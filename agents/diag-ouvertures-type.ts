@@ -21,7 +21,7 @@ try {
 
   const type = (e: { variant: string | null; relance: boolean; photo: boolean }) =>
     e.relance ? "relance" : `version ${e.variant ?? "?"}${e.photo ? " + photo" : ""}`;
-  const parProspect = new Map<string, typeof envois>();
+  const parProspect = new Map<string, (typeof envois)[number][]>();
   for (const e of envois) parProspect.set(e.prospect_id, [...(parProspect.get(e.prospect_id) ?? []), e]);
 
   // Ouvertures = visites regroupées par 30 min (comme le compteur), par artisan.
