@@ -1,0 +1,107 @@
+# Tableau de bord sur Google Cloud Run (5/11, voir docs/cloud-run.md) : gratuit, sans la limite de 10 ms de calcul
+# du plan gratuit de Cloudflare (erreurs 1102). Les pages publiques (maquettes /m/, /bienvenue, formulaires) restent
+# sur Cloudflare (workflow « Mise en ligne »).
+# Se lance à chaque envoi sur GitHub, ou à la main (Actions > « Tableau de bord — Cloud Run » > Run workflow).
+#
+# Secrets GitHub : GCP_SA_KEY (clé JSON du compte de service « github-deploy »), GCP_PROJECT_ID,
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (déjà là), CLE_GITHUB_ACTIONS (boutons « Lancer »).
+# Variable GitHub (facultative) : TABLEAU_URL, l'adresse du tableau de bord une fois connue.
+# Sans les secrets Google, le workflow s'arrête sans erreur.
+
+name: Tableau de bord — Cloud Run
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "tests/**"
+      - "workers/**"
+      - ".github/workflows/agent-*.yml"
+      - "**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tableau-cloud-run
+  cancel-in-progress: true
+
+env:
+  REGION: europe-west1
+  SERVICE: devanture-tableau
+  DEPOT: devanture
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+    steps:
+      - name: Vérifier les secrets
+        id: secrets
+        run: |
+          if [ -z "$GCP_SA_KEY" ] || [ -z "$GCP_PROJECT_ID" ]; then
+            echo "::notice::Cloud Run pas encore configuré : il manque GCP_SA_KEY ou GCP_PROJECT_ID (voir docs/cloud-run.md)."
+            echo "pret=non" >> "$GITHUB_OUTPUT"
+          else
+            echo "pret=oui" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.pret == 'oui'
+
+      - uses: google-github-actions/auth@v2
+        if: steps.secrets.outputs.pret == 'oui'
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+        if: steps.secrets.outputs.pret == 'oui'
+
+      - name: Préparer le dépôt d'images (une seule fois)
+        if: steps.secrets.outputs.pret == 'oui'
+        run: |
+          gcloud config set project "$GCP_PROJECT_ID"
+          if ! gcloud artifacts repositories describe "$DEPOT" --location "$REGION" >/dev/null 2>&1; then
+            gcloud artifacts repositories create "$DEPOT" --repository-format docker --location "$REGION" \
+              --description "Images du tableau de bord Devanture"
+          fi
+          # Ne garder que les 2 dernières images (le stockage gratuit est de 0,5 Go).
+          cat > politique.json <<'JSON'
+          [{"name":"garder-2","action":{"type":"Keep"},"mostRecentVersions":{"keepCount":2}},
+           {"name":"effacer-le-reste","action":{"type":"Delete"},"condition":{"tagState":"any"}}]
+          JSON
+          gcloud artifacts repositories set-cleanup-policies "$DEPOT" --location "$REGION" --policy politique.json --no-dry-run --quiet
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+
+      - name: Construire l'image
+        if: steps.secrets.outputs.pret == 'oui'
+        run: |
+          IMAGE="$REGION-docker.pkg.dev/$GCP_PROJECT_ID/$DEPOT/tableau:${GITHUB_SHA::12}"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          docker build -t "$IMAGE" \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
+            --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}" \
+            --build-arg NEXT_PUBLIC_SITE_URL="${{ vars.TABLEAU_URL || 'https://devanture-tableau-4hyif2bz7a-ew.a.run.app' }}" .
+          docker push "$IMAGE"
+
+      - name: Mettre en ligne sur Cloud Run
+        if: steps.secrets.outputs.pret == 'oui'
+        env:
+          CLE_GITHUB_ACTIONS: ${{ secrets.CLE_GITHUB_ACTIONS }}
+        run: |
+          # 0 instance au repos (gratuit), 2 au plus ; démarrage accéléré pour la première page.
+          VARS="GITHUB_REPOSITORY_DEVANTURE=Ambroiselc/Devanture"
+          if [ -n "$CLE_GITHUB_ACTIONS" ]; then VARS="$VARS,GITHUB_ACTIONS_TOKEN=$CLE_GITHUB_ACTIONS"; fi
+          gcloud run deploy "$SERVICE" --image "$IMAGE" --region "$REGION" --platform managed \
+            --allow-unauthenticated --min-instances 0 --max-instances 2 --cpu 1 --memory 512Mi \
+            --concurrency 40 --timeout 60 --cpu-boost --set-env-vars "$VARS" --quiet
+          URL=$(gcloud run services describe "$SERVICE" --region "$REGION" --format 'value(status.url)')
+          echo "::notice title=Tableau de bord en ligne::$URL"
+          if [ -z "$CLE_GITHUB_ACTIONS" ]; then
+            echo "::warning::Secret CLE_GITHUB_ACTIONS absent : les boutons « Lancer » des agents ne marcheront pas sur Cloud Run."
+          fi

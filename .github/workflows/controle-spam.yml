@@ -1,0 +1,46 @@
+# Contrôle anti-spam hebdomadaire (voir agents/controle-spam.ts) : l'équivalent automatique de mail-tester.com.
+# Chaque lundi vers 7 h 40 (heure de Paris en hiver), ou à la main (Actions > Run workflow). N'envoie rien.
+# Résultat : une tâche « Contrôle anti-spam » dans le tableau de bord (page Tâches).
+
+name: Contrôle anti-spam
+
+on:
+  schedule:
+    - cron: "41 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: controle-spam
+  cancel-in-progress: false
+
+jobs:
+  controle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      DEMO_BASE_URL: ${{ secrets.DEMO_BASE_URL }}
+      BOITES_ENVOI: ${{ secrets.BOITES_ENVOI }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+
+      - name: Installer SpamAssassin (le filtre utilisé par mail-tester)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq spamassassin
+          sudo sa-update || true
+
+      - name: Contrôler
+        run: node agents/controle-spam.ts

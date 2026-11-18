@@ -1,0 +1,38 @@
+# Applique une migration du dossier supabase/migrations/ sur la base Supabase (à la main : Actions > Run workflow).
+# Remplace le copier-coller dans Supabase > SQL Editor. Une seule transaction : en cas d'erreur, rien n'est changé.
+
+name: Appliquer une migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      fichier:
+        description: "Nom du fichier (ex. 20261028000000_boites_envoi.sql)"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: migration
+  cancel-in-progress: false
+
+jobs:
+  migration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+      - name: Appliquer
+        env:
+          FICHIER: ${{ inputs.fichier }}
+        run: node agents/appliquer-migration.ts "$FICHIER"

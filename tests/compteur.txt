@@ -1,0 +1,2 @@
+bandeau
+17/11 21 h 45 : vérifier les maquettes après Next.js 16.4.6

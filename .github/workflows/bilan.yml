@@ -1,0 +1,30 @@
+# Bilan complet du projet (30/10), EN LECTURE SEULE (voir agents/bilan.ts) : prospects, envois, rebonds, réponses, clients.
+# Se lance à la main (Actions > Run workflow) ou quand tests/bilan.txt change. Ne modifie rien dans la base.
+
+name: Bilan du projet
+
+on:
+  push:
+    branches: [main]
+    paths: [tests/bilan.txt]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bilan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+      - name: Calculer
+        run: node agents/bilan.ts

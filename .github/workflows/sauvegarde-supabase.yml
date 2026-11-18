@@ -1,0 +1,53 @@
+# Sauvegarde automatique et gratuite de la base Supabase.
+# • Tourne chaque lundi vers 4 h (heure de Paris), ou à la main (onglet Actions > « Run workflow »).
+# • Produit une archive téléchargeable dans GitHub (onglet Actions > la dernière exécution > « Artifacts »).
+# • Les archives s'effacent seules après 90 jours : pas de vieilles données qui traînent (RGPD).
+# • Rien n'est ajouté au code : le dépôt reste propre.
+#
+# À faire une seule fois (voir docs/sauvegardes.md) : ajouter le secret SUPABASE_DB_URL
+# dans GitHub > Settings > Secrets and variables > Actions.
+# Le dépôt DOIT rester privé : les sauvegardes contiennent les coordonnées des prospects.
+
+name: Sauvegarde Supabase
+
+on:
+  schedule:
+    - cron: "17 2 * * 1" # lundi 02:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sauvegarde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Vérifier que le secret est présent
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "::error::Le secret SUPABASE_DB_URL manque (voir docs/sauvegardes.md)."
+            exit 1
+          fi
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Exporter la base
+        run: |
+          mkdir -p sauvegarde
+          supabase db dump --db-url "$DB_URL" -f sauvegarde/roles.sql --role-only
+          supabase db dump --db-url "$DB_URL" -f sauvegarde/schema.sql
+          supabase db dump --db-url "$DB_URL" -f sauvegarde/data.sql --data-only --use-copy
+          gzip -9 sauvegarde/*.sql
+          ls -lh sauvegarde
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: supabase-${{ github.run_number }}-${{ github.run_id }}
+          path: sauvegarde/
+          retention-days: 90
+          if-no-files-found: error

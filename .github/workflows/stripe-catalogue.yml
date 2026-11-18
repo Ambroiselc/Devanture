@@ -1,0 +1,35 @@
+# Crée (ou retrouve) le catalogue Stripe de Devanture : produits, prix, code LANCEMENT et liens de paiement.
+# À la main : Actions > « Stripe — catalogue » > Run workflow, en « test » d'abord, puis « production ».
+# Peut être relancé sans risque : rien n'est créé deux fois. Les liens s'affichent dans le résumé du lancement.
+# Secrets : STRIPE_SECRET_KEY_TEST (clé du mode test) et STRIPE_SECRET_KEY (clé de production).
+
+name: Stripe — catalogue
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "test ou production"
+        type: choice
+        options: [test, production]
+        default: test
+
+permissions:
+  contents: read
+
+jobs:
+  catalogue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      STRIPE_SECRET_KEY_TEST: ${{ secrets.STRIPE_SECRET_KEY_TEST }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Créer le catalogue
+        env:
+          MODE: ${{ inputs.mode }}
+        run: node agents/stripe-catalogue.ts "$MODE"

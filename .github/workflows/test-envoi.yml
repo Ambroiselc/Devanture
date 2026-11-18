@@ -1,0 +1,43 @@
+# Envoi de TEST vers une personne de confiance (voir agents/test-envoi.ts).
+# Se lance tout seul quand tests/envoi-test.json change sur GitHub, ou à la main (Actions > Run workflow).
+# Un seul envoi par adresse et par jour.
+
+name: Test d'envoi
+
+on:
+  push:
+    branches: [main]
+    paths: [tests/envoi-test.json]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-envoi
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      ADRESSE_TEST: ${{ secrets.ADRESSE_TEST }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      EMAIL_REPLY_TO: ${{ secrets.EMAIL_REPLY_TO }}
+      DEMO_BASE_URL: ${{ secrets.DEMO_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+
+      - name: Envoyer l'e-mail de test
+        run: node agents/test-envoi.ts tests/envoi-test.json

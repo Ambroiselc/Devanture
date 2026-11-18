@@ -1,0 +1,115 @@
+# Loïc, l'agent de prospection (phase 2).
+# • À la main : bouton « Lancer » de la page « Loïc » du tableau de bord,
+#   ou GitHub > onglet Actions > « Loïc — agent de prospection » > Run workflow.
+# • Automatiquement 2 fois par jour, 7 jours sur 7 (vers 8 h et 14 h l'été, 7 h et 13 h l'hiver), SEULEMENT si « Lancement automatique »
+#   est activé sur la page « Loïc » (sinon l'exécution s'arrête tout de suite, sans rien faire).
+#   « RGE d'abord, Google en complément » (27/10) : Loïc passe d'abord dans la liste officielle des entreprises
+#   RGE (ADEME, gratuite) ; si elle ne fournit pas assez de nouveaux artisans, il complète avec une tournée Google
+#   (5 couples métier + commune choisis par lui, qui se partagent les fiches restantes).
+# Après chaque lancement, Sid prépare les maquettes des nouveaux qualifiés, puis Valérie rédige leurs e-mails.
+# Le résultat apparaît dans le tableau de bord (Prospects, Sid, Valérie, Tâches) et en résumé sous l'exécution.
+#
+# Secrets utilisés (déjà en place) : SUPABASE_DB_URL, GOOGLE_PLACES_API_KEY, ANTHROPIC_API_KEY.
+# Avant le premier lancement : exécuter dans Supabase les migrations 20261022000000_prospection.sql,
+# 20261022010000_reglages_loic.sql puis 20261022020000_loic_communes.sql.
+
+name: Loïc — agent de prospection
+
+on:
+  schedule:
+    # 2 vagues par jour, 7 jours sur 7 : 06:17 et 12:17 UTC (8 h 17 et 14 h 17 l'été, 7 h 17 et 13 h 17 l'hiver à Paris)
+    - cron: "17 6,12 * * *"
+  workflow_dispatch:
+    inputs:
+      metier:
+        description: "Métier à prospecter"
+        type: choice
+        options: [plombier, electricien, couvreur, peintre, menuisier, serrurier, macon, carreleur, plaquiste, climatisation, paysagiste]
+        default: plombier
+      limite:
+        description: "Nombre de fiches à examiner, multiple de 5 (vide = réglage de la page Loïc)"
+        type: string
+        default: ""
+      tournee:
+        description: "Tournée : Loïc choisit lui-même 5 métiers (métier et commune ci-dessus ignorés)"
+        type: boolean
+        default: false
+      rge:
+        description: "Méthode « RGE d'abord » : artisans de la liste officielle RGE (ADEME), qui ont déjà un e-mail. Gratuit, ignore métier et commune."
+        type: boolean
+        default: false
+      renoter:
+        description: "Nouvelle notation des prospects déjà connus (barème du 25/10 : le nombre d'avis compte très peu). Ignore les autres champs."
+        type: boolean
+        default: false
+      commune:
+        description: "Code INSEE de la commune (59350 = Lille, 59599 = Tourcoing, 59512 = Roubaix ; liste dans agents/lib/metiers.ts)"
+        type: string
+        default: "59599"
+
+permissions:
+  contents: read
+
+# Un seul lancement à la fois : les compteurs de requêtes Google restent justes.
+concurrency:
+  group: agent-prospection
+  cancel-in-progress: false
+
+jobs:
+  prospection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - name: Vérifier les secrets
+        run: |
+          for s in SUPABASE_DB_URL GOOGLE_PLACES_API_KEY ANTHROPIC_API_KEY; do
+            if [ -z "${!s}" ]; then echo "::error::Le secret $s manque."; exit 1; fi
+          done
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+
+      - name: Lancer l'agent
+        env:
+          METIER: ${{ inputs.metier || 'plombier' }}
+          LIMITE: ${{ inputs.limite }}
+          COMMUNE: ${{ inputs.commune || '59599' }}
+          AUTO: ${{ github.event_name == 'schedule' && '--auto' || (inputs.renoter && '--renoter' || (inputs.rge && '--rge' || (inputs.tournee && '--tournee' || ''))) }}
+        run: node agents/prospection.ts --metier "$METIER" --limite "$LIMITE" --commune "$COMMUNE" $AUTO
+
+      # Chaîne automatique (26/10) : dès que Loïc a qualifié des prospects, Sid leur prépare une maquette,
+      # puis Valérie rédige le premier e-mail (versions A/B et « avec / sans image » alternées).
+      # Rien n'est envoyé : les e-mails attendent la validation de Broise sur la page « Valérie ».
+# Depuis le 28/10, tout ce que Loïc qualifie devient maquette puis e-mail dans le même passage (--tout) :
+# le seul rythme imposé ensuite est celui de l'envoi (agent-envoi.yml).
+      # Ces étapes tournent même si Loïc s'est arrêté sur une erreur (elles traitent aussi les prospects plus anciens).
+      - name: Installer le navigateur des captures
+        if: ${{ !cancelled() }}
+        run: npx playwright install --with-deps chromium
+
+      - name: Sid prépare les maquettes
+        if: ${{ !cancelled() }}
+        # --tout (28/10) : toutes les maquettes en attente, Sid s'arrête de lui-même après 25 min (le reste au passage suivant).
+        run: node agents/demos.ts --tout
+
+      - name: Valérie rédige les e-mails
+        if: ${{ !cancelled() }}
+        # --tout (28/10) : tous les e-mails à rédiger, Valérie s'arrête d'elle-même après 15 min (le reste au passage suivant).
+        # Puis (3/11) Coco relit aussitôt les e-mails « à valider » (8 min au plus).
+        run: node agents/emails.ts --tout
+
+      # Nettoyage de la base (photos devenues inutiles, coordonnées des opposés, journaux de plus de 90 jours).
+      - name: Nettoyer la base
+        if: ${{ !cancelled() }}
+        run: node agents/nettoyage.ts

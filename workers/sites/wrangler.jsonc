@@ -1,0 +1,14 @@
+// Worker « devanture-sites » : sert les sites de TOUS les clients (Pedro, 30/10, voir docs/sites-clients.md).
+// Publié par le workflow « Sites des clients — serveur » (.github/workflows/sites-serveur.yml).
+// Aucun secret : les fichiers des sites sont publics (stockage Supabase, dossier « sites »).
+// Adresses : apercu.devanture-artisans.fr (aperçus) et les domaines des clients, branchés par Pedro via l'API
+// Cloudflare. Volontairement AUCUNE route ici : un déploiement ne touche jamais aux domaines déjà branchés.
+{
+  "name": "devanture-sites",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  "workers_dev": false,
+  // SUPABASE_URL est passée au déploiement (--var), depuis le secret GitHub NEXT_PUBLIC_SUPABASE_URL.
+  "keep_vars": true
+}

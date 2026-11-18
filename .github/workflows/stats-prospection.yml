@@ -1,0 +1,27 @@
+# Statistiques de Loïc sur 7 jours (voir agents/stats-prospection.ts). À la main : Actions > Run workflow.
+# Ne modifie rien dans la base.
+
+name: Statistiques de Loïc
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+      - name: Calculer
+        run: node agents/stats-prospection.ts

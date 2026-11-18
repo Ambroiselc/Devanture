@@ -1,0 +1,16 @@
+// Mise en ligne du tableau de bord et des maquettes publiques sur Cloudflare (voir docs/mise-en-ligne.md).
+// Les clés ne vont JAMAIS ici : Cloudflare > Workers > devanture-app > Settings > Variables and Secrets.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "devanture-app",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  // Garde les variables ajoutées dans le tableau de bord Cloudflare lors des déploiements suivants.
+  "keep_vars": true
+}

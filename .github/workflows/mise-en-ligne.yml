@@ -1,0 +1,77 @@
+# Met en ligne le tableau de bord et les maquettes publiques sur Cloudflare (Worker « devanture-app »),
+# à chaque envoi sur GitHub, ou à la main (Actions > « Mise en ligne » > Run workflow).
+# Remplace la construction automatique de Cloudflare (qui n'arrivait pas à récupérer le dépôt).
+#
+# Secrets GitHub nécessaires (voir docs/mise-en-ligne.md) :
+#   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID,
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.
+# Sans eux, le workflow s'arrête sans erreur.
+
+name: Mise en ligne
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "tests/**"
+      - "workers/**"
+      - "agents/**"
+      - ".github/workflows/agent-*.yml"
+      - "**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mise-en-ligne
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_SITE_URL: https://app.devanture-artisans.fr
+      # 5/11 : adresse du tableau de bord sur Cloud Run (variable GitHub TABLEAU_URL) ; vide = pas de redirection.
+      NEXT_PUBLIC_TABLEAU_URL: ${{ vars.TABLEAU_URL || 'https://devanture-tableau-4hyif2bz7a-ew.a.run.app' }}
+    steps:
+      - name: Vérifier les secrets
+        id: secrets
+        run: |
+          manque=""
+          for s in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY; do
+            if [ -z "${!s}" ]; then manque="$manque $s"; fi
+          done
+          if [ -n "$manque" ]; then
+            echo "::notice::Mise en ligne pas encore configurée, il manque :$manque (voir docs/mise-en-ligne.md)."
+            echo "pret=non" >> "$GITHUB_OUTPUT"
+          else
+            echo "pret=oui" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.secrets.outputs.pret == 'oui'
+
+      - uses: actions/setup-node@v4
+        if: steps.secrets.outputs.pret == 'oui'
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer
+        if: steps.secrets.outputs.pret == 'oui'
+        run: npm ci --no-audit --no-fund
+
+      - name: Construire pour Cloudflare
+        if: steps.secrets.outputs.pret == 'oui'
+        run: npx opennextjs-cloudflare build
+
+      - name: Mettre en ligne
+        if: steps.secrets.outputs.pret == 'oui'
+        run: npx opennextjs-cloudflare deploy

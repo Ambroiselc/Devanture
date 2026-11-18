@@ -1,0 +1,15 @@
+// Worker de réception des e-mails de Devanture (voir docs/boite-mail.md).
+// Les clés (SUPABASE_SECRET_KEY, GITHUB_TOKEN) ne vont JAMAIS ici :
+// Cloudflare > Workers > boite-mail > Settings > Variables and Secrets.
+{
+  "name": "boite-mail",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  // Variables non secrètes (modifiables aussi dans le tableau de bord Cloudflare).
+  "vars": {
+    "GITHUB_REPOSITORY": "Ambroiselc/Devanture"
+  },
+  // Garde les variables ajoutées dans le tableau de bord Cloudflare lors des déploiements suivants.
+  "keep_vars": true
+}

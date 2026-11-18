@@ -1,0 +1,73 @@
+# Inès, l'agente de la boîte mail : trie les e-mails reçus, répond seule aux messages simples,
+# prépare les autres réponses pour Broise (page « Boîte mail »), et envoie les réponses validées (8 h – 20 h).
+#
+# Lancée :
+#   • par le Worker Cloudflare « boite-mail », dès qu'un e-mail arrive (si son secret GITHUB_TOKEN est rempli) ;
+#   • par la page « Boîte mail » du tableau de bord (bouton, ou après une validation) ;
+#   • toutes les deux heures en journée, par sécurité.
+#
+# Secrets utilisés : SUPABASE_DB_URL, ANTHROPIC_API_KEY (déjà en place), RESEND_API_KEY, EMAIL_FROM,
+# EMAIL_REPLY_TO et DEMO_BASE_URL (ceux de l'envoi de Valérie), BOITES_ENVOI (relève des boîtes de prospection).
+# Avant le premier lancement : exécuter dans Supabase la migration 20261027000000_boite_mail.sql.
+
+name: Inès — boîte mail
+
+on:
+  schedule:
+    - cron: "23 7-19/2 * * *"
+  workflow_dispatch:
+  # 5/11 : relancer Inès tout de suite en modifiant tests/ines.txt.
+  push:
+    branches: [main]
+    paths: [tests/ines.txt]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-boite
+  cancel-in-progress: false
+
+jobs:
+  boite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      BOITES_ENVOI: ${{ secrets.BOITES_ENVOI }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      EMAIL_REPLY_TO: ${{ secrets.EMAIL_REPLY_TO }}
+      DEMO_BASE_URL: ${{ secrets.DEMO_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+
+      # Paiements Stripe (29/10) : nouveaux clients et e-mails de bienvenue à valider (agents/paiements.ts).
+      # Une erreur ici n'empêche jamais Inès de traiter le courrier.
+      - name: Relever les paiements Stripe
+        continue-on-error: true
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: node agents/paiements.ts
+
+      # Demandes de devis des sites clients (30/10) : transmises par e-mail à l'artisan (agents/devis.ts).
+      - name: Transmettre les demandes de devis
+        continue-on-error: true
+        run: node agents/devis.ts
+
+      # « Ce site m'intéresse » (13/11) : alerte à Broise quand un artisan clique sur le bandeau de sa maquette.
+      - name: Prévenir Broise des artisans intéressés
+        continue-on-error: true
+        run: node agents/interets.ts
+
+      - name: Relever et traiter le courrier
+        run: node agents/boite.ts

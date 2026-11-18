@@ -1,0 +1,12 @@
+{
+  "envoyer": true,
+  "effacer": true,
+  "client_test": true,
+  "email": "",
+  "_adresse": "adresse vide = secret GitHub ADRESSE_TEST (18/11 : dépôt public, aucune adresse personnelle dans le code)",
+  "entreprise": "Test Toiture Broise",
+  "metier": "couvreur",
+  "commune": "Roubaix",
+  "code_postal": "59100",
+  "note_interne": "Client de test n° 2 créé à la demande de Broise le 29/10/2026 (test des cases photos, pas un vrai artisan)."
+}

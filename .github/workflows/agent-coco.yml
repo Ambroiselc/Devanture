@@ -1,0 +1,55 @@
+# Coco, l'agente superviseuse (30/10).
+# • Sa relecture des e-mails de Valérie se fait juste après leur rédaction (3/11, agents/emails.ts, après chaque vague de Loïc),
+#   et celle des relances au début de chaque vague d'envoi, juste après leur préparation (workflow agent-envoi.yml) :
+#   rien à lancer ici pour ça.
+# • Ici : son BILAN du jour, chaque soir à 18 h 13 (heure d'hiver ; 19 h 13 l'été), 7 jours sur 7, rangé sur la page /coco.
+# • À la main (Actions > Run workflow) : « relire » = relire tout de suite ce nombre d'e-mails « à valider » (300 au plus).
+# Secrets utilisés (déjà en place) : SUPABASE_DB_URL, ANTHROPIC_API_KEY.
+# Avant le premier lancement : appliquer la migration 20261030020000_coco.sql (workflow « Appliquer une migration »).
+
+name: Coco — supervision
+
+on:
+  schedule:
+    - cron: "13 17 * * *"
+  workflow_dispatch:
+    inputs:
+      relire:
+        description: "Relire tout de suite ce nombre d'e-mails « à valider » (vide = seulement le bilan)"
+        type: string
+        default: ""
+      revoir_gardes:
+        description: "Remettre aussi en relecture les e-mails qu'elle a gardés pour Broise"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-coco
+  cancel-in-progress: false
+
+jobs:
+  coco:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+
+      - name: Superviser
+        env:
+          RELIRE: ${{ inputs.relire }}
+          REVOIR: ${{ inputs.revoir_gardes && '--revoir-gardes' || '' }}
+        run: node agents/coco.ts --relire "$RELIRE" $REVOIR

@@ -1,0 +1,11 @@
+{
+  "envoyer": false,
+  "essai": 2,
+  "email": "",
+  "_adresse": "adresse vide = secret GitHub ADRESSE_TEST (18/11 : dépôt public, aucune adresse personnelle dans le code)",
+  "entreprise": "Colombe Carrelage & Crédences (test)",
+  "metier": "carreleur",
+  "commune": "Tourcoing",
+  "objet": "Une maquette de site pour Colombe Carrelage & Crédences",
+  "texte": "Bonjour,\n\nJ'ai préparé une maquette de site pour Colombe Carrelage & Crédences, pensée pour vos chantiers de carrelage et de crédences à Tourcoing et autour. Elle présente vos prestations, votre zone d'intervention et un bouton pour demander un devis, et elle s'affiche bien sur téléphone.\n\nElle existe en deux styles, un sobre et un plus chaleureux, sur la même page :\n{{lien_demo}}\n\nTout se modifie selon vos souhaits : textes, photos de vos réalisations, coordonnées.\n\nLequel des deux styles vous plaît le plus ?\n\nBien cordialement,\nAmbroise Le Clerc\nDevanture — sites web pour les artisans\n11 rue des Tournelles, 75004 Paris\n\n—\nPourquoi ce message : votre adresse est publiée sur une page publique de votre entreprise. Devanture n'écrit qu'aux professionnels, au sujet de leur activité.\nPour ne plus recevoir de message de Devanture, répondez simplement « STOP »."
+}

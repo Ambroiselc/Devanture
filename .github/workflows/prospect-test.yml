@@ -1,0 +1,68 @@
+# Prospect de TEST « grandeur nature » (voir agents/prospect-test.ts) : un artisan inventé reçoit
+# sa maquette (Sid) et son premier e-mail (Valérie), envoyé tout de suite, comme un vrai prospect.
+# Se lance tout seul quand tests/prospect-test.json change sur GitHub, ou à la main (Actions > Run workflow).
+
+name: Prospect de test
+
+on:
+  push:
+    branches: [main]
+    paths: [tests/prospect-test.json]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prospect-test
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      ADRESSE_TEST: ${{ secrets.ADRESSE_TEST }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      EMAIL_REPLY_TO: ${{ secrets.EMAIL_REPLY_TO }}
+      DEMO_BASE_URL: ${{ secrets.DEMO_BASE_URL }}
+      # Pour effacer les photos et le site de test (stockage Supabase).
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+
+      - name: Installer le navigateur des captures
+        run: npx playwright install --with-deps chromium
+
+      - name: 1. Créer l'artisan
+        id: creer
+        run: node agents/prospect-test.ts creer tests/prospect-test.json
+
+      - name: 2. Sid prépare sa maquette
+        if: steps.creer.outputs.prospect != ''
+        run: node agents/demos.ts --prospect "${{ steps.creer.outputs.prospect }}"
+
+      - name: 3. Valérie rédige son e-mail
+        if: steps.creer.outputs.prospect != ''
+        run: node agents/emails.ts --prospect "${{ steps.creer.outputs.prospect }}"
+
+      - name: 4. Validation de l'e-mail
+        id: valider
+        if: steps.creer.outputs.prospect != ''
+        run: node agents/prospect-test.ts valider "${{ steps.creer.outputs.prospect }}"
+
+      - name: 5. Envoi
+        if: steps.valider.outputs.email != ''
+        run: node agents/envoi.ts --email "${{ steps.valider.outputs.email }}"

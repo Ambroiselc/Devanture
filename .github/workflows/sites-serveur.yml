@@ -1,0 +1,40 @@
+# Publie le Worker Cloudflare « devanture-sites », qui sert les sites de tous les clients (workers/sites).
+# À lancer une fois à la main (GitHub > Actions > « Sites des clients — serveur » > Run workflow),
+# puis automatiquement à chaque changement de workers/sites.
+# Secrets : CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, NEXT_PUBLIC_SUPABASE_URL (déjà en place).
+
+name: Sites des clients — serveur
+
+on:
+  push:
+    branches: [main]
+    paths: ["workers/sites/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sites-serveur
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Publier le Worker
+        working-directory: workers/sites
+        run: |
+          npm install --no-audit --no-fund
+          URL="${NEXT_PUBLIC_SUPABASE_URL%/}"
+          URL="${URL%/rest/v1}"
+          npx wrangler deploy --var "SUPABASE_URL:$URL"

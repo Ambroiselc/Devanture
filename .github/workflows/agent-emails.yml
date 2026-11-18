@@ -1,0 +1,69 @@
+# Valérie, l'agente des e-mails (phase 4) : rédige le premier e-mail des prospects qui ont leur maquette.
+# • Bouton « Lancer Valérie » de la page « Valérie » du tableau de bord,
+#   ou GitHub > onglet Actions > « Valérie — e-mails de prospection » > Run workflow.
+# Automatique : aussi lancé à la suite de chaque vague de Loïc (voir agent-prospection.yml).
+# RIEN N'EST ENVOYÉ : les e-mails attendent la validation de Broise sur la page « Valérie ».
+#
+# Secrets utilisés (déjà en place) : SUPABASE_DB_URL, ANTHROPIC_API_KEY.
+# Avant le premier lancement : exécuter dans Supabase la migration 20261023010000_valerie.sql.
+
+name: Valérie — e-mails de prospection
+
+on:
+  workflow_dispatch:
+    inputs:
+      limite:
+        description: "Nombre d'e-mails à rédiger (30 au maximum ; vide = réglage de la page Valérie)"
+        type: string
+        default: ""
+      reecrire:
+        description: "Réécrire tous les e-mails « à valider » avec les consignes actuelles (même version A/B)"
+        type: boolean
+        default: false
+      valides:
+        description: "Avec « réécrire » : réécrire aussi les e-mails validés pas encore envoyés (ils repassent « à valider »)"
+        type: boolean
+        default: false
+      b_en_c:
+        description: "Réécrire en version C (très courte) les e-mails en version B pas encore envoyés (13/11)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-emails
+  cancel-in-progress: false
+
+jobs:
+  emails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - name: Vérifier les secrets
+        run: |
+          for s in SUPABASE_DB_URL ANTHROPIC_API_KEY; do
+            if [ -z "${!s}" ]; then echo "::error::Le secret $s manque."; exit 1; fi
+          done
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+
+      - name: Lancer l'agent
+        env:
+          LIMITE: ${{ inputs.limite }}
+          REECRIRE: ${{ inputs.reecrire && '--reecrire' || '' }}
+          VALIDES: ${{ inputs.valides && '--valides' || '' }}
+          B_EN_C: ${{ inputs.b_en_c && '--b-en-c' || '' }}
+        run: node agents/emails.ts --limite "$LIMITE" $REECRIRE $VALIDES $B_EN_C

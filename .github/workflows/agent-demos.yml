@@ -1,0 +1,73 @@
+# Sid, l'agent des maquettes (phase 3) : prépare une maquette de site pour les prospects qualifiés qui n'en ont pas.
+# • Bouton « Lancer Sid » de la page « Sid » du tableau de bord,
+#   ou GitHub > onglet Actions > « Sid — maquettes de sites » > Run workflow.
+# Automatique : aussi lancé à la suite de chaque vague de Loïc (voir agent-prospection.yml).
+# Rien n'est envoyé ni mis en ligne : les démos se regardent dans le tableau de bord.
+#
+# Secrets utilisés (déjà en place) : SUPABASE_DB_URL, ANTHROPIC_API_KEY.
+# Avant le premier lancement : exécuter dans Supabase la migration 20261023000000_demos.sql.
+
+name: Sid — maquettes de sites
+
+on:
+  workflow_dispatch:
+    inputs:
+      limite:
+        description: "Nombre de maquettes à préparer (20 au maximum)"
+        type: string
+        default: "5"
+      prospect:
+        description: "Facultatif : identifiant d'un prospect précis (pour refaire sa démo)"
+        type: string
+        default: ""
+      captures:
+        description: "Rattrapage : faire seulement la capture des maquettes qui n'en ont pas (sans IA)"
+        type: boolean
+        default: false
+      habiller:
+        description: "Rattrapage : donner un habillage unique aux maquettes faites avant le 27/10 (sans IA)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-demos
+  cancel-in-progress: false
+
+jobs:
+  demos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - name: Vérifier les secrets
+        run: |
+          for s in SUPABASE_DB_URL ANTHROPIC_API_KEY; do
+            if [ -z "${!s}" ]; then echo "::error::Le secret $s manque."; exit 1; fi
+          done
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+
+      # Navigateur utilisé pour photographier chaque maquette (vue téléphone).
+      - name: Installer le navigateur des captures
+        run: npx playwright install --with-deps chromium
+
+      - name: Lancer l'agent
+        env:
+          LIMITE: ${{ inputs.limite || '5' }}
+          PROSPECT: ${{ inputs.prospect }}
+          CAPTURES: ${{ inputs.captures && '--captures' || '' }}
+          HABILLER: ${{ inputs.habiller && '--habiller' || '' }}
+        run: node agents/demos.ts --limite "$LIMITE" --prospect "$PROSPECT" $CAPTURES $HABILLER

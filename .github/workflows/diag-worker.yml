@@ -1,0 +1,29 @@
+# Diagnostic du tableau de bord sur Cloudflare (3/11), EN LECTURE SEULE (voir agents/diag-worker.ts).
+# Se lance à la main (Actions > Run workflow) ou quand tests/diag-worker.txt change.
+name: Diagnostic du tableau de bord
+
+on:
+  push:
+    branches: [main]
+    paths: [tests/diag-worker.txt]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Lire les journaux et statistiques
+        # 1re ligne de tests/diag-worker.txt : « visites » → visites perdues du site vitrine (agents/diag-visites-perdues.ts).
+        run: |
+          if head -n1 tests/diag-worker.txt | grep -qi '^visites'; then node agents/diag-visites-perdues.ts; else node agents/diag-worker.ts; fi

@@ -1,0 +1,28 @@
+# Dépendances (réinstallées avec « npm install »)
+/node_modules
+
+# Fichiers générés par Next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# SECRETS — ne jamais envoyer sur GitHub
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.example
+
+# Divers
+.DS_Store
+Thumbs.db
+npm-debug.log*
+.vercel
+/supabase/.temp/
+
+# Mise en ligne Cloudflare (fichiers générés)
+/.open-next/
+/.wrangler/
+.dev.vars

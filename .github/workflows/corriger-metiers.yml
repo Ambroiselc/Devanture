@@ -1,0 +1,47 @@
+# Rattrapage du métier des artisans RGE pas encore contactés (10/11, voir agents/corriger-metiers.ts).
+# Par défaut : SIMULATION (liste ce qui changerait, ne modifie rien). « appliquer » : corrige, archive les maquettes
+# et supprime les e-mails non partis concernés (Sid et Valérie les refont au passage suivant).
+# Se lance à la main (Actions > Run workflow) ou quand tests/metiers.txt change (1re ligne « appliquer » ou « simulation »).
+
+name: Loïc — corriger les métiers
+
+on:
+  push:
+    branches: [main]
+    paths: [tests/metiers.txt]
+  workflow_dispatch:
+    inputs:
+      appliquer:
+        description: "Appliquer les corrections (sinon simple simulation)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: corriger-metiers
+
+jobs:
+  metiers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+      - name: Vérifier le choix du métier
+        run: node agents/test-metier.ts
+      - name: Corriger
+        run: |
+          MODE=simulation
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.appliquer }}" = "true" ]; then MODE=appliquer; fi
+          if [ "${{ github.event_name }}" = "push" ] && head -n1 tests/metiers.txt | grep -qi '^appliquer'; then MODE=appliquer; fi
+          echo "Mode : $MODE"
+          if [ "$MODE" = "appliquer" ]; then node agents/corriger-metiers.ts --appliquer; else node agents/corriger-metiers.ts; fi

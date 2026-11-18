@@ -1,0 +1,42 @@
+# Diagnostic du compteur d'ouvertures des maquettes (12/11, agents/diag-compteur.ts) : chiffres par jour + essai réel
+# sur la maquette de la fiche de test Colombe (remise en état ensuite). Relancé en modifiant tests/compteur.txt.
+name: Diagnostic du compteur des maquettes
+
+on:
+  push:
+    branches: [main]
+    paths: [tests/compteur.txt]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compteur:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Vérifier le compteur
+        # 1re ligne de tests/compteur.txt : « site » → site vitrine (agents/diag-site.ts), sinon maquettes.
+        run: |
+          if head -n1 tests/compteur.txt | grep -qi '^retirer '; then node agents/retirer-visite.ts "$(head -n1 tests/compteur.txt | cut -c9- | tr -d '\r')";
+          elif head -n1 tests/compteur.txt | grep -qi '^retrouvees'; then node agents/visites-retrouvees.ts;
+          elif head -n1 tests/compteur.txt | grep -qi '^detail-site'; then node agents/visites-site-detail-retrouvees.ts;
+          elif head -n1 tests/compteur.txt | grep -qi '^azure'; then node agents/diag-azure.ts;
+          elif head -n1 tests/compteur.txt | grep -qi '^bandeau'; then node agents/diag-bandeau.ts;
+          elif head -n1 tests/compteur.txt | grep -qi '^exemples-c'; then node agents/diag-exemples-c.ts;
+          elif head -n1 tests/compteur.txt | grep -qi '^robots-maquettes'; then node agents/retirer-robots-maquettes.ts "$(head -n1 tests/compteur.txt | awk '{print $2}' | tr -d '\r')";
+          elif head -n1 tests/compteur.txt | grep -qi '^site'; then node agents/diag-site.ts; else node agents/diag-compteur.ts; fi

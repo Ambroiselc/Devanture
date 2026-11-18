@@ -1,0 +1,94 @@
+@import "tailwindcss";
+@import "@fontsource-variable/bricolage-grotesque";
+
+/* ------------------------------------------------------------------
+   Couleurs de Devanture
+   Inspirées des vieilles devantures de commerce du Nord :
+   vert bouteille peint, store rayé, vitrine claire.
+   ------------------------------------------------------------------ */
+:root {
+  --paper: #f3f4f1;      /* fond général */
+  --surface: #ffffff;    /* panneaux */
+  --ink: #18272a;        /* texte principal */
+  --muted: #5d6b6c;      /* texte secondaire */
+  --line: #dbe0dc;       /* bordures */
+  --shop: #1d5c4b;       /* vert devanture (couleur de marque) */
+  --shop-soft: #e3eee9;
+  --stripe: #f6f3ea;     /* rayures claires du store */
+
+  --t-neutral-bg: #eceeed; --t-neutral-fg: #3e4a4b;
+  --t-info-bg: #e3ecf6;    --t-info-fg: #234f7d;
+  --t-progress-bg: #e5eef7;--t-progress-fg: #1f5c8f;
+  --t-success-bg: #e0f0e6; --t-success-fg: #1d6b3d;
+  --t-warning-bg: #fbefd6; --t-warning-fg: #8a5a06;
+  --t-danger-bg: #fbe4e1;  --t-danger-fg: #a42619;
+  --t-muted-bg: #eff0ef;   --t-muted-fg: #7a8585;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #111a1b;
+    --surface: #182325;
+    --ink: #e7ecea;
+    --muted: #9aa8a6;
+    --line: #2a3739;
+    --shop: #5fb69a;
+    --shop-soft: #1c3a32;
+    --stripe: #1e2a2b;
+
+    --t-neutral-bg: #26322f; --t-neutral-fg: #c9d2cf;
+    --t-info-bg: #1b2d42;    --t-info-fg: #9cc3ea;
+    --t-progress-bg: #1b2f45;--t-progress-fg: #8fc0ee;
+    --t-success-bg: #18352a; --t-success-fg: #8ad3a7;
+    --t-warning-bg: #3a2e14; --t-warning-fg: #f0c46c;
+    --t-danger-bg: #3d1d1a;  --t-danger-fg: #f2a196;
+    --t-muted-bg: #222c2d;   --t-muted-fg: #8b9796;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-shop: var(--shop);
+  --color-shop-soft: var(--shop-soft);
+  --font-display: "Bricolage Grotesque Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html { color-scheme: light dark; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--shop);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Le store rayé, au-dessus du nom de l'application. */
+.awning {
+  height: 34px;
+  background: repeating-linear-gradient(
+    90deg, var(--shop) 0 22px, var(--stripe) 22px 44px
+  );
+  position: relative;
+}
+.awning::after {
+  /* bord festonné du store */
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -10px;
+  height: 10px;
+  background:
+    radial-gradient(circle at 11px 0, var(--shop) 10px, transparent 10.5px) 0 0 / 44px 10px repeat-x,
+    radial-gradient(circle at 33px 0, var(--stripe) 10px, transparent 10.5px) 0 0 / 44px 10px repeat-x;
+}
+
+.tabular { font-variant-numeric: tabular-nums; }

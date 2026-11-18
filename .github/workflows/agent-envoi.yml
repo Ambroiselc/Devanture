@@ -1,0 +1,64 @@
+# Valérie envoie les e-mails VALIDÉS, avec une montée progressive (10 par jour la 1re semaine, puis plus si tout va bien).
+# 4 vagues par jour ouvré : programmées à 8 h 37, 10 h 37, 13 h 37 et 15 h 37 (heure d'hiver ; une heure plus tard l'été).
+# GitHub les lance souvent 30 à 45 min en retard (parfois 1 h) : elles partent donc en pratique vers 9 h, 11 h, 14 h et 16 h.
+# Rattrapage (29/10) : un 5e passage à 17 h 37 envoie ce qui reste du quota du jour si une vague a été retardée ou
+# sautée par GitHub (sinon il ne fait rien : la dernière vague a déjà tout envoyé).
+# Rien ne part tant que :
+#   • l'envoi n'est pas activé sur la page « Valérie » ;
+#   • EMAIL_FROM et DEMO_BASE_URL ne sont pas remplis, ou qu'il n'y a ni BOITES_ENVOI ni RESEND_API_KEY (EMAIL_REPLY_TO conseillé).
+# BOITES_ENVOI (28/10) : les boîtes de prospection, une par ligne « adresse mot-de-passe-d'application »
+# (voir agents/lib/boites-envoi.ts). Resend ne prospecte plus dès qu'une boîte existe (seulement les réponses d'Inès).
+
+name: Valérie — envoi des e-mails
+
+on:
+  schedule:
+    - cron: "37 7,9,12,14,16 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      copie_vers:
+        description: "Test de délivrabilité : envoyer une COPIE du dernier e-mail parti à cette adresse (ex. mail-tester.com) ; rien n'est changé"
+        type: string
+        default: ""
+      essai:
+        description: "Essai : envoyer au plus ce nombre d'e-mails maintenant (dans la limite du quota du jour)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-envoi
+  cancel-in-progress: false
+
+jobs:
+  envoi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      BOITES_ENVOI: ${{ secrets.BOITES_ENVOI }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      EMAIL_REPLY_TO: ${{ secrets.EMAIL_REPLY_TO }}
+      DEMO_BASE_URL: ${{ secrets.DEMO_BASE_URL }}
+      # Coco (30/10) relit les relances « à valider » préparées au début de chaque vague (Claude Haiku) ;
+      # depuis le 3/11, les premiers e-mails sont relus juste après leur rédaction (agents/emails.ts).
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+
+      - name: Envoyer
+        env:
+          ESSAI: ${{ inputs.essai }}
+          COPIE: ${{ inputs.copie_vers }}
+        run: node agents/envoi.ts --essai "$ESSAI" --copie-vers "$COPIE"

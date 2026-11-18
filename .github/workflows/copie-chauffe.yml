@@ -1,0 +1,45 @@
+# Copie de chauffe (6/11) : renvoie une COPIE d'un vrai e-mail de Valérie déjà parti à un artisan vers une adresse amie
+# (chauffe des boîtes et test de délivrabilité), depuis la même boîte. Rien n'est changé dans la base, rien ne compte
+# dans le quota ; le lien de la maquette porte « ?apercu=1 » (visite non comptée) et l'adresse de réponse n'est pas
+# celle de l'artisan.
+# Se lance tout seul quand tests/copie-chauffe.json change sur GitHub : { "adresse": "...", "avec_image": true|false }.
+
+name: Valérie — copie de chauffe
+
+on:
+  push:
+    branches: [main]
+    paths: [tests/copie-chauffe.json]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-envoi
+  cancel-in-progress: false
+
+jobs:
+  copie:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      ADRESSE_TEST: ${{ secrets.ADRESSE_TEST }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      BOITES_ENVOI: ${{ secrets.BOITES_ENVOI }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      EMAIL_REPLY_TO: ${{ secrets.EMAIL_REPLY_TO }}
+      DEMO_BASE_URL: ${{ secrets.DEMO_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+      - name: Envoyer la copie
+        run: |
+          ADRESSE=$(node -e 'console.log(require("./tests/copie-chauffe.json").adresse || process.env.ADRESSE_TEST || "")')
+          IMAGE=$(node -e 'console.log(require("./tests/copie-chauffe.json").avec_image ? "--copie-image" : "--copie-sans-image")')
+          node agents/envoi.ts --copie-vers "$ADRESSE" $IMAGE
