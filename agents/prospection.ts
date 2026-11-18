@@ -14,7 +14,6 @@
 // Test sans Internet ni clés : DEVANTURE_SIMULATION=1 (voir docs/agent-prospection.md).
 // =====================================================================
 import { parseArgs } from "node:util";
-import { appendFileSync } from "node:fs";
 import { chercherDansAnnuaire, nafParSiret, type EntrepriseAnnuaire } from "./lib/annuaire.ts";
 import { connecter, type Sql, sansNul } from "./lib/db.ts";
 import { MODELE, noter } from "./lib/haiku.ts";
@@ -27,6 +26,7 @@ import { choisirAutomatiquement, lireReglages, PLAFOND_PAR_LANCEMENT, type Regla
 import { analyserSite } from "./lib/site.ts";
 import { entreprisesRge, entreprisesRgeDepartement, estArtisanRge, SOURCE_EMAIL_RGE, type EntrepriseRge } from "./lib/rge.ts";
 import { COMMUNES_PLUS_TARD, LISTE_COMMUNES, TOUTES_COMMUNES_MEL } from "./lib/metiers.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 // Garde-fous fixes (les autres se règlent sur la page « Loïc », dans des limites dures).
 const MAX_ERREURS_DE_SUITE = 3;
@@ -736,7 +736,7 @@ async function renoter(sql: Sql, reglages: Reglages) {
       bilan.arret ? `\n**Arrêt :** ${bilan.arret}` : "",
     ].join("\n");
     console.log(texte);
-    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+    ajouterResume(`${texte}\n`);
   }
 }
 
@@ -922,7 +922,7 @@ function resume(reglages: Reglages, metier: string, commune: string, b: Bilan) {
   ];
   const texte = lignes.join("\n");
   console.log(`\n${texte}`);
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+  ajouterResume(`${texte}\n`);
 }
 
 main().catch((err) => {

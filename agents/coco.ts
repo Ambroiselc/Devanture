@@ -9,10 +9,10 @@
 //   • --relire N : relit tout de suite N e-mails « à valider » (au plus 300), sans attendre la vague suivante.
 // =====================================================================
 import { parseArgs } from "node:util";
-import { appendFileSync } from "node:fs";
 import { connecter, type Sql } from "./lib/db.ts";
 import { SIMULATION } from "./lib/http.ts";
 import { relire, renvois } from "./lib/coco.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 const { values: args } = parseArgs({ options: { relire: { type: "string", default: "" }, "revoir-gardes": { type: "boolean", default: false } } });
 
@@ -192,7 +192,7 @@ async function main() {
       ...(alertes.length ? alertes.map((a) => `- ${icone[a.niveau]} ${a.texte}`) : ["Aucune alerte."]),
     ].join("\n");
     console.log(texte);
-    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+    ajouterResume(`${texte}\n`);
   } catch (err) {
     const message = (err as Error).message;
     console.error(message);

@@ -1,6 +1,7 @@
 // 13/11, EN LECTURE SEULE : appels du compteur du site vitrine (/api/visite) et des maquettes (POST /m/<slug>) venus
 // du réseau Microsoft (AS8075 : Azure, mais aussi les robots de sécurité de Microsoft 365 qui ouvrent les liens des
 // e-mails pour les vérifier). Par jour, avec l'heure, l'appareil annoncé et la page.
+import "./lib/sortie-publique.ts"; // journaux publics (18/11)
 const cle = process.env.CLOUDFLARE_API_TOKEN, compte = process.env.CLOUDFLARE_ACCOUNT_ID;
 if (!cle || !compte) throw new Error("CLOUDFLARE_API_TOKEN ou CLOUDFLARE_ACCOUNT_ID manquant.");
 const DEBUT = Date.parse("2026-11-02T00:00:00+01:00");

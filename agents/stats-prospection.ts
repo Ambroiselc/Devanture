@@ -1,8 +1,8 @@
 // Statistiques de Loïc (27/10) : combien de fiches, d'e-mails et de qualifiés par jour, lancements automatiques
 // seulement, sur les 7 derniers jours. Lancé à la main (workflow stats-prospection.yml) ; n'écrit rien dans la base.
 // Le résumé sort aussi en « notice » GitHub, lisible depuis l'API (annotations de la tâche).
-import { appendFileSync } from "node:fs";
 import { connecter } from "./lib/db.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 const sql = connecter();
 try {
@@ -44,7 +44,7 @@ try {
   console.log(lignes.join("\n"));
   // Une seule annotation (GitHub en limite le nombre) : retours à la ligne encodés.
   console.log(`::notice title=Statistiques de Loïc::${lignes.join("%0A")}`);
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, lignes.map((l) => `- ${l}`).join("\n") + "\n");
+  ajouterResume(lignes.map((l) => `- ${l}`).join("\n") + "\n");
 } catch (err) {
   console.error((err as Error).message);
   process.exitCode = 1;

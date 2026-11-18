@@ -21,7 +21,6 @@
 // Test sans Internet ni clés : DEVANTURE_SIMULATION=1 sur une base locale.
 // =====================================================================
 import { parseArgs } from "node:util";
-import { appendFileSync } from "node:fs";
 import { promises as dns } from "node:dns";
 import { connecter, type Sql } from "./lib/db.ts";
 import { http, sleep, SIMULATION } from "./lib/http.ts";
@@ -32,6 +31,7 @@ import { preparerRelances } from "./lib/relance.ts";
 import { relire as relireCoco, type BilanRelecture, renvois } from "./lib/coco.ts";
 import { quotaResend, rythmeBoite, rythmeDuJour, vagueDuMoment, VAGUES_PAR_JOUR, type Rythme, type Sante } from "./lib/rythme-envoi.ts";
 import { envoyerDepuis, expediteurPour, fermerTransports, lireBoites, releverBoites, type Boite } from "./lib/boites-envoi.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 const { values: args } = parseArgs({
   options: {
@@ -261,7 +261,7 @@ async function main() {
       }, env);
       const texteBilan = `## Copie de test envoyée\n\nCopie de l'e-mail à ${m.name} (${img ? "avec" : "sans"} image) envoyée à ${dest} depuis ${boite?.adresse ?? "Resend"}.`;
       console.log(texteBilan);
-      if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texteBilan}\n`);
+      ajouterResume(`${texteBilan}\n`);
       return;
     }
 
@@ -515,7 +515,7 @@ async function main() {
       bilan.arret ? `\n${bilan.arret}` : "",
     ].filter((l) => l !== "").join("\n");
     console.log(texte);
-    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+    ajouterResume(`${texte}\n`);
     await sql.end();
   }
 }

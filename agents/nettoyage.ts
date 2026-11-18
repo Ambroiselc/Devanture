@@ -1,7 +1,7 @@
 // Nettoyage quotidien de la base (lancé après chaque vague de Loïc) : voir la fonction SQL public.nettoyer_base()
 // dans supabase/migrations/20261026020000_styles_et_nettoyage.sql. N'efface jamais la liste d'opposition.
-import { appendFileSync } from "node:fs";
 import { connecter } from "./lib/db.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 const sql = connecter();
 try {
@@ -22,7 +22,7 @@ try {
     `Place utilisée : **${taille.total}** (${pourcent} % des 500 Mo gratuits) · captures ${taille.captures} · prospects ${taille.prospects} · e-mails ${taille.emails}`,
   ].join("\n");
   console.log(texte);
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+  ajouterResume(`${texte}\n`);
 } catch (err) {
   // La migration n'est peut-être pas encore lancée : on le signale sans faire échouer la vague.
   console.log(`Nettoyage impossible : ${(err as Error).message}`);

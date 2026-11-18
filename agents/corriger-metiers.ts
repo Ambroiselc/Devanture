@@ -15,11 +15,11 @@
 // Passent aussi en revue les artisans que Coco a écartés pour un métier douteux (« [Coco] écarté : » dans les notes) :
 // ils reviennent « qualifié » avec le bon métier, leurs lignes « [Coco… » sont retirées (compteur de renvois remis à zéro)
 // et l'e-mail annulé est supprimé, pour que Sid et Valérie les refassent.
-import { appendFileSync } from "node:fs";
 import { connecter } from "./lib/db.ts";
 import { nafParSiret } from "./lib/annuaire.ts";
 import { metierArtisan } from "./lib/metier-artisan.ts";
 import { entreprisesRgeParSiret } from "./lib/rge.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 /** Les métiers ajoutés le 17/11 : un artisan déjà corrigé (Coco ou 10/11) est revu seulement pour passer à l'un d'eux. */
 const NOUVEAUX = new Set(["Isolation", "Panneaux solaires", "Façadier", "Poêles et cheminées"]);
@@ -121,7 +121,7 @@ try {
   for (let i = 0; i < resume.length && i < 9 * 40; i += 40) {
     console.log(`::notice title=Métiers ${i / 40 + 1}::${resume.slice(i, i + 40).join("%0A").replace(/::/g, ": :")}`);
   }
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, resume.join("\n") + "\n");
+  ajouterResume(resume.join("\n") + "\n");
 } catch (err) {
   console.error((err as Error).message);
   console.log(`::error title=Métiers::${(err as Error).message}`);

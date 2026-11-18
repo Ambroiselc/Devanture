@@ -1,15 +1,16 @@
 // Bilan complet du projet (30/10), EN LECTURE SEULE : prospects, e-mails, envois par jour et par boîte, rebonds,
 // réponses, oppositions, clients, coûts d'IA. Lancé par le workflow bilan.yml (à la main, ou quand tests/bilan.txt change).
 // Le résultat sort en « notice » GitHub (lisible par l'API) et dans le résumé du lancement. N'écrit rien dans la base.
-import { appendFileSync } from "node:fs";
 import { connecter } from "./lib/db.ts";
+import { ajouterResume, colonneSensible } from "./lib/sortie-publique.ts";
 
 const sql = connecter();
 const lignes: string[] = [];
 const t = (titre: string, rows: Record<string, unknown>[]) => {
   lignes.push(`## ${titre}`);
   if (rows.length === 0) lignes.push("(rien)");
-  for (const r of rows) lignes.push(Object.values(r).map((v) => (v instanceof Date ? v.toISOString() : String(v))).join(" | "));
+  // 18/11 (dépôt public) : les colonnes « artisan » (nom, ville, texte, objet…) ne sortent jamais dans le journal.
+  for (const r of rows) lignes.push(Object.entries(r).map(([k, v]) => (colonneSensible(k) ? "•" : v instanceof Date ? v.toISOString() : String(v))).join(" | "));
 };
 try {
   t("Prospects par statut (hors fictifs)", await sql`
@@ -171,7 +172,7 @@ try {
       from public.emails e join qui using (prospect_id) where e.sent_at is not null
       union all
       select m.prospect_id, coalesce(m.received_at, m.created_at), case when m.direction = 'entrant' then 'reçu' else 'réponse' end,
-             coalesce(m.from_name, ''), coalesce(m.summary, ''), m.subject,
+             'artisan', coalesce(m.summary, ''), m.subject,
              coalesce(nullif(m.body_text, ''), regexp_replace(coalesce(m.body_html, ''), '<[^>]+>', ' ', 'g'))
       from public.mailbox_messages m join qui using (prospect_id) where m.is_demo = false
     ) x join public.prospects p on p.id = x.prospect_id
@@ -194,7 +195,7 @@ try {
     from public.emails o left join public.emails r on r.relance_de = o.id
     where o.relance_de is null and o.sent_at is not null and o.is_demo = false group by 1 order by 1`);
   t("Journal des vagues d'envoi d'aujourd'hui (heure | niveau | message)", await sql`
-    select to_char(ev.created_at at time zone 'Europe/Paris', 'HH24:MI') h, ev.level, left(ev.message, 220) m
+    select to_char(ev.created_at at time zone 'Europe/Paris', 'HH24:MI') h, ev.level, regexp_replace(left(ev.message, 220), '^[^:]{1,80} : ', '… : ') m
     from public.task_events ev join public.tasks tk on tk.id = ev.task_id
     where tk.agent = 'email' and tk.title ilike '%envoi%' and ev.created_at >= date_trunc('day', now() at time zone 'Europe/Paris') at time zone 'Europe/Paris'
       and (ev.message ilike '%relance%' or ev.message ilike '%coco%' or ev.message ilike '%quota%' or ev.level <> 'info')
@@ -202,7 +203,7 @@ try {
   t("Messages reçus rangés automatique / spam, 3 derniers jours (heure | de | objet | catégorie | auto | texte | html | début)", await sql`
     select to_char(created_at at time zone 'Europe/Paris', 'DD/MM HH24:MI') h, from_email de, left(subject, 60) objet, category,
            auto_submitted auto, length(coalesce(body_text, ''))::int texte, (body_html is not null) html,
-           left(regexp_replace(coalesce(body_text, ''), '[[:space:]]+', ' ', 'g'), 140) debut
+           left(regexp_replace(coalesce(body_text, ''), '[[:space:]]+', ' ', 'g'), 140) debut_texte
     from public.mailbox_messages
     where direction = 'entrant' and category in ('automatique', 'spam') and created_at > now() - interval '3 days'
     order by created_at desc limit 25`);
@@ -253,7 +254,7 @@ try {
            (select count(*) from public.opposition_list where is_demo = false)::int stop`);
   t("Réponses reçues d'artisans (date | artisan | catégorie | début)", await sql`
     select to_char(m.created_at at time zone 'Europe/Paris', 'DD/MM HH24:MI') quand, p.name, m.category,
-           left(regexp_replace(coalesce(m.body_text, ''), '[[:space:]]+', ' ', 'g'), 120) debut
+           left(regexp_replace(coalesce(m.body_text, ''), '[[:space:]]+', ' ', 'g'), 120) debut_texte
     from public.mailbox_messages m join public.prospects p on p.id = m.prospect_id
     where m.direction = 'entrant' and coalesce(m.category, '') not in ('automatique', 'spam', 'chauffe')
     order by m.created_at desc limit 15`);
@@ -388,7 +389,7 @@ try {
     const groupe = blocs.slice(i, i + 3).flat();
     console.log(`::notice title=Bilan ${i / 3 + 1}::${groupe.join("%0A").replace(/::/g, ": :")}`);
   }
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, lignes.join("\n") + "\n");
+  ajouterResume(lignes.join("\n") + "\n");
 } catch (err) {
   console.error((err as Error).message);
   console.log(`::error title=Bilan::${(err as Error).message}`);

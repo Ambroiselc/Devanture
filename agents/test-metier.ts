@@ -1,5 +1,6 @@
 // Vérifie le choix du métier (lib/metier-artisan.ts). Lancer : node agents/test-metier.ts
 import { metierArtisan } from "./lib/metier-artisan.ts";
+import "./lib/sortie-publique.ts"; // journaux publics (18/11)
 
 const cas: [string, { nom: string; naf?: string | null; domaines: string[]; metierRgeActuel?: string }, string][] = [
   ["Le nom l'emporte sur les domaines RGE", { nom: "Concept Menuiseries", domaines: ["Fenêtres de toit", "Isolation des combles perdus"] }, "Menuisier"],

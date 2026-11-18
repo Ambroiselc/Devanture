@@ -4,9 +4,9 @@
 //    (app.devanture-artisans.fr et devanture-sites.fr), et vérifie que la visite arrive bien en base.
 //    Puis remet la fiche de test dans son état d'avant (aucune trace dans les chiffres).
 // Workflow diag-compteur.yml (modifier tests/compteur.txt). Aucun e-mail, aucun artisan réel touché.
-import { appendFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { connecter } from "./lib/db.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 const sql = connecter();
 const sortie: string[] = [];
@@ -82,5 +82,5 @@ try {
   process.exitCode = 1;
 } finally {
   await sql.end();
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, sortie.join("\n") + "\n");
+  ajouterResume(sortie.join("\n") + "\n");
 }

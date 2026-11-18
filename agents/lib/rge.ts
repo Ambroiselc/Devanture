@@ -3,6 +3,7 @@
 // Avantage sur Google : chaque entreprise a déjà son e-mail, son téléphone et souvent son site.
 // API : https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/
 import { http, sleep } from "./http.ts";
+import { masquer } from "./sortie-publique.ts";
 import { joliNom } from "./annuaire.ts";
 
 const BASE = "https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2/lines";
@@ -139,6 +140,7 @@ async function lireRge(qs: string): Promise<EntrepriseRge[]> {
       if (l.domaine && !e.domaines.includes(l.domaine)) e.domaines.push(l.domaine);
       e.particulier ||= l.particulier === true;
       parSiret.set(siret, e);
+      masquer(e.nom, e.adresse, l.nom_entreprise, l.adresse, e.site, l.site_internet); // journaux publics (18/11)
     }
     url = data.next ?? null;
     await sleep(200);

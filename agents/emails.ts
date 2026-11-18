@@ -12,13 +12,13 @@
 // Test sans Internet ni clés : DEVANTURE_SIMULATION=1 sur une base locale.
 // =====================================================================
 import { parseArgs } from "node:util";
-import { appendFileSync } from "node:fs";
 import { connecter, type Sql } from "./lib/db.ts";
 import { MODELE } from "./lib/haiku.ts";
 import { SIMULATION } from "./lib/http.ts";
 import { assemblerEmail, redigerEmail, type Variante } from "./lib/redaction-email.ts";
 import { VARIANTES_ACTIVES } from "./lib/variantes-email.ts";
 import { relire as relireCoco, renvois } from "./lib/coco.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 const PLAFOND = 30; // e-mails rédigés au maximum par lancement à la main
 // « --tout » (chaîne automatique après Loïc et Sid, 28/10) : toutes les maquettes prêtes sans e-mail, sans limite de nombre,
@@ -106,7 +106,7 @@ async function relectureCoco(sql: Sql, taskId: string) {
     if (rel.arret) await journal(sql, taskId, "warning", rel.arret);
     const texte = `## Coco : relecture\n\nRelus : **${rel.relus}** · Validés : ${rel.ok} · Corrigés puis validés : ${rel.corriges} · Gardés pour Broise : ${rel.gardes} · Coût IA : ${rel.cout_ia_eur.toFixed(4)} €${rel.arret ? `\n\n**Arrêt :** ${rel.arret}` : ""}`;
     console.log(texte);
-    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+    ajouterResume(`${texte}\n`);
   } catch (err) {
     await journal(sql, taskId, "warning", `Coco n'a pas pu relire : ${(err as Error).message}`);
   }
@@ -205,7 +205,7 @@ async function reecrire(sql: Sql, r: Reglages, signature: string) {
   } finally {
     const texte = `## ${r.display_name} : réécriture\n\nRéécrits : **${bilan.reecrits}** sur ${liste.length} · Erreurs : ${bilan.erreurs} · Coût IA : ${bilan.cout_ia_eur.toFixed(4)} €${bilan.arret ? `\n\n**Arrêt :** ${bilan.arret}` : ""}`;
     console.log(texte);
-    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+    ajouterResume(`${texte}\n`);
   }
 }
 
@@ -358,7 +358,7 @@ async function main() {
       `Rien n'est envoyé : les e-mails attendent ta validation sur la page « ${nom} ».`,
     ].join("\n");
     console.log(texte);
-    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+    ajouterResume(`${texte}\n`);
     await sql.end();
   }
 }

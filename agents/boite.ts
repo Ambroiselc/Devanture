@@ -16,7 +16,6 @@
 // Garde-fous : budget IA du mois, liste d'opposition (vérifiée dans le code ET par la base), 3 erreurs de suite.
 // Test sans Internet ni clés : DEVANTURE_SIMULATION=1 sur une base locale.
 // =====================================================================
-import { appendFileSync } from "node:fs";
 import { connecter, type Sql } from "./lib/db.ts";
 import { http, sleep, SIMULATION } from "./lib/http.ts";
 import {
@@ -25,6 +24,7 @@ import {
 import { assemblerReponse, MODELE, traiterMessage, type Categorie } from "./lib/redaction-reponse.ts";
 import { phrasesTropLongues } from "./lib/style.ts";
 import { lireBoites, releverBoites } from "./lib/boites-envoi.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 const RESEND = "https://api.resend.com/emails";
 const MAX_TRI = 40; // e-mails triés au plus par passage
@@ -499,7 +499,7 @@ async function main() {
       bilan.arret ? `\n**Arrêt :** ${bilan.arret}` : "",
     ].join("\n");
     console.log(texte);
-    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+    ajouterResume(`${texte}\n`);
     await sql.end();
   }
 }

@@ -10,7 +10,7 @@
 // Le résultat est une tâche « Contrôle anti-spam » (page Tâches) ; en cas de problème, elle est « échouée » et
 // apparaît en « À faire » dans la vue d'ensemble.
 // =====================================================================
-import { appendFileSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -20,6 +20,7 @@ import { SIMULATION } from "./lib/http.ts";
 import { LIEN_DEMO, remplacerSignature } from "./lib/redaction-email.ts";
 import { versHtml } from "./lib/email-html.ts";
 import { lireBoites } from "./lib/boites-envoi.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 const DOMAINE = "devanture-artisans.fr";
 const DOMAINE_ENVOI = "mail.devanture-artisans.fr";
@@ -183,7 +184,7 @@ try {
   const resume = [`## ${titre}`, "", problemes.length ? `**À regarder :** ${problemes.join(" ; ")}` : "Tout est en ordre.",
     "", "```json", JSON.stringify(resultats, null, 2), "```"].join("\n");
   console.log(resume);
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${resume}\n`);
+  ajouterResume(`${resume}\n`);
 } catch (err) {
   const message = (err as Error).message;
   console.error(message);

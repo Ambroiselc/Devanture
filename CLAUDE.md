@@ -216,6 +216,12 @@
 - Dépôt bientôt PUBLIC (18/11, décision de Broise : minutes GitHub Actions gratuites et illimitées). Règles : JAMAIS de
   secret, d'adresse e-mail personnelle, de numéro de téléphone ni de donnée d'artisan dans le code, les tests, les docs ou les
   messages de commit. Les adresses de test viennent du secret GitHub `ADRESSE_TEST` (fichiers tests/*.json avec une adresse vide).
+  Journaux GitHub (publics) : `agents/lib/sortie-publique.ts` filtre toute la sortie des agents dans GitHub Actions (stdout,
+  stderr, annotations) et le résumé (`ajouterResume`, jamais appendFileSync sur GITHUB_STEP_SUMMARY) : valeurs des colonnes
+  « artisan » lues dans la base (enregistrées par `connecter()`, option transform), noms venus de RGE / Google (`masquer`),
+  e-mails (sauf nos domaines), téléphones, SIRET, liens /m/<slug>. Tout script agents/*.ts importe db.ts ou ce module.
+  bilan.ts : colonnes sensibles affichées « • ». Le détail complet reste dans la base (journal des tâches du tableau de bord).
+  Anciens lancements (avec noms) supprimés le 18/11.
 - Données personnelles : respecter `docs/registre-rgpd.md` (B2B uniquement, sources publiques, 3 ans max,
   lien de désinscription dans chaque e-mail). Mettre le registre à jour à chaque nouvel outil.
 - Vérifier avec `npm run typecheck` puis `npm run build` avant de dire que c'est fini.

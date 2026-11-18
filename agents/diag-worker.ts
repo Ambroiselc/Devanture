@@ -1,7 +1,7 @@
 // Diagnostic EN LECTURE SEULE du tableau de bord sur Cloudflare (3/11, erreur 1102) : lit les journaux du Worker
 // « devanture-app » des dernières 24 h (Workers Observability) et ses statistiques (GraphQL), puis les affiche
 // dans le résumé du workflow et en annotations. Ne modifie rien. Lancé quand tests/diag-worker.txt change.
-import { appendFileSync } from "node:fs";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 const cle = process.env.CLOUDFLARE_API_TOKEN;
 const compte = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -84,5 +84,5 @@ async function api(chemin: string, corps: unknown) {
 }
 
 const texte = lignes.join("\n");
-if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, "```\n" + texte + "\n```\n");
+ajouterResume("```\n" + texte + "\n```\n");
 for (let i = 0; i < lignes.length; i += 25) console.log(`::notice title=Diag ${i / 25 + 1}::${lignes.slice(i, i + 25).join("%0A").replace(/::/g, ": :")}`);

@@ -11,12 +11,12 @@
 // Déroulé avec un client (CGV) : la CRÉATION se paie à la signature (lien « création ») ; l'ABONNEMENT démarre
 // à la mise en ligne du site (lien « abonnement »). Carte ou prélèvement SEPA (à activer dans Stripe).
 // Chaque paiement donne une facture Stripe (mentions : réglages Stripe > Facturation > Factures).
-import { appendFileSync } from "node:fs";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 /** Erreur affichée en clair dans les « Annotations » du lancement GitHub, puis arrêt. */
 function echec(message: string): never {
   console.log(`::error title=Stripe — catalogue::${message.replace(/\r?\n/g, " ")}`);
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## Échec\n\n${message}\n`);
+  ajouterResume(`## Échec\n\n${message}\n`);
   process.exit(1);
 }
 
@@ -176,7 +176,7 @@ const bilan = [
   ...lignes,
 ].join("\n");
 console.log(bilan);
-if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${bilan}\n`);
+ajouterResume(`${bilan}\n`);
 }
 
 try {

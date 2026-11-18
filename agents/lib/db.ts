@@ -2,6 +2,7 @@
 // On réutilise le secret SUPABASE_DB_URL, déjà en place pour la sauvegarde.
 // Cette connexion a tous les droits : elle ne doit JAMAIS servir dans le navigateur.
 import postgres from "postgres";
+import { colonneSensible, masquer } from "./sortie-publique.ts";
 
 export function connecter() {
   const url = process.env.SUPABASE_DB_URL;
@@ -15,6 +16,8 @@ export function connecter() {
     idle_timeout: 20,
     connect_timeout: 30,
     onnotice: () => {},
+    // 18/11 (dépôt public) : toute valeur « artisan » lue dans la base est masquée dans les journaux GitHub.
+    transform: { value: { from: (v: unknown, col: { name: string }) => { if (colonneSensible(col.name)) masquer(v); return v; } } },
   });
 }
 

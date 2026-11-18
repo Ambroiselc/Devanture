@@ -4,6 +4,7 @@
 // Règle Google : on n'a le droit de CONSERVER que l'identifiant du lieu (place id).
 // Le reste (note, nombre d'avis, site) sert seulement à juger l'artisan, sur le moment.
 import { http } from "./http.ts";
+import { masquer } from "./sortie-publique.ts";
 import type { Commune } from "./geo.ts";
 
 export interface FicheGoogle {
@@ -112,6 +113,7 @@ export async function detailsFiche(placeId: string): Promise<FicheGoogle> {
     throw new Error(`Google Places : erreur ${res.status} ${detail}`);
   }
   const p = (await res.json()) as Place;
+  masquer(p.displayName?.text, p.formattedAddress, p.websiteUri); // journaux publics (18/11)
   return {
     placeId: p.id ?? placeId,
     nom: p.displayName?.text ?? "",

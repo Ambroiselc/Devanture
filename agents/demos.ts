@@ -13,7 +13,6 @@
 // Test sans Internet ni clés : DEVANTURE_SIMULATION=1 sur une base locale.
 // =====================================================================
 import { parseArgs } from "node:util";
-import { appendFileSync } from "node:fs";
 import { connecter, type Sql } from "./lib/db.ts";
 import { Photographe } from "./lib/capture.ts";
 import { MODELE_DEMO, type ContenuDemo } from "./lib/demo-artisan-pro.ts";
@@ -24,6 +23,7 @@ import { COMMUNES_PLUS_TARD, LISTE_COMMUNES } from "./lib/metiers.ts";
 import { redigerDemo } from "./lib/redaction-demo.ts";
 import { analyserSite } from "./lib/site.ts";
 import { communesVoisines } from "./lib/geo.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 const PLAFOND = 20; // démos au maximum par lancement à la main (bouton de la page Sid)
 // « --tout » (chaîne automatique après Loïc, 28/10) : tous les qualifiés sans démo, sans limite de nombre,
@@ -129,7 +129,7 @@ async function habillerAnciennes(sql: Sql) {
   }
   const texte = `## Sid : habillage des anciennes maquettes\n\nMaquettes habillées : **${faites}** sur ${maquettes.length} · Captures refaites : ${captures}`;
   console.log(texte);
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+  ajouterResume(`${texte}\n`);
 }
 
 async function journal(sql: Sql, taskId: string, level: "info" | "warning" | "error", message: string) {
@@ -180,7 +180,7 @@ async function rattraperCaptures(sql: Sql) {
   }
   const texte = `## Sid : rattrapage des captures\n\nCaptures faites : **${faites}** sur ${maquettes.length} · Erreurs : ${erreurs}`;
   console.log(texte);
-  if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+  ajouterResume(`${texte}\n`);
 }
 
 async function main() {
@@ -337,7 +337,7 @@ async function main() {
       "Les maquettes se regardent dans le tableau de bord, page « Sid ».",
     ].join("\n");
     console.log(texte);
-    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+    ajouterResume(`${texte}\n`);
     await photographe.fermer();
     await sql.end();
   }

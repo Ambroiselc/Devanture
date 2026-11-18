@@ -4,7 +4,7 @@
 // 2. Statistiques Cloudflare de la zone devanture-artisans.fr (GraphQL, par jour) : visiteurs uniques et pages vues,
 //    robots compris (beaucoup plus que de vraies personnes).
 // Lancé par diag-worker.yml quand la 1re ligne de tests/diag-worker.txt est « visites ».
-import { appendFileSync } from "node:fs";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 const cle = process.env.CLOUDFLARE_API_TOKEN;
 const compte = process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -89,4 +89,4 @@ const jourParis = (t: number) => new Date(t).toLocaleDateString("fr-FR", { timeZ
 }
 
 const texte = lignes.join("\n");
-if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, "```\n" + texte + "\n```\n");
+ajouterResume("```\n" + texte + "\n```\n");

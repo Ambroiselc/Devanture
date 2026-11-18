@@ -21,7 +21,6 @@
 // CLOUDFLARE_API_TOKEN et CLOUDFLARE_ACCOUNT_ID (domaines). Procédure : docs/sites-clients.md.
 // =====================================================================
 import { parseArgs } from "node:util";
-import { appendFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { connecter, type Sql } from "./lib/db.ts";
@@ -38,6 +37,7 @@ import { preparerLogo, preparerPhoto, type PhotoPrete } from "./lib/photos.ts";
 import { heberger, relier } from "./lib/polices.ts";
 import { brancherAdresse, workerSitesExiste, zoneDuDomaine } from "./lib/cloudflare.ts";
 import { redigerDemo } from "./lib/redaction-demo.ts";
+import { ajouterResume } from "./lib/sortie-publique.ts";
 
 export const APERCU = "https://apercu.devanture-artisans.fr";
 const ZONE_APERCU = "devanture-artisans.fr";
@@ -494,7 +494,7 @@ async function main() {
       ...(bilan.avertissements.length ? ["", "**À vérifier :**", ...bilan.avertissements.map((a) => `- ${a}`)] : []),
     ].join("\n");
     console.log(texte);
-    if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${texte}\n`);
+    ajouterResume(`${texte}\n`);
     await sql.end();
   }
 }
