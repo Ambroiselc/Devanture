@@ -49,7 +49,16 @@ export async function fournisseurMail(email: string | null): Promise<string | nu
   }
 }
 
-export interface DetailOuverture { fournisseur: string | null; emailId: string | null }
+/** Un e-mail parti vers l'artisan (18/11) : sert à dire quel e-mail a amené chaque ouverture de maquette. */
+export interface Envoi { sent_at: string; type: string }
+
+/** Type lisible d'un e-mail envoyé : « relance », sinon la version (A, B, C ; « + photo » si l'image était dedans). */
+function typeEnvoi(e: { variant: string | null; relance_de: string | null; with_image: boolean | null }): string {
+  if (e.relance_de) return "relance";
+  return `${e.variant ?? "?"}${e.with_image ? " + photo" : ""}`;
+}
+
+export interface DetailOuverture { fournisseur: string | null; emailId: string | null; envois: Envoi[] }
 
 /** Fournisseur et premier e-mail envoyé, par prospect (quelques prospects seulement). */
 export async function detailsOuvertures(supabase: SupabaseClient, prospects: { id: string; email: string | null }[]):
@@ -57,13 +66,17 @@ export async function detailsOuvertures(supabase: SupabaseClient, prospects: { i
   const res = new Map<string, DetailOuverture>();
   if (!prospects.length) return res;
   const [{ data }, fournisseurs] = await Promise.all([
-    supabase.from("emails").select("id, prospect_id, sent_at").in("prospect_id", prospects.map((p) => p.id))
-      .is("relance_de", null).not("sent_at", "is", null).order("sent_at", { ascending: true }).limit(100),
+    supabase.from("emails").select("id, prospect_id, sent_at, variant, relance_de, with_image").in("prospect_id", prospects.map((p) => p.id))
+      .not("sent_at", "is", null).order("sent_at", { ascending: true }).limit(200),
     Promise.all(prospects.map((p) => fournisseurMail(p.email))),
   ]);
   prospects.forEach((p, i) => {
-    const e = (data ?? []).find((x) => x.prospect_id === p.id);
-    res.set(p.id, { fournisseur: fournisseurs[i], emailId: (e?.id as string | undefined) ?? null });
+    const siens = (data ?? []).filter((x) => x.prospect_id === p.id);
+    const e = siens.find((x) => !x.relance_de);
+    res.set(p.id, {
+      fournisseur: fournisseurs[i], emailId: (e?.id as string | undefined) ?? null,
+      envois: siens.map((x) => ({ sent_at: x.sent_at as string, type: typeEnvoi(x as never) })),
+    });
   });
   return res;
 }
@@ -72,4 +85,6 @@ export async function detailsOuvertures(supabase: SupabaseClient, prospects: { i
 export interface Ouverte {
   name: string; city: string | null; vues: number; premiere: string | null; derniere: string; visites: VisiteMaquette[];
   slug?: string | null; fournisseur?: string | null; emailId?: string | null;
+  /** E-mails partis vers l'artisan, du plus ancien au plus récent (18/11). */
+  envois?: Envoi[];
 }

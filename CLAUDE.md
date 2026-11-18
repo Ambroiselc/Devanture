@@ -56,6 +56,8 @@
   Durée (5/11, migration 20261105010000_visites_maquettes.sql) : identifiant de visite au hasard, temps onglet visible envoyé
   après 1,5 s puis toutes les 15 s et à la sortie (corps JSON {v, d, a, p}) → `public.maquette_visite` → table `maquette_visites`
   (date, durée, téléphone/ordinateur) ; affichée par `components/visites-maquette.tsx` (vue d'ensemble, page Valérie, via `lib/visites-maquettes.ts`).
+  18/11 (demande de Broise) : chaque ouverture porte une pastille « version A/B/C (+ photo) » ou « relance » = le dernier
+  e-mail parti avant elle (`envoiAvant`, `detailsOuvertures` lit aussi les relances) ; ligne « E-mails reçus » par artisan.
   Aperçu de Broise (2/11) : jamais compté s'il est connecté au tableau de bord (`estConnecte`, GET et POST) ou avec `?apercu=1`
   (liens du tableau de bord, gardé par le sélecteur de style) ; pastille « Aperçu — visite non comptée » en bas à gauche.
   Visites du SITE VITRINE (2/11, migration 20261102020000_visites_site.sql) : script du layout de devanture-site → sendBeacon

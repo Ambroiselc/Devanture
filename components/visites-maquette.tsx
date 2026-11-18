@@ -3,7 +3,7 @@
 // ou un 2e onglet crée une 2e visite mesurée. Les visites sont donc regroupées par 30 minutes avant de déduire les
 // ouvertures d'avant le 5/11 (sinon deux visites à 9 h 48 cachaient l'ouverture du 2/11).
 import { formatDate, formatSecondes } from "@/lib/format";
-import type { VisiteMaquette } from "@/lib/visites-maquettes";
+import type { Envoi, VisiteMaquette } from "@/lib/visites-maquettes";
 
 const TRENTE_MIN = 30 * 60 * 1000;
 
@@ -19,7 +19,27 @@ function ouverturesMesurees(visites: VisiteMaquette[]): number {
   return n;
 }
 
-export function VisitesMaquette({ visites, vues, premiere }: { visites: VisiteMaquette[]; vues: number; premiere?: string | null }) {
+/** 18/11 : l'e-mail qui a amené une ouverture = le dernier parti avant elle (envois du plus ancien au plus récent). */
+export function envoiAvant(envois: Envoi[] | undefined, date: string): Envoi | null {
+  const t = new Date(date).getTime();
+  let dernier: Envoi | null = null;
+  for (const e of envois ?? []) if (new Date(e.sent_at).getTime() <= t) dernier = e;
+  return dernier;
+}
+
+/** Pastille « version A », « relance »… (vide si aucun e-mail n'était parti avant). */
+export function PastilleEnvoi({ envoi }: { envoi: Envoi | null }) {
+  if (!envoi) return null;
+  const relance = envoi.type === "relance";
+  return (
+    <span className={`ml-1 rounded px-1.5 py-px text-[11px] font-medium ${relance ? "bg-amber-100 text-amber-900" : "bg-sky-100 text-sky-900"}`}
+      title={`Dernier e-mail parti avant cette ouverture : ${relance ? "la relance" : `version ${envoi.type}`}, le ${formatDate(envoi.sent_at)}`}>
+      {relance ? "relance" : `version ${envoi.type}`}
+    </span>
+  );
+}
+
+export function VisitesMaquette({ visites, vues, premiere, envois }: { visites: VisiteMaquette[]; vues: number; premiere?: string | null; envois?: Envoi[] }) {
   const sansDuree = Math.max(0, vues - ouverturesMesurees(visites));
   if (!visites.length && !sansDuree) return null;
   const total = visites.reduce((t, v) => t + v.duree_s, 0);
@@ -31,6 +51,7 @@ export function VisitesMaquette({ visites, vues, premiere }: { visites: VisiteMa
             <li key={i} className="tabular">
               {formatDate(v.debut)} · <span className="font-medium text-ink">{formatSecondes(v.duree_s)}</span>
               {v.appareil && <> · {v.appareil === "telephone" ? "téléphone" : "ordinateur"}</>}
+              <PastilleEnvoi envoi={envoiAvant(envois, v.debut)} />
             </li>
           ))}
         </ul>
@@ -39,7 +60,7 @@ export function VisitesMaquette({ visites, vues, premiere }: { visites: VisiteMa
       {sansDuree > 0 && (
         <p className="tabular">
           {sansDuree === 1 ? "1 ouverture" : `${sansDuree} ouvertures`} d&apos;avant le 5/11, sans durée mesurée
-          {premiere && <> (la 1re le {formatDate(premiere)})</>}.
+          {premiere && <> (la 1re le {formatDate(premiere)}<PastilleEnvoi envoi={envoiAvant(envois, premiere)} />)</>}.
         </p>
       )}
     </div>

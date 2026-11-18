@@ -236,7 +236,7 @@ export default async function ValeriePage({ searchParams }: {
         const d = p ? details.get(p.id) : undefined;
         return { name: p?.name ?? "?", city: p?.city ?? null, vues: w.vues as number, premiere: (w.premiere_vue as string | null) ?? null, derniere: w.derniere_vue as string,
                  visites: visitesParSite.get(w.id as string) ?? [], slug: (w.slug as string | null) ?? null,
-                 fournisseur: d?.fournisseur ?? null, emailId: d?.emailId ?? null };
+                 fournisseur: d?.fournisseur ?? null, emailId: d?.emailId ?? null, envois: d?.envois ?? [] };
       });
     }
   }
