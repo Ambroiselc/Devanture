@@ -13,5 +13,5 @@ try {
     "## Compteur (site_visites)", ...compteur.map((c) => `${c.jour} ${c.page} ${c.source} : ${c.visites}`),
     "## Visites détaillées", ...detail.map((d) => `${d.jour} ${d.heure} ${d.source} ${d.robot ? "ROBOT" : "humain"}${d.retrouvee ? " retrouvée" : ""} ${d.pays ?? "?"} ${d.reseau ?? "?"} ${d.duree_s ?? "?"} s`),
   ];
-  console.log(`::notice title=Site jour par jour::${l.join("%0A")}`);
+  for (const ligne of l) console.log(`SJ ${ligne}`);
 } finally { await sql.end(); }
