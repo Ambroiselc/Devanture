@@ -396,7 +396,10 @@ async function main() {
     let budgetEssai = essai || Infinity;
     for (const c of canaux) {
       const reste = Math.max(0, c.quota - c.aujourdhui);
-      c.part = Math.min(essai ? reste : Math.ceil(reste / vaguesRestantes), budgetEssai);
+      // 19/11 (demande de Broise) : jamais plus d'un quart du quota du jour par vague (≈ 12-15 e-mails en tout avec
+      // 2 boîtes à 25/jour), même si une vague a été sautée par GitHub : ce qui manque est perdu, pas rattrapé d'un coup.
+      const plafondVague = Math.ceil(c.quota / VAGUES_PAR_JOUR);
+      c.part = Math.min(essai ? reste : Math.min(Math.ceil(reste / vaguesRestantes), plafondVague), budgetEssai);
       budgetEssai -= c.part;
     }
     // Ordre d'envoi : on alterne les canaux (boîte 1, boîte 2, …, boîte 1, …).
