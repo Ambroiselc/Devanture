@@ -91,11 +91,11 @@ async function journal(sql: Sql, taskId: string, level: "info" | "warning" | "er
  * Elle prend aussi ceux qu'elle n'a pas encore lus (rédigés avant, ou laissés au passage précédent faute de temps).
  * Si elle est en pause (interrupteur « Pilote automatique » sur /coco) ou échoue, les e-mails attendent Broise.
  */
-async function relectureCoco(sql: Sql, taskId: string) {
+async function relectureCoco(sql: Sql, taskId: string): Promise<number> {
   try {
     const [coco] = await sql<{ enabled: boolean; instructions: string | null }[]>`
       select enabled, instructions from public.agent_settings where agent = 'coco'`;
-    if (!coco?.enabled) return;
+    if (!coco?.enabled) return 0;
     const rel = await relireCoco(sql, {
       max: 80, taskId, consignes: coco.instructions, finAuPlusTard: Date.now() + 8 * 60_000,
       journal: (niveau, message) => journal(sql, taskId, niveau, message),
@@ -107,10 +107,19 @@ async function relectureCoco(sql: Sql, taskId: string) {
     const texte = `## Coco : relecture\n\nRelus : **${rel.relus}** · Validés : ${rel.ok} · Corrigés puis validés : ${rel.corriges} · Gardés pour Broise : ${rel.gardes} · Coût IA : ${rel.cout_ia_eur.toFixed(4)} €${rel.arret ? `\n\n**Arrêt :** ${rel.arret}` : ""}`;
     console.log(texte);
     ajouterResume(`${texte}\n`);
+    return rel.renvoyes_valerie ?? 0;
   } catch (err) {
     await journal(sql, taskId, "warning", `Coco n'a pas pu relire : ${(err as Error).message}`);
+    return 0;
   }
 }
+
+/**
+ * 19/11 (demande de Broise) : quand Coco renvoie des e-mails à Valérie, Valérie les réécrit tout de suite et Coco les
+ * relit aussitôt, dans le même passage, au lieu d'attendre le passage suivant (6 h plus tard). Au plus 2 tours de plus :
+ * de toute façon, au 3e renvoi pour le même artisan, Coco l'écarte (MAX_RENVOIS dans lib/coco.ts).
+ */
+const TOURS_REECRITURE = 2;
 
 async function reecrire(sql: Sql, r: Reglages, signature: string) {
   const bEnC = Boolean(args["b-en-c"]);
@@ -236,7 +245,8 @@ async function main() {
     const finAuPlusTard = args.tout ? Date.now() + DUREE_MAX_TOUT_MIN * 60_000 : Infinity;
 
     // Prospects avec maquette prête et e-mail, jamais contactés (aucun e-mail en dehors des erreurs).
-    const prospects = await sql<ProspectEmail[]>`
+    // Tours suivants (19/11) : seulement ceux que Coco vient de renvoyer (note « [Coco] » sans e-mail en cours).
+    const choisir = (renvoyesSeulement: boolean) => sql<ProspectEmail[]>`
       select p.id, p.campaign_id, p.name, p.category, p.city, p.email, p.email_source,
              p.current_website, p.website_quality, p.score_reason, p.notes, w.id as website_id, w.nom_affiche
       from public.prospects p
@@ -248,8 +258,10 @@ async function main() {
       where p.status = 'demo_prete' and p.email is not null
         and not exists (select 1 from public.emails e where e.prospect_id = p.id and e.status <> 'erreur')
         ${args.prospect ? sql`and p.id = ${args.prospect}` : sql``}
+        ${renvoyesSeulement ? sql`and p.notes like '%[Coco] %'` : sql``}
       order by p.score desc nulls last, p.created_at
       limit ${limite}`;
+    let prospects = await choisir(false);
 
     if (prospects.length === 0) {
       console.log("Aucun prospect avec maquette prête à contacter : rien à faire.");
@@ -273,6 +285,7 @@ async function main() {
     taskId = tache.id;
 
     let erreursDeSuite = 0;
+    for (let tour = 0; ; tour++) {
     for (const [i, p] of prospects.entries()) {
       if (Date.now() > finAuPlusTard) {
         bilan.arret = `Temps maximum atteint (${DUREE_MAX_TOUT_MIN} min) : ${prospects.length - i} e-mail(s) au prochain passage.`;
@@ -337,9 +350,16 @@ async function main() {
                 tokens_output = ${tokensSortie} where id = ${taskId}`;
     }
 
+    // Coco relit ce qui vient d'être écrit ; ce qu'elle renvoie à Valérie est réécrit puis relu dans la foulée.
+    const renvoyes = await relectureCoco(sql, taskId);
+    if (!renvoyes || tour >= TOURS_REECRITURE || bilan.arret || Date.now() > finAuPlusTard) break;
+    prospects = await choisir(true);
+    if (prospects.length === 0) break;
+    await journal(sql, taskId, "info", `Coco a renvoyé ${renvoyes} e-mail(s) : ${nom} réécrit ${prospects.length} e-mail(s) tout de suite (tour ${tour + 2}).`);
+    }
+
     await sql`update public.tasks set status = 'terminee', finished_at = now(), output = ${sql.json(bilan as never)},
               tokens_input = ${tokensEntree}, tokens_output = ${tokensSortie} where id = ${taskId}`;
-    await relectureCoco(sql, taskId);
   } catch (err) {
     const message = (err as Error).message;
     console.error(message);

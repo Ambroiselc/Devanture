@@ -185,6 +185,9 @@
   doublon, ou déjà 2 renvois → artisan « écarté » ; l'artisan a écrit ou son statut a changé → e-mail « annule » ; relance
   avec un problème → relance « annule ». Statut d'e-mail « annule » (migration 20261117000000, qui remet aussi en relecture
   les anciens gardés) : Valérie ne réécrit pas pour cet artisan, la relance n'est pas reproposée.
+  19/11 (demande de Broise) : réécriture immédiate. Dans agents/emails.ts, quand Coco renvoie des e-mails à Valérie
+  (`relectureCoco` renvoie `renvoyes_valerie`), Valérie réécrit tout de suite ces artisans (note « [Coco] » sans e-mail) et
+  Coco les relit aussitôt, au plus 2 tours de plus (`TOURS_REECRITURE`) ; au 3e problème Coco écarte l'artisan (MAX_RENVOIS).
   Même jour : 4 métiers ajoutés (Isolation, Panneaux solaires, Façadier, Poêles et cheminées) dans metiers.ts, rge.ts
   (domaines RGE) et metier-artisan.ts (nom, NAF compatibles ; « Elec » dans le nom = Électricien) : les entreprises RGE
   correspondantes étaient rangées en plaquiste / électricien / maçon / plombier et Coco écartait leurs maquettes.
