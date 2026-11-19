@@ -9,6 +9,7 @@ import { estConnecte } from "@/lib/est-connecte";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { lireReseau } from "@/lib/reseau";
 import { bandeauInteret } from "@/lib/bandeau-interet";
+import { moderniser } from "@/agents/lib/moderne";
 
 const page = (html: string, status = 200) =>
   new Response(html, {
@@ -40,8 +41,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   const style = estStyle(demande) ? demande : "chaleureux"; // 19/11 : chaleureux d'abord
   // Aperçu de Broise (2/11) : connecté au tableau de bord OU lien « ?apercu=1 » → visite jamais comptée.
   const apercu = url.searchParams.get("apercu") === "1" || (await estConnecte());
-  const suffixe = apercu ? "&apercu=1" : "";
-  const brut = renderAvecSelecteur(contenu, style, (s: string) => `/m/${slug}?style=${s}${suffixe}`);
+  // 19/11 : essai de la version « moderne » (animations, galerie qui défile) avec ?moderne=1, gardé par le sélecteur de style.
+  const moderne = url.searchParams.get("moderne") === "1";
+  const suffixe = (apercu ? "&apercu=1" : "") + (moderne ? "&moderne=1" : "");
+  const rendu = renderAvecSelecteur(contenu, style, (s: string) => `/m/${slug}?style=${s}${suffixe}`);
+  const brut = moderne ? moderniser(rendu) : rendu;
   // 13/11 : bandeau « Ce site m'intéresse », tout en haut et collé en haut de l'écran.
   const html = brut.replace("<body>", `<body>\n${bandeauInteret(slug, style, apercu)}`);
   const ajout = apercu ? bandeauApercu : compteur(slug);

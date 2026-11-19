@@ -8,8 +8,9 @@ import { estStyle, renderAvecSelecteur } from "@/agents/lib/demo-styles";
 import { codeHabillage, habillageAuHasard, lireCodeHabillage } from "@/agents/lib/habillage";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { moderniser } from "@/agents/lib/moderne";
 
-const page = (html: string, status = 200) =>
+const pageBrute = (html: string, status = 200) =>
   new Response(html, {
     status,
     headers: {
@@ -21,14 +22,18 @@ const page = (html: string, status = 200) =>
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  // 19/11 : essai de la version « moderne » avec ?moderne=1.
+  const moderne = new URL(req.url).searchParams.get("moderne") === "1";
+  const m = moderne ? "&moderne=1" : "";
+  const page = (html: string, status = 200) => pageBrute(moderne && status === 200 ? moderniser(html) : html, status);
   const demande = new URL(req.url).searchParams.get("style");
   const style = estStyle(demande) ? demande : "chaleureux"; // 19/11 : chaleureux d'abord
-  const lien = (s: string) => `/demo/${id}?style=${s}`;
+  const lien = (s: string) => `/demo/${id}?style=${s}${m}`;
   if (id === "exemple") {
     const habillage = lireCodeHabillage(new URL(req.url).searchParams.get("v")) ?? habillageAuHasard();
     const code = codeHabillage(habillage);
-    return page(renderAvecSelecteur({ ...EXEMPLE_DEMO, habillage }, style, (s) => `/demo/exemple?style=${s}&v=${code}`,
-      `/demo/exemple?style=${style}`));
+    return page(renderAvecSelecteur({ ...EXEMPLE_DEMO, habillage }, style, (s) => `/demo/exemple?style=${s}&v=${code}${m}`,
+      `/demo/exemple?style=${style}${m}`));
   }
   if (!isSupabaseConfigured || !/^[0-9a-f-]{36}$/i.test(id)) return page("<p>Démo introuvable.</p>", 404);
 

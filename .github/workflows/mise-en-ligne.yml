@@ -22,6 +22,7 @@ on:
       - "!agents/lib/photo-metier.ts"
       - "!agents/lib/habillage.ts"
       - "!agents/lib/site-reel.ts"
+      - "!agents/lib/moderne.ts"
       - ".github/workflows/agent-*.yml"
       - "**.md"
   workflow_dispatch:
