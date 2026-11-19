@@ -99,7 +99,7 @@ document.querySelectorAll("#realisations .works").forEach(function(w){
     if(i>=2*n){clearTimeout(enCours);enCours=setTimeout(function(){i-=n;placer(false)},750)}
   }
   placer(false);
-  if(!reduit)setInterval(avancer,2600); /* 0,7 s de glissement, puis environ 2 s de pause au milieu */
+  if(!reduit)setInterval(avancer,2000); /* 0,7 s de glissement, puis environ 1,3 s de pause au milieu (19/11 : pause raccourcie) */
   addEventListener("resize",function(){placer(false)});
   w.addEventListener("mouseenter",function(){pause=true});
   w.addEventListener("mouseleave",function(){pause=false});
