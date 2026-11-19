@@ -54,6 +54,9 @@
   Plafond par vague (19/11, demande de Broise : « une douzaine par série, pas tout d'un coup ») : chaque canal envoie au plus
   ceil(quota du jour / 4) par vague (≈ 14 avec 2 boîtes à 25), même après une vague sautée ; seul le rattrapage
   (à partir de 17 h 30, heure de Paris) envoie tout le reste du quota d'un coup.
+  Vagues manquées (19/11 : GitHub a sauté les 2 premières) : cron toutes les 30 min (7,37 7-16 UTC) ; chaque vague a sa plage
+  (`DEBUT_VAGUES` : 8 h 30, 10 h, 12 h 30, 15 h) et un passage n'envoie que ce qui manque au plafond de la vague en cours
+  (`cette_vague`). Un envoi resté « en cours » plus de 70 min (annulé sur GitHub) est marqué « annulee » au passage suivant.
   Visites des maquettes (30/10) : petit script dans `/m/<slug>` → POST `/m/<slug>` après 1,5 s visibles (4 s jusqu'au 5/11 ; ignoré si navigator.webdriver) → `public.maquette_vue`
   (`websites.vues`, `premiere_vue`, `derniere_vue`, une visite par 30 min ; sans cookie ni IP). Affiché sur la page Valérie.
   Durée (5/11, migration 20261105010000_visites_maquettes.sql) : identifiant de visite au hasard, temps onglet visible envoyé

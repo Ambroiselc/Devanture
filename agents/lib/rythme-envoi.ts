@@ -8,6 +8,8 @@
 
 export const PALIERS = [10, 15, 20, 30, 40, 50];
 export const VAGUES_PAR_JOUR = 4;
+/** Heure de Paris (décimale) où commence chaque vague : 8 h 30, 10 h, 12 h 30, 15 h (même découpage que vagueDuMoment). */
+export const DEBUT_VAGUES = [8.5, 10, 12.5, 15];
 export const SEUIL_REBONDS = 0.03;
 
 export interface Sante {

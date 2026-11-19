@@ -29,7 +29,7 @@ import { adresseReponse } from "./lib/boite.ts";
 import { versHtml } from "./lib/email-html.ts";
 import { preparerRelances } from "./lib/relance.ts";
 import { relire as relireCoco, type BilanRelecture, renvois } from "./lib/coco.ts";
-import { quotaResend, rythmeBoite, rythmeDuJour, vagueDuMoment, VAGUES_PAR_JOUR, type Rythme, type Sante } from "./lib/rythme-envoi.ts";
+import { quotaResend, rythmeBoite, rythmeDuJour, vagueDuMoment, VAGUES_PAR_JOUR, DEBUT_VAGUES, type Rythme, type Sante } from "./lib/rythme-envoi.ts";
 import { envoyerDepuis, expediteurPour, fermerTransports, lireBoites, releverBoites, type Boite } from "./lib/boites-envoi.ts";
 import { ajouterResume } from "./lib/sortie-publique.ts";
 
@@ -110,6 +110,7 @@ interface Canal {
   quota: number;          // e-mails autorisés aujourd'hui
   aujourdhui: number;     // déjà partis aujourd'hui
   part: number;           // à envoyer dans cette vague
+  cetteVague: number;     // déjà envoyés depuis le début de la vague en cours (19/11)
 }
 
 interface Contenu {
@@ -274,6 +275,13 @@ async function main() {
       return;
     }
 
+    // 19/11 : un envoi arrêté à la main sur GitHub (ou coupé) restait « En cours » pour toujours sur le tableau de bord.
+    // Tout envoi encore « en cours » après 70 min (plafond du workflow : 60 min) est marqué « annulé ».
+    await sql`update public.tasks set status = 'annulee', finished_at = coalesce(finished_at, now()),
+              error_message = coalesce(error_message, 'Arrêté avant la fin (annulé sur GitHub ou coupé).')
+              where agent = 'email' and status = 'en_cours' and title like '%: envoi%'
+                and started_at < now() - interval '70 minutes'`;
+
     const [tache] = await sql<{ id: string }[]>`
       insert into public.tasks (agent, title, status, input, attempts, started_at, is_demo)
       values ('email', ${`${r.display_name} : envoi${essai ? " (essai)" : ""}`}, 'en_cours',
@@ -355,27 +363,32 @@ async function main() {
     }
 
     // 2. Quota du jour, canal par canal (chaque boîte a sa montée ; Resend la sienne).
-    const stats = await sql<{ canal: string; premier: Date | null; envoyes7j: number; rebonds7j: number; plaintes7j: number; aujourdhui: number }[]>`
+    // 19/11 : GitHub saute parfois un créneau programmé. Le workflow passe donc toutes les 30 min ; chaque vague a sa
+    // plage horaire (DEBUT_VAGUES) et un passage n'envoie que ce qui manque à la vague en cours (« cette_vague »).
+    const debutVague = DEBUT_VAGUES[vagueDuMoment(heure)];
+    const minutesDansVague = Math.max(1, Math.round((heure - debutVague) * 60));
+    const stats = await sql<{ canal: string; premier: Date | null; envoyes7j: number; rebonds7j: number; plaintes7j: number; aujourdhui: number; cette_vague: number }[]>`
       select coalesce(sender, 'resend') as canal, min(sent_at) as premier,
              count(*) filter (where sent_at > now() - interval '7 days')::int as envoyes7j,
              count(*) filter (where sent_at > now() - interval '7 days' and delivery_status = 'bounced')::int as rebonds7j,
              count(*) filter (where sent_at > now() - interval '7 days' and delivery_status = 'complained')::int as plaintes7j,
-             count(*) filter (where sent_at >= (date_trunc('day', now() at time zone 'Europe/Paris') at time zone 'Europe/Paris'))::int as aujourdhui
+             count(*) filter (where sent_at >= (date_trunc('day', now() at time zone 'Europe/Paris') at time zone 'Europe/Paris'))::int as aujourdhui,
+             count(*) filter (where sent_at >= now() - make_interval(mins => ${minutesDansVague}))::int as cette_vague
       from public.emails where status in ('envoye', 'repondu') or (status = 'erreur' and sent_at is not null)
       group by 1`;
-    const stat = (c: string) => stats.find((s) => s.canal === c) ?? { premier: null, envoyes7j: 0, rebonds7j: 0, plaintes7j: 0, aujourdhui: 0 };
+    const stat = (c: string) => stats.find((s) => s.canal === c) ?? { premier: null, envoyes7j: 0, rebonds7j: 0, plaintes7j: 0, aujourdhui: 0, cette_vague: 0 };
     const sante = (s: ReturnType<typeof stat>): Sante => ({ envoyes7j: s.envoyes7j, rebonds7j: s.rebonds7j, plaintes7j: s.plaintes7j });
 
     const canaux: Canal[] = boites.map((b) => {
       const s = stat(b.adresse);
       const rythme = rythmeBoite(s.premier ? new Date(s.premier) : null, maintenant, sante(s));
-      return { cle: b.adresse, boite: b, rythme, quota: rythme.quota, aujourdhui: s.aujourdhui, part: 0 };
+      return { cle: b.adresse, boite: b, rythme, quota: rythme.quota, aujourdhui: s.aujourdhui, cetteVague: s.cette_vague, part: 0 };
     });
     if (cle) {
       const s = stat("resend");
       const rythme = rythmeDuJour(s.premier ? new Date(s.premier) : null, maintenant, sante(s), r.send_max_per_day);
       const quota = boites.length ? quotaResend(rythme, boites.length) : rythme.quota;
-      canaux.push({ cle: "resend", boite: null, rythme, quota, aujourdhui: s.aujourdhui, part: 0 });
+      canaux.push({ cle: "resend", boite: null, rythme, quota, aujourdhui: s.aujourdhui, cetteVague: s.cette_vague, part: 0 });
     }
     // Plafond de la page « Valérie », pour tous les canaux ensemble (les boîtes d'abord).
     let plafond = Math.max(0, r.send_max_per_day - canaux.reduce((t, c) => t + c.aujourdhui, 0));
@@ -401,7 +414,7 @@ async function main() {
       // 2 boîtes à 25/jour), même si une vague a été sautée par GitHub. Sauf le rattrapage de fin de journée
       // (à partir de 17 h 30) : lui envoie tout ce qui reste du quota, d'un coup.
       const rattrapage = heure >= 17.5;
-      const plafondVague = rattrapage ? Infinity : Math.ceil(c.quota / VAGUES_PAR_JOUR);
+      const plafondVague = rattrapage ? Infinity : Math.max(0, Math.ceil(c.quota / VAGUES_PAR_JOUR) - c.cetteVague);
       c.part = Math.min(essai ? reste : Math.min(Math.ceil(reste / vaguesRestantes), plafondVague), budgetEssai);
       budgetEssai -= c.part;
     }

@@ -35,7 +35,7 @@ const PLANNINGS: Planning[] = [
   {
     cle: "envoi", agent: "email", titre: "Valérie : envoi des e-mails",
     description: "Coco relit d'abord les e-mails à valider, puis Valérie envoie les validés dans la limite du quota du jour.",
-    rythme: "4 vagues par jour ouvré, puis un rattrapage en fin d'après-midi", heuresUtc: [7, 9, 12, 14, 16], minute: 37, retards: [50, 50, 60, 45, 45], jours: [1, 2, 3, 4, 5], workflow: "agent-envoi.yml", href: "/valerie",
+    rythme: "4 vagues par jour ouvré (passage de secours toutes les 30 min si GitHub en saute une), puis un rattrapage en fin d'après-midi", heuresUtc: [7, 9, 12, 14, 16], minute: 37, retards: [50, 50, 60, 45, 45], jours: [1, 2, 3, 4, 5], workflow: "agent-envoi.yml", href: "/valerie",
   },
   {
     cle: "ines", agent: "boite", titre: "Inès : boîte mail",
