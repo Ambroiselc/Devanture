@@ -11,6 +11,7 @@
 // Variantes (27/10) : palette, polices, en-tête, prestations et réalisations changent selon `c.habillage`
 // (voir habillage.ts). Variante 0 partout = l'apparence d'origine.
 import { variantes, type Habillage } from "./habillage.ts";
+import { imgPhotoMetier } from "./photo-metier.ts";
 import { ancre, champPiege, horairesHtml, imgPhoto, lienTel, piedReel, scriptDevis, teteSeo, type Reel } from "./site-reel.ts";
 
 export const MODELE_DEMO = "artisan-pro";
@@ -41,6 +42,11 @@ export interface ContenuDemo {
   apropos: string;
   /** Combinaison de variantes choisie par Sid pour que chaque site soit différent (absente = apparence d'origine). */
   habillage?: Habillage;
+  /**
+   * Maquette (19/11) : téléphone public de l'entreprise (liste RGE), s'il est connu. Absent = rien n'est affiché
+   * (plus de « Votre numéro » en pointillés en haut de la page : la maquette avait l'air d'un formulaire à remplir).
+   */
+  telephone?: string | null;
   /** Site définitif d'un client (Pedro, 30/10) : vraies infos et photos. Absent = maquette. */
   reel?: Reel;
 }
@@ -84,11 +90,13 @@ export function renderArtisanPro(c: ContenuDemo): string {
   const pol = POLICES[v.police];
   const photos = services.slice(0, v.realisations === 1 ? 2 : 3);
   const R = c.reel;
-  const telHref = R?.telephone ? lienTel(R.telephone) : "#contact";
-  const tel = R?.telephone ? `<a href="${telHref}" style="text-decoration:none">${e(R.telephone)}</a>` : R ? "" : aCompleter("Votre numéro");
-  const mail = c.email ? e(c.email) : R ? "" : aCompleter("Votre adresse e-mail");
+  // 19/11 : la maquette n'affiche plus de trous (« Votre numéro », « Vos horaires ») : ce qu'on sait, sinon rien.
+  const telephone = R ? R.telephone : c.telephone || null;
+  const telHref = telephone ? lienTel(telephone) : "#contact";
+  const tel = telephone ? `<a href="${telHref}" style="text-decoration:none">${e(telephone)}</a>` : "";
+  const mail = c.email ? e(c.email) : "";
   const adresse = c.adresse ? e(c.adresse) : e(c.commune);
-  const horaires = R?.horaires ? horairesHtml(R.horaires) : R ? "" : aCompleter("Vos horaires d'ouverture");
+  const horaires = R?.horaires ? horairesHtml(R.horaires) : "";
   const photoHero = R?.photos[0];
   const coords = [
     tel && `<div><small>Téléphone</small><strong>${tel}</strong></div>`,
@@ -101,7 +109,7 @@ export function renderArtisanPro(c: ContenuDemo): string {
       <p class="lead">${e(c.intro)}</p>
       <div class="ctas">
         <a class="btn btn-amber" href="#contact">Demander un devis</a>
-        ${R && !R.telephone ? "" : `<a class="btn btn-ghost" href="${telHref}">Appeler</a>`}
+        ${telephone ? `<a class="btn btn-ghost" href="${telHref}">Appeler</a>` : ""}
       </div>`;
   // En-tête : 0 = texte + carte des coordonnées ; 1 = centré avec bandeau ; 2 = clair avec grande photo.
   const hero = [
@@ -130,7 +138,7 @@ export function renderArtisanPro(c: ContenuDemo): string {
     <div>
       ${texteHero}
     </div>
-    ${photoHero ? imgPhoto(photoHero, "photo photo-hero", true) : R ? "" : `<div class="ph ph-hero">Votre photo ici<br>(un beau chantier, votre équipe ou votre camionnette)</div>`}
+    ${photoHero ? imgPhoto(photoHero, "photo photo-hero", true) : R ? "" : `<div class="photo-metier">${imgPhotoMetier(c.metier, c.nom, "photo photo-hero", c.metier)}</div>`}
   </div>
 </div>
 <div class="infos"><div class="wrap strip" aria-label="Coordonnées">
@@ -276,6 +284,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 /* Vrai site (Pedro) : photos, logo, galerie, page de prestation */
 .photo{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:6px;background:var(--mist)}
 .photo-hero{aspect-ratio:4/3.4}
+.photo-metier{border-radius:6px;background:var(--line);aspect-ratio:4/3.4;overflow:hidden}
+.photo-metier .photo{height:100%}
 .hero:not(.hero-clair) .photo-hero{display:none}
 .logo img{display:block;height:46px;width:auto;max-width:220px;object-fit:contain}
 a.from{text-decoration:none;color:var(--ink)}
@@ -425,7 +435,7 @@ ${!avis ? "" : R ? `<section id="avis" class="alt">
   <div class="wrap">${R ? piedReel(c.nom, c.commune) : `<span>© ${annee} ${e(c.nom)} · ${e(c.commune)}</span><span>Démonstration réalisée par Devanture</span>`}</div>
 </footer>
 
-<div class="callbar">${R && !R.telephone ? "" : `<a class="btn btn-amber" href="${telHref}">Appeler</a>`}<a class="btn" style="background:var(--ink);color:#fff" href="#contact">Devis</a></div>
+<div class="callbar">${telephone ? `<a class="btn btn-amber" href="${telHref}">Appeler</a>` : ""}<a class="btn" style="background:var(--ink);color:#fff" href="#contact">Devis</a></div>
 
 ${R ? scriptDevis(R) : `<script>
 document.getElementById("devis").addEventListener("submit", function (ev) { ev.preventDefault(); document.getElementById("ok").hidden = false; });

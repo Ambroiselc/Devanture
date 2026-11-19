@@ -1,0 +1,44 @@
+# Rattrapage des téléphones des artisans RGE (19/11, voir agents/telephones.ts) : relus à l'ADEME par SIRET,
+# rangés dans prospects.phone et ajoutés en haut de leur maquette. Par défaut : SIMULATION.
+# Se lance à la main (Actions > Run workflow) ou quand tests/telephones.txt change (1re ligne « appliquer » ou « simulation »).
+
+name: Loïc — téléphones des artisans
+
+on:
+  push:
+    branches: [main]
+    paths: [tests/telephones.txt]
+  workflow_dispatch:
+    inputs:
+      appliquer:
+        description: "Enregistrer les téléphones (sinon simple simulation)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: telephones
+
+jobs:
+  telephones:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Installer
+        run: npm ci --no-audit --no-fund
+      - name: Rattraper
+        run: |
+          MODE=simulation
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.appliquer }}" = "true" ]; then MODE=appliquer; fi
+          if [ "${{ github.event_name }}" = "push" ] && head -n1 tests/telephones.txt | grep -qi '^appliquer'; then MODE=appliquer; fi
+          echo "Mode : $MODE"
+          if [ "$MODE" = "appliquer" ]; then node agents/telephones.ts --appliquer; else node agents/telephones.ts; fi

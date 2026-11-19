@@ -5,6 +5,7 @@
 // Variantes (27/10) : palette, polices, en-tête, prestations et réalisations selon `c.habillage` (habillage.ts).
 import type { ContenuDemo } from "./demo-artisan-pro.ts";
 import { variantes } from "./habillage.ts";
+import { imgPhotoMetier } from "./photo-metier.ts";
 import { ancre, champPiege, horairesHtml, imgPhoto, lienTel, piedReel, scriptDevis, teteSeo } from "./site-reel.ts";
 
 /** Palettes du style chaleureux. La 0 est celle d'origine (brique et mousse). */
@@ -45,7 +46,10 @@ export function renderArtisanChaleureux(c: ContenuDemo): string {
   const pol = POLICES[v.police];
   const photos = services.slice(0, v.realisations === 1 ? 4 : 5);
   const R = c.reel;
-  const telHref = R?.telephone ? lienTel(R.telephone) : "#contact";
+  // 19/11 : la maquette n'affiche plus de trous en haut (« Votre numéro », note Google vide, cadre « Votre photo ici ») :
+  // le téléphone s'il est connu (liste RGE), sinon rien ; une vraie photo du métier à la place du cadre.
+  const telephone = R ? R.telephone : c.telephone || null;
+  const telHref = telephone ? lienTel(telephone) : "#contact";
   const photoHero = R?.photos[0];
   // Vrai site : la galerie reprend les photos du client, sauf celle de l'en-tête (s'il en reste assez).
   const galerie = R ? R.photos.slice(R.photos.length > 3 ? 1 : 0) : [];
@@ -57,13 +61,13 @@ export function renderArtisanChaleureux(c: ContenuDemo): string {
         <a class="btn btn-line" href="${ancre(R, "prestations")}">Voir les prestations</a>
       </div>`;
   const badge = !R
-    ? `<div class="badge"><div class="stars" aria-hidden="true">☆☆☆☆☆</div><b>${aCompleter("Votre note Google")}</b><span>et vos avis clients</span></div>`
+    ? ""
     : R.avisUrl
       ? `<a class="badge" href="${e(R.avisUrl)}" target="_blank" rel="noopener" style="text-decoration:none"><div class="stars" aria-hidden="true">★★★★★</div><b>Nos avis clients</b><span>à lire sur Google</span></a>`
       : "";
   const portrait = !R
     ? `<div class="portrait">
-      <div class="pic">Votre photo ici<br>(vous, votre équipe ou votre camionnette)</div>
+      <div class="pic-cadre">${imgPhotoMetier(c.metier, c.nom, "pic photo", c.metier)}</div>
       ${badge}
     </div>`
     : photoHero
@@ -87,7 +91,7 @@ export function renderArtisanChaleureux(c: ContenuDemo): string {
     </div>
   </div></div>`,
     `<div class="hero hero-bandeau"><div class="wrap">
-    ${photoHero ? imgPhoto(photoHero, "banniere photo", true) : R ? "" : `<div class="banniere">Votre plus belle photo de chantier ici</div>`}
+    ${photoHero ? imgPhoto(photoHero, "banniere photo", true) : R ? "" : `<div class="banniere-cadre">${imgPhotoMetier(c.metier, c.nom, "banniere photo", c.metier)}</div>`}
     <div class="panneau">
       ${texteHero}
       ${badge}
@@ -104,7 +108,7 @@ export function renderArtisanChaleureux(c: ContenuDemo): string {
   const blocService = (s: ContenuDemo["services"][number], i: number) => v.prestations === 2
     ? `<div class="svc"><span class="n">${i + 1}</span><h3>${e(s.titre)}</h3>${prix(i)}<p>${e(s.description)}</p></div>`
     : `<div class="svc"><h3>${e(s.titre)}</h3>${prix(i)}<p>${e(s.description)}</p></div>`;
-  const telTexte = R?.telephone ? `<a class="phone" href="${telHref}">${e(R.telephone)}</a>` : R ? "" : `<span class="phone">${aCompleter("Votre numéro")}</span>`;
+  const telTexte = telephone ? `<a class="phone" href="${telHref}">${e(telephone)}</a>` : "";
 
   return `<!doctype html>
 <html lang="fr">
@@ -213,6 +217,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .photo{display:block;width:100%;height:auto;object-fit:cover;background:var(--pic)}
 img.pic{border:0;padding:0}
 img.banniere{border:0;padding:0;height:min(46vw,420px);min-height:220px}
+.pic-cadre{aspect-ratio:4/5;border-radius:22px 22px 120px 22px;background:var(--pic);overflow:hidden}
+.hero-inverse .pic-cadre{border-radius:22px 22px 22px 120px}
+.pic-cadre img.pic{width:100%;height:100%;aspect-ratio:auto;border-radius:0}
+.banniere-cadre{border-radius:28px;background:var(--pic);overflow:hidden;min-height:220px}
+.banniere-cadre img.banniere{border-radius:0}
 .hero .wrap:has(> :only-child),.story .wrap:has(> :only-child){grid-template-columns:1fr}
 .logo img{display:block;height:48px;width:auto;max-width:220px;object-fit:contain}
 a.price{text-decoration:none}
@@ -325,11 +334,9 @@ ${R ? (galerie.length || R.avisUrl ? `<section id="realisations">
     <div>
       <h2>On en parle ?</h2>
       <p class="small" style="margin-top:12px">Le plus simple, c'est d'appeler. Sinon, laissez un message : la demande arrive directement par e-mail.</p>
-      ${R ? (R.telephone ? `<a class="big-phone" href="${telHref}" style="text-decoration:none">${e(R.telephone)}</a>` : "")
-        : `<span class="big-phone">${aCompleter("Votre numéro")}</span>`}
-      ${c.email ? `<p class="small">${e(c.email)}</p>` : R ? "" : `<p class="small">${aCompleter("Votre adresse e-mail")}</p>`}
-      ${R ? (R.horaires ? `<p class="small" style="margin-top:6px">${horairesHtml(R.horaires)}</p>` : "")
-        : `<p class="small" style="margin-top:6px">${aCompleter("Vos horaires d'ouverture")}</p>`}
+      ${telephone ? `<a class="big-phone" href="${telHref}" style="text-decoration:none">${e(telephone)}</a>` : ""}
+      ${c.email ? `<p class="small">${e(c.email)}</p>` : ""}
+      ${R?.horaires ? `<p class="small" style="margin-top:6px">${horairesHtml(R.horaires)}</p>` : ""}
     </div>
     <form id="devis" novalidate>
       <label for="nom">Votre nom<input id="nom" name="nom" autocomplete="name" placeholder="Votre nom"></label>
@@ -349,7 +356,7 @@ ${R ? (galerie.length || R.avisUrl ? `<section id="realisations">
   <div class="wrap">${R ? piedReel(c.nom, c.commune) : `<span>© ${annee} ${e(c.nom)} · ${e(c.commune)}</span><span>Démonstration réalisée par Devanture</span>`}</div>
 </footer>
 
-<div class="callbar">${R && !R.telephone ? "" : `<a class="btn btn-brick" href="${telHref}">Appeler</a>`}<a class="btn btn-line" style="background:var(--paper)" href="#contact">Devis</a></div>
+<div class="callbar">${telephone ? `<a class="btn btn-brick" href="${telHref}">Appeler</a>` : ""}<a class="btn btn-line" style="background:var(--paper)" href="#contact">Devis</a></div>
 
 ${R ? scriptDevis(R) : `<script>
 document.getElementById("devis").addEventListener("submit", function (ev) { ev.preventDefault(); document.getElementById("ok").hidden = false; });

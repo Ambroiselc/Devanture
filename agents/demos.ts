@@ -57,6 +57,8 @@ interface ProspectDemo {
   address: string | null;
   email: string | null;
   current_website: string | null;
+  /** Téléphone public (liste RGE, 19/11), affiché en haut de la maquette s'il est connu. */
+  phone: string | null;
 }
 
 const COMMUNES_MEL = [...LISTE_COMMUNES, ...COMMUNES_PLUS_TARD].map(([, nom]) => nom);
@@ -203,10 +205,10 @@ async function main() {
     }
     const prospects = args.prospect
       ? await sql<ProspectDemo[]>`
-          select id, campaign_id, name, category, city, postal_code, address, email, current_website
+          select id, campaign_id, name, category, city, postal_code, address, email, current_website, phone
           from public.prospects where id = ${args.prospect}`
       : await sql<ProspectDemo[]>`
-          select p.id, p.campaign_id, p.name, p.category, p.city, p.postal_code, p.address, p.email, p.current_website
+          select p.id, p.campaign_id, p.name, p.category, p.city, p.postal_code, p.address, p.email, p.current_website, p.phone
           from public.prospects p
           where p.status = 'qualifie'
             and not exists (select 1 from public.websites w
@@ -273,7 +275,7 @@ async function main() {
         bilan.cout_ia_eur = Math.round((bilan.cout_ia_eur + r.coutEur) * 1e6) / 1e6;
 
         const habillage = await habillagePour(sql, p);
-        const contenu: ContenuDemo = { ...r.contenu, habillage };
+        const contenu: ContenuDemo = { ...r.contenu, habillage, ...(p.phone ? { telephone: p.phone } : {}) };
 
         let websiteId = "";
         await sql.begin(async (tx) => {

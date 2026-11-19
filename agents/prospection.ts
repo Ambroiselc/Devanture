@@ -544,6 +544,7 @@ async function traiterRge(
     city: e.commune || null,
     postal_code: e.codePostal || null,
     email,
+    phone: e.telephone, // 19/11 : téléphone public de la liste RGE, affiché en haut de la maquette
     current_website: site?.repond ? site.url : null,
     has_website: Boolean(site?.repond),
     source: "Liste officielle des entreprises RGE (ADEME) + site",

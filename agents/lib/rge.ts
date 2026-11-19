@@ -18,6 +18,7 @@ interface Ligne {
   code_postal?: string;
   commune?: string;
   email?: string;
+  telephone?: string;
   site_internet?: string;
   domaine?: string;
   particulier?: boolean;
@@ -30,6 +31,8 @@ export interface EntrepriseRge {
   codePostal: string;
   commune: string;
   email: string | null;
+  /** Téléphone public de l'entreprise (19/11), au format « 03 20 12 34 56 ». Affiché en haut de sa maquette. */
+  telephone: string | null;
   site: string | null;
   domaines: string[];
   /** Travaille pour les particuliers (notre cible). */
@@ -67,6 +70,17 @@ const emailValide = (e?: string) => {
   return /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(v) ? v : null;
 };
 
+/** Numéro français à 10 chiffres (ou +33…), remis au format « 03 20 12 34 56 » ; sinon null. */
+export function telephoneValide(t?: string | null): string | null {
+  let n = String(t ?? "").replace(/[^\d+]/g, "");
+  if (n.startsWith("+33")) n = "0" + n.slice(3);
+  else if (n.startsWith("0033")) n = "0" + n.slice(4);
+  else if (/^33\d{9}$/.test(n)) n = "0" + n.slice(2);
+  else if (/^[1-9]\d{8}$/.test(n)) n = "0" + n;
+  if (!/^0[1-9]\d{8}$/.test(n)) return null;
+  return n.replace(/(\d{2})(?=\d)/g, "$1 ");
+}
+
 const siteValide = (s?: string) => {
   const v = (s ?? "").trim();
   if (!v || v.length < 4) return null;
@@ -97,12 +111,25 @@ export async function entreprisesRgeDepartement(departement: string): Promise<En
   return lireRge(`code_postal:${departement}*`);
 }
 
+const CHAMPS = "siret,nom_entreprise,adresse,code_postal,commune,email,site_internet,domaine,particulier";
+/** 19/11 : on demande aussi le téléphone ; si l'ADEME refuse ce champ (erreur 400), on s'en passe pour la suite. */
+let avecTelephone = true;
+
 async function lireRge(qs: string): Promise<EntrepriseRge[]> {
-  const params = new URLSearchParams({
-    size: "1000",
-    qs,
-    select: "siret,nom_entreprise,adresse,code_postal,commune,email,site_internet,domaine,particulier",
-  });
+  try {
+    return await lireRgeChamps(qs, avecTelephone ? `${CHAMPS},telephone` : CHAMPS);
+  } catch (err) {
+    if (avecTelephone && err instanceof Error && /erreur 400/.test(err.message)) {
+      avecTelephone = false;
+      console.warn("Liste RGE : le champ « telephone » est refusé, lecture sans téléphone.");
+      return lireRgeChamps(qs, CHAMPS);
+    }
+    throw err;
+  }
+}
+
+async function lireRgeChamps(qs: string, select: string): Promise<EntrepriseRge[]> {
+  const params = new URLSearchParams({ size: "1000", qs, select });
   let url: string | null = `${BASE}?${params}`;
   const parSiret = new Map<string, EntrepriseRge>();
   let pages = 0;
@@ -131,16 +158,18 @@ async function lireRge(qs: string): Promise<EntrepriseRge[]> {
         codePostal: l.code_postal ?? "",
         commune: joliNom(l.commune ?? ""),
         email: null,
+        telephone: null,
         site: null,
         domaines: [],
         particulier: false,
       };
       e.email ??= emailValide(l.email);
+      e.telephone ??= telephoneValide(l.telephone);
       e.site ??= siteValide(l.site_internet);
       if (l.domaine && !e.domaines.includes(l.domaine)) e.domaines.push(l.domaine);
       e.particulier ||= l.particulier === true;
       parSiret.set(siret, e);
-      masquer(e.nom, e.adresse, l.nom_entreprise, l.adresse, e.site, l.site_internet); // journaux publics (18/11)
+      masquer(e.nom, e.adresse, l.nom_entreprise, l.adresse, e.site, l.site_internet, e.telephone, l.telephone); // journaux publics (18/11)
     }
     url = data.next ?? null;
     await sleep(200);

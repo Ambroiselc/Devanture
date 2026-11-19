@@ -88,6 +88,14 @@
   d'Inès → `agents/interets.ts` envoie l'alerte à Broise (Resend, expéditeur alertes@, ignoré par Inès) ; panneau
   en tête de la vue d'ensemble (`components/artisans-interesses.tsx`, « Marquer traité ») ; alerte urgente de Coco ;
   plus de relance automatique pour un artisan intéressé.
+  19/11 (demande de Broise, 0 réponse intéressée, ouvertures de 4 à 20 s) : plus AUCUN trou en haut des maquettes.
+  Téléphone, e-mail et horaires : la vraie valeur ou rien (fini « Votre numéro », « Vos horaires » en pointillés, et la
+  note Google vide du style chaleureux) ; boutons « Appeler » seulement avec un numéro. Téléphone public de la liste RGE :
+  `telephoneValide` + champ `telephone` dans rge.ts (si l'ADEME refuse le champ → lecture sans), gardé par Loïc dans
+  `prospects.phone`, mis par Sid dans `content.telephone` ; rattrapage des anciens : `agents/telephones.ts` (workflow
+  `telephones.yml`, « appliquer » en 1re ligne de tests/telephones.txt). Le cadre gris « Votre photo ici » est remplacé
+  par une photo du métier (`agents/lib/photo-metier.ts` : Unsplash, 2-3 par métier, choisie par le nom, `onerror` efface
+  l'image) ; jamais sur les sites définitifs de Pedro. Les sections plus bas (réalisations, avis) gardent leurs pointillés.
   Bilan en lecture seule : workflow `bilan.yml` (`agents/bilan.ts`), relancé en modifiant `tests/bilan.txt` ; résultat en annotations.
   Migrations : workflow « Appliquer une migration » (`agents/appliquer-migration.ts`) au lieu du SQL Editor.
   Deux styles (26/10) : chaque maquette existe en « pro » et « chaleureux » (`agents/lib/demo-styles.ts`,
