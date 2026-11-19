@@ -11,7 +11,7 @@
 // Variantes (27/10) : palette, polices, en-tête, prestations et réalisations changent selon `c.habillage`
 // (voir habillage.ts). Variante 0 partout = l'apparence d'origine.
 import { variantes, type Habillage } from "./habillage.ts";
-import { imgPhotoMetier } from "./photo-metier.ts";
+import { imgPhotoMetier, photosChantiers } from "./photo-metier.ts";
 import { ancre, champPiege, horairesHtml, imgPhoto, lienTel, piedReel, scriptDevis, teteSeo, type Reel } from "./site-reel.ts";
 
 export const MODELE_DEMO = "artisan-pro";
@@ -160,10 +160,14 @@ export function renderArtisanPro(c: ContenuDemo): string {
   // Vrai site : la galerie montre les photos du client (sauf celle de l'en-tête quand l'en-tête en a une).
   const galerie = R ? R.photos.slice(v.entete === 2 && R.photos.length > 3 ? 1 : 0) : [];
   const avis = R ? R.avisUrl : "maquette";
-  // Réalisations : 0 = trois photos ; 1 = deux chantiers en « avant / après ».
-  const blocRealisation = (s: ServiceDemo) => v.realisations === 1
-    ? `<figure class="work" style="margin:0"><div class="paire"><div class="ph">Photo avant</div><div class="ph">Photo après</div></div><figcaption><h3>${e(s.titre)}</h3><span class="muted">${aCompleter("Commune · durée")}</span></figcaption></figure>`
-    : `<figure class="work" style="margin:0"><div class="ph">Votre photo de chantier</div><figcaption><h3>${e(s.titre)}</h3><span class="muted">${aCompleter("Commune · durée")}</span></figcaption></figure>`;
+  // Réalisations : 0 = trois photos ; 1 = deux chantiers, deux photos chacun.
+  // 19/11 (demande de Broise) : la maquette est remplie de photos d'illustration du métier (photo-metier.ts), en fond
+  // de cadre : si une photo ne charge pas, le cadre garde simplement sa couleur.
+  const illustrations = R ? [] : photosChantiers(c.metier, c.nom, photos.length * 2);
+  const tuile = (i: number) => `<div class="ph ph-photo" role="img" aria-label="Photo d'illustration" style="background-image:url('${e(illustrations[i])}')"></div>`;
+  const blocRealisation = (s: ServiceDemo, i: number) => v.realisations === 1
+    ? `<figure class="work" style="margin:0"><div class="paire">${tuile(2 * i)}${tuile(2 * i + 1)}</div><figcaption><h3>${e(s.titre)}</h3></figcaption></figure>`
+    : `<figure class="work" style="margin:0">${tuile(i)}<figcaption><h3>${e(s.titre)}</h3></figcaption></figure>`;
 
   return `<!doctype html>
 <html lang="fr">
@@ -233,6 +237,7 @@ section{padding-block:72px}
 .works{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .ph{aspect-ratio:4/3;max-width:100%;border-radius:6px;border:2px dashed var(--ph);background:var(--mist);display:grid;place-items:center;color:var(--ink-2);font-size:.9rem;font-weight:600;text-align:center;padding:12px}
 .work figcaption{margin-top:12px;display:grid;gap:2px}
+.ph-photo{border:0;padding:0;background-size:cover;background-position:center}
 .reviews{background:var(--paper);border:2px dashed var(--ph);border-radius:8px;padding:28px;display:grid;gap:10px;justify-items:start}
 .stars{color:var(--amber);letter-spacing:3px;font-size:1.2rem}
 .coords{display:grid;gap:18px;margin-top:22px}
@@ -366,7 +371,7 @@ ${R ? (galerie.length ? `<section id="realisations">
   </div>
 </section>` : "") : `<section id="realisations">
   <div class="wrap">
-    <div class="head"><h2>Réalisations</h2><p>Vos photos de chantier, avant et après, rassurent plus qu'un long discours.</p></div>
+    <div class="head"><h2>Réalisations</h2><p>Photos d'illustration : vos propres chantiers prendront leur place.</p></div>
     <div class="works${v.realisations === 1 ? " avap" : ""}">
       ${photos.map(blocRealisation).join("\n      ")}
     </div>

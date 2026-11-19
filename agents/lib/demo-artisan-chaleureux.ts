@@ -5,7 +5,7 @@
 // Variantes (27/10) : palette, polices, en-tête, prestations et réalisations selon `c.habillage` (habillage.ts).
 import type { ContenuDemo } from "./demo-artisan-pro.ts";
 import { variantes } from "./habillage.ts";
-import { imgPhotoMetier } from "./photo-metier.ts";
+import { imgPhotoMetier, photosChantiers } from "./photo-metier.ts";
 import { ancre, champPiege, horairesHtml, imgPhoto, lienTel, piedReel, scriptDevis, teteSeo } from "./site-reel.ts";
 
 /** Palettes du style chaleureux. La 0 est celle d'origine (brique et mousse). */
@@ -53,6 +53,8 @@ export function renderArtisanChaleureux(c: ContenuDemo): string {
   const photoHero = R?.photos[0];
   // Vrai site : la galerie reprend les photos du client, sauf celle de l'en-tête (s'il en reste assez).
   const galerie = R ? R.photos.slice(R.photos.length > 3 ? 1 : 0) : [];
+  // 19/11 (demande de Broise) : « Mes derniers chantiers » rempli de photos d'illustration du métier (photo-metier.ts).
+  const illustrations = R ? [] : photosChantiers(c.metier, c.nom, photos.length);
   const texteHero = `<div class="hello">${e(c.metier)} à ${e(c.commune)}</div>
       <h1>${e(c.accroche)}</h1>
       <p class="lead">${e(c.intro)}</p>
@@ -179,6 +181,8 @@ section{padding-block:72px}
 .ph{border-radius:16px;min-height:180px;border:2px dashed var(--dash);background:var(--stone);display:flex;flex-direction:column;justify-content:flex-end;padding:16px;color:var(--muted)}
 .ph b{font-family:var(--display);font-size:1.05rem;color:var(--moss)}
 .ph:first-child{grid-row:span 2;min-height:376px}
+.ph-photo{border:0;background-size:cover;background-position:center}
+.ph-photo b{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)}
 .reviews{margin-top:32px;background:var(--stone);border:2px dashed var(--dash);border-radius:18px;padding:28px;display:grid;gap:10px;justify-items:start}
 .contact{background:var(--stone)}
 .contact .wrap{display:grid;grid-template-columns:1fr 1.15fr;gap:48px}
@@ -316,8 +320,9 @@ ${R ? (galerie.length || R.avisUrl ? `<section id="realisations">
 </section>` : "") : `<section id="realisations">
   <div class="wrap">
     <h2>Mes derniers chantiers</h2>
+    <p class="small" style="margin-top:8px">Photos d'illustration : vos propres chantiers prendront leur place.</p>
     <div class="works${v.realisations === 1 ? " bande" : ""}">
-      ${photos.map((s) => `<div class="ph"><b>${e(s.titre)}</b><span>Votre photo de chantier</span></div>`).join("\n      ")}
+      ${photos.map((s, i) => `<div class="ph ph-photo" role="img" aria-label="Photo d'illustration" style="background-image:linear-gradient(to top,rgba(0,0,0,.62),rgba(0,0,0,0) 55%),url('${e(illustrations[i])}')"><b>${e(s.titre)}</b></div>`).join("\n      ")}
     </div>
     <div class="reviews">
       <div class="stars" aria-hidden="true">☆☆☆☆☆</div>

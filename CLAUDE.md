@@ -98,7 +98,9 @@
   `prospects.phone`, mis par Sid dans `content.telephone` ; rattrapage des anciens : `agents/telephones.ts` (workflow
   `telephones.yml`, « appliquer » en 1re ligne de tests/telephones.txt). Le cadre gris « Votre photo ici » est remplacé
   par une photo du métier (`agents/lib/photo-metier.ts` : Unsplash, 2-3 par métier, choisie par le nom, `onerror` efface
-  l'image) ; jamais sur les sites définitifs de Pedro. Les sections plus bas (réalisations, avis) gardent leurs pointillés.
+  l'image) ; jamais sur les sites définitifs de Pedro. Réalisations / « Mes derniers chantiers » (19/11, même demande) :
+  remplies de photos d'illustration du métier (`photosChantiers`, autres que celle de l'en-tête), en image de fond des cadres
+  (pas de photo = couleur du cadre), avec la mention « Photos d'illustration : vos propres chantiers prendront leur place ».
   Bilan en lecture seule : workflow `bilan.yml` (`agents/bilan.ts`), relancé en modifiant `tests/bilan.txt` ; résultat en annotations.
   Migrations : workflow « Appliquer une migration » (`agents/appliquer-migration.ts`) au lieu du SQL Editor.
   Deux styles (26/10) : chaque maquette existe en « pro » et « chaleureux » (19/11 : chaleureux = style 1, affiché par défaut sur /m et /demo) (`agents/lib/demo-styles.ts`,
