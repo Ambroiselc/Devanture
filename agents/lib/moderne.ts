@@ -48,9 +48,9 @@ header.dv-ombre{box-shadow:0 6px 24px rgba(0,0,0,.08)}
 .works.dv-defile:hover .dv-piste,.works.dv-defile.dv-pause .dv-piste{animation-play-state:paused}
 @keyframes dv-defile{to{transform:translateX(calc(-50% - 9px))}}
 .dv-piste>.ph{flex:0 0 clamp(240px,30vw,320px)!important;height:clamp(300px,34vw,380px);min-height:0!important;grid-row:auto!important;
-  border-radius:22px;transition:transform .5s var(--dv-ease),box-shadow .5s var(--dv-ease);background-size:110%!important;
-  background-position:center;transition:transform .5s var(--dv-ease),box-shadow .5s var(--dv-ease),background-size .8s var(--dv-ease)}
-.dv-piste>.ph:hover{transform:translateY(-6px);box-shadow:0 18px 36px rgba(0,0,0,.18);background-size:120%!important}
+  border-radius:22px;background-size:cover!important;background-repeat:no-repeat!important;background-position:center;
+  transition:transform .5s var(--dv-ease),box-shadow .5s var(--dv-ease)}
+.dv-piste>.ph:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 18px 36px rgba(0,0,0,.18)}
 .dv-piste>.ph b{transition:transform .5s var(--dv-ease)}
 .dv-piste>.ph:hover b{transform:translateY(-4px)}
 .dv-piste>figure.work{flex:0 0 clamp(260px,34vw,360px)}
