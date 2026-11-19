@@ -22,7 +22,7 @@ const page = (html: string, status = 200) =>
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const demande = new URL(req.url).searchParams.get("style");
-  const style = estStyle(demande) ? demande : "pro";
+  const style = estStyle(demande) ? demande : "chaleureux"; // 19/11 : chaleureux d'abord
   const lien = (s: string) => `/demo/${id}?style=${s}`;
   if (id === "exemple") {
     const habillage = lireCodeHabillage(new URL(req.url).searchParams.get("v")) ?? habillageAuHasard();

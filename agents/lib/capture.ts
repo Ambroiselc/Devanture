@@ -47,9 +47,9 @@ export class Photographe {
       const img = (c: Capture) => `data:image/jpeg;base64,${c.image.toString("base64")}`;
       await page.setContent(`<!doctype html><html><body style="margin:0;background:#f4f4f2;font:600 15px system-ui,sans-serif;color:#333">
         <div style="display:flex;gap:20px;justify-content:center;padding:18px 16px 10px">
-          ${[pro, chaleureux].map((c, i) => `<figure style="margin:0;text-align:center">
+          ${[chaleureux, pro].map((c, i) => `<figure style="margin:0;text-align:center">
             <img src="${img(c)}" style="width:270px;height:540px;object-fit:cover;object-position:top;border-radius:18px;border:6px solid #1d1d1d;display:block">
-            <figcaption style="margin-top:8px">${i === 0 ? "Style 1 · sobre" : "Style 2 · chaleureux"}</figcaption></figure>`).join("")}
+            <figcaption style="margin-top:8px">${i === 0 ? "Style 1 · chaleureux" : "Style 2 · sobre"}</figcaption></figure>`).join("")}
         </div></body></html>`, { waitUntil: "load" });
       const image = await page.screenshot({ type: "jpeg", quality: QUALITE, fullPage: true });
       return { image, width: 750, height: 800 };

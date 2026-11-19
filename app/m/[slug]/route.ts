@@ -37,7 +37,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
   const url = new URL(req.url);
   const demande = url.searchParams.get("style");
-  const style = estStyle(demande) ? demande : "pro";
+  const style = estStyle(demande) ? demande : "chaleureux"; // 19/11 : chaleureux d'abord
   // Aperçu de Broise (2/11) : connecté au tableau de bord OU lien « ?apercu=1 » → visite jamais comptée.
   const apercu = url.searchParams.get("apercu") === "1" || (await estConnecte());
   const suffixe = apercu ? "&apercu=1" : "";

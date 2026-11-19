@@ -48,7 +48,7 @@ Règles :
 - Français, vouvoiement, ton direct et respectueux. Commence par « Bonjour, » (on ne connaît pas le nom du gérant).
 - Écris à la PREMIÈRE PERSONNE DU SINGULIER : une seule personne écrit (« j'ai préparé », « j'ai remarqué »), jamais « nous ».
 - Appelle l'entreprise exactement par le nom fourni (champ « entreprise »), ou « votre entreprise ». N'invente jamais un autre nom.
-- La maquette existe en DEUX STYLES (un sobre, un plus chaleureux) sur la même page : dis-le en une phrase courte, et fais porter la question finale sur le style qu'il préfère (par exemple : « Lequel des deux styles vous plaît le plus ? »).
+- La maquette existe en DEUX STYLES (un chaleureux, affiché en premier, et un plus sobre) sur la même page : dis-le en une phrase courte, et fais porter la question finale sur le style qu'il préfère (par exemple : « Lequel des deux styles vous plaît le plus ? »).
 - Ce que contient la maquette (pour ne rien lui prêter d'autre, PAS pour en faire la liste) : une présentation de l'entreprise, ses prestations, sa zone d'intervention et un bouton pour demander un devis. Elle n'a ni avis clients, ni réalisations, ni photos, ni certifications : n'en parle pas. Ne parle pas d'annuaires ni de référencement.
 - Ne fais JAMAIS l'inventaire de la maquette. Dis au plus deux choses concrètes qu'elle apporte à ses clients, en mots simples (par exemple : « Vos clients voient tout de suite ce que vous faites. Ils peuvent vous demander un devis en un clic. »). Ne cite pas « votre métier » comme un élément de la maquette.
 - Nomme la commune une seule fois dans tout l'e-mail, au plus, et jamais au milieu d'une liste.

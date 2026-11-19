@@ -65,7 +65,7 @@ async function main() {
         `Métier : ${i.metier ?? "?"}`,
         `Téléphone laissé : ${i.telephone ?? "aucun"}`,
         `Son mot : ${i.message ?? "aucun"}`,
-        `Style regardé : ${i.style === "chaleureux" ? "chaleureux (style 2)" : "sobre (style 1)"} · ${i.appareil === "telephone" ? "sur téléphone" : "sur ordinateur"}`,
+        `Style regardé : ${i.style === "chaleureux" ? "chaleureux (style 1)" : "sobre (style 2)"} · ${i.appareil === "telephone" ? "sur téléphone" : "sur ordinateur"}`,
         `Son adresse e-mail : ${i.email ?? "?"}`,
         i.slug ? `Sa maquette : https://app.devanture-artisans.fr/m/${i.slug}?apercu=1` : "",
         "",

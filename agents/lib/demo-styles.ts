@@ -6,8 +6,9 @@ import { renderArtisanPro, type ContenuDemo } from "./demo-artisan-pro.ts";
 export type StyleDemo = "pro" | "chaleureux";
 
 export const STYLES: { id: StyleDemo; nom: string; rendu: (c: ContenuDemo) => string }[] = [
-  { id: "pro", nom: "Style 1 · sobre", rendu: renderArtisanPro },
-  { id: "chaleureux", nom: "Style 2 · chaleureux", rendu: renderArtisanChaleureux },
+  // 19/11 (demande de Broise) : le style chaleureux s'affiche en premier (style par défaut des maquettes).
+  { id: "chaleureux", nom: "Style 1 · chaleureux", rendu: renderArtisanChaleureux },
+  { id: "pro", nom: "Style 2 · sobre", rendu: renderArtisanPro },
 ];
 
 export const estStyle = (s: unknown): s is StyleDemo => s === "pro" || s === "chaleureux";

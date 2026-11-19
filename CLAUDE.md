@@ -100,7 +100,7 @@
   l'image) ; jamais sur les sites définitifs de Pedro. Les sections plus bas (réalisations, avis) gardent leurs pointillés.
   Bilan en lecture seule : workflow `bilan.yml` (`agents/bilan.ts`), relancé en modifiant `tests/bilan.txt` ; résultat en annotations.
   Migrations : workflow « Appliquer une migration » (`agents/appliquer-migration.ts`) au lieu du SQL Editor.
-  Deux styles (26/10) : chaque maquette existe en « pro » et « chaleureux » (`agents/lib/demo-styles.ts`,
+  Deux styles (26/10) : chaque maquette existe en « pro » et « chaleureux » (19/11 : chaleureux = style 1, affiché par défaut sur /m et /demo) (`agents/lib/demo-styles.ts`,
   sélecteur en haut de `/demo/<id>?style=…`) ; captures par style + « duo » pour l'e-mail (`website_captures.style`).
   Habillage (27/10, `agents/lib/habillage.ts`) : chaque maquette reçoit une combinaison de variantes par style
   (palette, polices, en-tête, prestations, réalisations ; `content.habillage`, absente = apparence d'origine).
