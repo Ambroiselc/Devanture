@@ -42,15 +42,16 @@ header.dv-ombre{box-shadow:0 6px 24px rgba(0,0,0,.08)}
 .communes span{transition:transform .25s var(--dv-ease),background-color .25s}
 .communes span:hover{transform:translateY(-2px) scale(1.04)}
 /* Galerie des chantiers : défilement automatique sans fin */
-.works.dv-defile{display:block!important;overflow:hidden;padding:6px 0 10px;margin-top:28px;
+.works.dv-defile{display:block!important;overflow:hidden;padding:16px 0 30px;margin-top:20px;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
-.dv-piste{display:flex;gap:18px;width:max-content;animation:dv-defile var(--dv-duree,45s) linear infinite}
-.works.dv-defile:hover .dv-piste,.works.dv-defile.dv-pause .dv-piste{animation-play-state:paused}
-@keyframes dv-defile{to{transform:translateX(calc(-50% - 9px))}}
+/* 19/11 : défilement par à-coups (rapide, puis pause quand une photo arrive au milieu), piloté par le script */
+.dv-piste{position:relative;display:flex;gap:18px;width:max-content;will-change:transform}
+.dv-piste>*{opacity:.72;transition:opacity .6s var(--dv-ease),transform .6s var(--dv-ease),box-shadow .6s var(--dv-ease)!important}
+.dv-piste>.dv-centre{opacity:1;transform:scale(1.04);box-shadow:0 18px 40px rgba(0,0,0,.18)}
 .dv-piste>.ph{flex:0 0 clamp(240px,30vw,320px)!important;height:clamp(300px,34vw,380px);min-height:0!important;grid-row:auto!important;
   border-radius:22px;background-size:cover!important;background-repeat:no-repeat!important;background-position:center;
   transition:transform .5s var(--dv-ease),box-shadow .5s var(--dv-ease)}
-.dv-piste>.ph:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 18px 36px rgba(0,0,0,.18)}
+.dv-piste>.ph:hover{opacity:1}
 .dv-piste>.ph b{transition:transform .5s var(--dv-ease)}
 .dv-piste>.ph:hover b{transform:translateY(-4px)}
 .dv-piste>figure.work{flex:0 0 clamp(260px,34vw,360px)}
@@ -81,12 +82,30 @@ document.querySelectorAll("#realisations .works").forEach(function(w){
   var cases=[].slice.call(w.children);if(cases.length<2)return;
   var piste=document.createElement("div");piste.className="dv-piste";
   cases.forEach(function(c){piste.appendChild(c)});
-  cases.forEach(function(c){var d=c.cloneNode(true);d.setAttribute("aria-hidden","true");piste.appendChild(d)});
+  /* Trois exemplaires : des voisins de chaque côté de la photo du milieu, et un retour en arrière invisible. */
+  for(var k=0;k<2;k++)cases.forEach(function(c){var d=c.cloneNode(true);d.setAttribute("aria-hidden","true");piste.appendChild(d)});
   w.textContent="";w.appendChild(piste);w.classList.remove("bande","avap");w.classList.add("dv-defile");
-  piste.style.setProperty("--dv-duree",Math.max(30,cases.length*9)+"s");
+  var n=cases.length,i=n,pause=false,enCours=null;
+  function placer(anime){
+    var t=piste.children[i];if(!t)return;
+    var x=w.clientWidth/2-(t.offsetLeft+t.offsetWidth/2);
+    piste.style.transition=anime?"transform .7s cubic-bezier(.65,0,.35,1)":"none";
+    piste.style.transform="translateX("+x+"px)";
+    [].forEach.call(piste.children,function(c,j){c.classList.toggle("dv-centre",j===i)});
+  }
+  function avancer(){
+    if(pause||document.hidden)return;
+    i++;placer(!reduit);
+    if(i>=2*n){clearTimeout(enCours);enCours=setTimeout(function(){i-=n;placer(false)},750)}
+  }
+  placer(false);
+  if(!reduit)setInterval(avancer,2600); /* 0,7 s de glissement, puis environ 2 s de pause au milieu */
+  addEventListener("resize",function(){placer(false)});
+  w.addEventListener("mouseenter",function(){pause=true});
+  w.addEventListener("mouseleave",function(){pause=false});
   /* Sur téléphone : un doigt posé met en pause */
-  w.addEventListener("touchstart",function(){w.classList.add("dv-pause")},{passive:true});
-  w.addEventListener("touchend",function(){setTimeout(function(){w.classList.remove("dv-pause")},1500)},{passive:true});
+  w.addEventListener("touchstart",function(){pause=true},{passive:true});
+  w.addEventListener("touchend",function(){setTimeout(function(){pause=false},1500)},{passive:true});
 });
 if(reduit||!("IntersectionObserver" in window))return;
 /* Apparition des blocs au défilement, en cascade */
