@@ -1,0 +1,15 @@
+// Worker « devanture-reveil » (19/11) : réveille Valérie (envoi des e-mails) à l'heure, car GitHub ne lance plus
+// ses créneaux programmés de façon fiable (aucun envoi programmé le 19/11 alors que 20 créneaux étaient prévus).
+// Les « Cron Triggers » de Cloudflare sont gratuits et ponctuels : ce Worker appelle l'API GitHub pour lancer le
+// workflow agent-envoi.yml. Le créneau GitHub reste en secours : un passage en double ne renvoie rien de plus
+// (chaque passage n'envoie que ce qui manque à la vague en cours, voir agents/envoi.ts).
+// Publié par .github/workflows/reveil.yml. Secret : GITHUB_TOKEN (copié du secret GitHub CLE_GITHUB_ACTIONS).
+{
+  "name": "devanture-reveil",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  "workers_dev": false,
+  // Heures UTC (Paris = UTC+1 en hiver) : toutes les 30 min de 8 h 07 à 17 h 37 (heure de Paris), du lundi au vendredi.
+  "triggers": { "crons": ["7,37 7-16 * * 1-5"] }
+}

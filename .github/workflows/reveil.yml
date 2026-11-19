@@ -1,0 +1,40 @@
+# Publie le Worker Cloudflare « devanture-reveil » (workers/reveil) : il lance l'envoi de Valérie toutes les 30 min
+# en journée, parce que GitHub saute ses créneaux programmés (19/11). Automatique à chaque changement de workers/reveil,
+# ou à la main (Actions > « Réveil de Valérie (Cloudflare) » > Run workflow).
+# Secrets : CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, CLE_GITHUB_ACTIONS (déjà en place).
+
+name: Réveil de Valérie (Cloudflare)
+
+on:
+  push:
+    branches: [main]
+    paths: ["workers/reveil/**", ".github/workflows/reveil.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reveil
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLE_GITHUB_ACTIONS: ${{ secrets.CLE_GITHUB_ACTIONS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Publier le Worker et sa clé GitHub
+        working-directory: workers/reveil
+        run: |
+          if [ -z "$CLE_GITHUB_ACTIONS" ]; then echo "::error::Secret CLE_GITHUB_ACTIONS manquant"; exit 1; fi
+          npm install --no-audit --no-fund
+          npx wrangler deploy
+          printf '%s' "$CLE_GITHUB_ACTIONS" | npx wrangler secret put GITHUB_TOKEN

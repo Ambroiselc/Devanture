@@ -57,6 +57,10 @@
   Vagues manquées (19/11 : GitHub a sauté les 2 premières) : cron toutes les 30 min (7,37 7-16 UTC) ; chaque vague a sa plage
   (`DEBUT_VAGUES` : 8 h 30, 10 h, 12 h 30, 15 h) et un passage n'envoie que ce qui manque au plafond de la vague en cours
   (`cette_vague`). Un envoi resté « en cours » plus de 70 min (annulé sur GitHub) est marqué « annulee » au passage suivant.
+  Réveil (19/11 après-midi : GitHub n'a lancé AUCUN créneau programmé de l'envoi de la journée) : Worker Cloudflare
+  `workers/reveil` (« devanture-reveil », Cron Trigger « 7,37 7-16 * * 1-5 », gratuit) qui lance agent-envoi.yml par l'API
+  GitHub (secret Worker GITHUB_TOKEN = secret GitHub CLE_GITHUB_ACTIONS, posé par le workflow `reveil.yml`). Le créneau
+  GitHub reste en secours (passages en double sans effet).
   Visites des maquettes (30/10) : petit script dans `/m/<slug>` → POST `/m/<slug>` après 1,5 s visibles (4 s jusqu'au 5/11 ; ignoré si navigator.webdriver) → `public.maquette_vue`
   (`websites.vues`, `premiere_vue`, `derniere_vue`, une visite par 30 min ; sans cookie ni IP). Affiché sur la page Valérie.
   Durée (5/11, migration 20261105010000_visites_maquettes.sql) : identifiant de visite au hasard, temps onglet visible envoyé
