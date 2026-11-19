@@ -48,6 +48,11 @@ navigateur du visiteur.
 
 Depuis le 13/11/2026 : les visites venues d'un réseau d'hébergeur (robots de Microsoft 365 qui vérifient les liens des
 e-mails…) ne sont plus comptées ; l'opérateur réseau est lu par Cloudflare au moment de la visite, jamais l'adresse IP.
+
+Depuis le 19/11/2026 : chaque ouverture de maquette garde aussi, comme les visites du site vitrine, la famille de système et
+de navigateur (« Windows », « Chrome »), l'opérateur réseau, le pays et la ville approximative déduits par Cloudflare (souvent
+la ville du fournisseur d'accès). Toujours ni adresse IP ni cookie ; effacé avec la maquette. Les visites venues de
+l'étranger (hors France et pays voisins) sont traitées comme des robots et ne sont pas comptées.
 Les visites de robots retirées après coup sont gardées à part (`maquette_visites_robots`) pour pouvoir les remettre.
 
 ### « Ce site m'intéresse » — depuis le 13/11/2026

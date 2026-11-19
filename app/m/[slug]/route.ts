@@ -8,6 +8,7 @@ import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "@/lib/supabase/c
 import { estConnecte } from "@/lib/est-connecte";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { lireReseau } from "@/lib/reseau";
+import { lireAppareil } from "@/lib/appareil";
 import { bandeauInteret } from "@/lib/bandeau-interet";
 import { moderniser } from "@/agents/lib/moderne";
 
@@ -108,7 +109,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     if (visite) {
       const duree = Math.max(0, Math.min(7200, Math.round(Number(corps?.d) || 0)));
       const appareil = corps?.a === "telephone" || corps?.a === "ordinateur" ? corps.a : null;
-      const { error } = await supabase.rpc("maquette_visite", { p_slug: slug, p_visite: visite, p_duree: duree, p_appareil: appareil });
+      // 19/11 : système, navigateur, opérateur, pays et ville (comme le site vitrine) ; repli sur l'ancienne fonction
+      // si la migration 20261119000000_visites_maquettes_reseau.sql n'est pas encore appliquée.
+      const ua = lireAppareil(req.headers.get("user-agent") ?? "");
+      let { error } = await supabase.rpc("maquette_visite", {
+        p_slug: slug, p_visite: visite, p_duree: duree, p_appareil: appareil,
+        p_systeme: ua.systeme, p_navigateur: ua.navigateur, p_reseau: reseau.reseau, p_pays: reseau.pays, p_ville: reseau.ville,
+      });
+      if (error) ({ error } = await supabase.rpc("maquette_visite", { p_slug: slug, p_visite: visite, p_duree: duree, p_appareil: appareil }));
       // 6/11 : visible dans les journaux Cloudflare (workflow « Diagnostic du tableau de bord ») si la durée ne s'enregistre pas.
       if (error) console.error(`maquette_visite ${slug} : ${error.message}`);
     }

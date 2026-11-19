@@ -20,12 +20,14 @@ export const RESEAUX_ROBOTS: Record<number, string> = {
 export const PAYS_HUMAINS = new Set(["FR", "GP", "MQ", "GF", "RE", "YT", "PM", "NC", "PF", "BL", "MF",
   "BE", "LU", "CH", "MC", "AD", "DE", "ES", "IT", "NL", "GB", "PT", "IE"]);
 
-export interface Reseau { reseau: string | null; pays: string | null; robot: boolean; motif: string | null }
+export interface Reseau { reseau: string | null; pays: string | null; ville: string | null; robot: boolean; motif: string | null }
 
-export function lireReseau(cf: { asn?: unknown; asOrganization?: unknown; country?: unknown } | undefined | null): Reseau {
+export function lireReseau(cf: { asn?: unknown; asOrganization?: unknown; country?: unknown; city?: unknown } | undefined | null): Reseau {
   const asn = Number(cf?.asn ?? 0);
   const org = typeof cf?.asOrganization === "string" ? cf.asOrganization.slice(0, 60) : null;
   const pays = typeof cf?.country === "string" ? cf.country.slice(0, 2) : null;
   const motif = RESEAUX_ROBOTS[asn] ?? (pays && !PAYS_HUMAINS.has(pays.toUpperCase()) ? `visite depuis l'étranger (${pays})` : null);
-  return { reseau: org, pays, robot: Boolean(motif), motif };
+  // 19/11 : ville approximative (déduite par Cloudflare, souvent celle du fournisseur d'accès), jamais l'adresse IP.
+  const ville = typeof cf?.city === "string" ? cf.city.slice(0, 60) : null;
+  return { reseau: org, pays, ville, robot: Boolean(motif), motif };
 }

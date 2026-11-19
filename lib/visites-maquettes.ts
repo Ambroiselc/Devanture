@@ -3,17 +3,24 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export interface VisiteMaquette { debut: string; duree_s: number; appareil: string | null }
+export interface VisiteMaquette {
+  debut: string; duree_s: number; appareil: string | null;
+  /** 19/11 : indices sur le visiteur (comme le site vitrine), absents pour les visites d'avant. */
+  systeme?: string | null; navigateur?: string | null; reseau?: string | null; pays?: string | null; ville?: string | null;
+}
 
 /** Visites par maquette (les plus récentes d'abord), ou une table vide si la migration n'est pas encore appliquée. */
 export async function visitesDe(supabase: SupabaseClient, ids: string[]): Promise<Map<string, VisiteMaquette[]>> {
   const parSite = new Map<string, VisiteMaquette[]>();
   if (!ids.length) return parSite;
-  const { data, error } = await supabase.from("maquette_visites").select("website_id, debut, duree_s, appareil")
+  const lire = (colonnes: string) => supabase.from("maquette_visites").select(colonnes)
     .in("website_id", ids).order("debut", { ascending: false }).limit(200);
+  let { data, error } = await lire("website_id, debut, duree_s, appareil, systeme, navigateur, reseau, pays, ville");
+  if (error) ({ data, error } = await lire("website_id, debut, duree_s, appareil")); // migration du 19/11 pas encore appliquée
   if (error) return parSite;
-  for (const v of (data ?? []) as (VisiteMaquette & { website_id: string })[]) {
-    parSite.set(v.website_id, [...(parSite.get(v.website_id) ?? []), { debut: v.debut, duree_s: v.duree_s, appareil: v.appareil }]);
+  for (const v of (data ?? []) as unknown as (VisiteMaquette & { website_id: string })[]) {
+    const { website_id, ...visite } = v;
+    parSite.set(website_id, [...(parSite.get(website_id) ?? []), visite]);
   }
   return parSite;
 }

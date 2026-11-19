@@ -51,6 +51,8 @@ export function VisitesMaquette({ visites, vues, premiere, envois }: { visites: 
             <li key={i} className="tabular">
               {formatDate(v.debut)} · <span className="font-medium text-ink">{formatSecondes(v.duree_s)}</span>
               {v.appareil && <> · {v.appareil === "telephone" ? "téléphone" : "ordinateur"}</>}
+              {[v.systeme, v.navigateur].filter(Boolean).length > 0 && <> · {[v.systeme, v.navigateur].filter(Boolean).join(" · ")}</>}
+              {(v.reseau || v.ville || v.pays) && <> · {[v.reseau, v.ville, v.pays].filter(Boolean).join(", ")}</>}
               <PastilleEnvoi envoi={envoiAvant(envois, v.debut)} />
             </li>
           ))}
