@@ -397,8 +397,10 @@ async function main() {
     for (const c of canaux) {
       const reste = Math.max(0, c.quota - c.aujourdhui);
       // 19/11 (demande de Broise) : jamais plus d'un quart du quota du jour par vague (≈ 12-15 e-mails en tout avec
-      // 2 boîtes à 25/jour), même si une vague a été sautée par GitHub : ce qui manque est perdu, pas rattrapé d'un coup.
-      const plafondVague = Math.ceil(c.quota / VAGUES_PAR_JOUR);
+      // 2 boîtes à 25/jour), même si une vague a été sautée par GitHub. Sauf le rattrapage de fin de journée
+      // (à partir de 17 h 30) : lui envoie tout ce qui reste du quota, d'un coup.
+      const rattrapage = heure >= 17.5;
+      const plafondVague = rattrapage ? Infinity : Math.ceil(c.quota / VAGUES_PAR_JOUR);
       c.part = Math.min(essai ? reste : Math.min(Math.ceil(reste / vaguesRestantes), plafondVague), budgetEssai);
       budgetEssai -= c.part;
     }

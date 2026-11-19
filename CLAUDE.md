@@ -52,7 +52,8 @@
   toutes les relances dues partent d'abord depuis le 5/11 (`PART_RELANCES` = 1 dans envoi.ts ; 0,3 avant, elles s'accumulaient),
   maquettes ouvertes d'abord, puis les plus anciennes ; les premiers e-mails prennent le reste des places.
   Plafond par vague (19/11, demande de Broise : « une douzaine par série, pas tout d'un coup ») : chaque canal envoie au plus
-  ceil(quota du jour / 4) par vague (≈ 14 avec 2 boîtes à 25), même après une vague sautée ou au rattrapage de 17 h 37.
+  ceil(quota du jour / 4) par vague (≈ 14 avec 2 boîtes à 25), même après une vague sautée ; seul le rattrapage
+  (à partir de 17 h 30, heure de Paris) envoie tout le reste du quota d'un coup.
   Visites des maquettes (30/10) : petit script dans `/m/<slug>` → POST `/m/<slug>` après 1,5 s visibles (4 s jusqu'au 5/11 ; ignoré si navigator.webdriver) → `public.maquette_vue`
   (`websites.vues`, `premiere_vue`, `derniere_vue`, une visite par 30 min ; sans cookie ni IP). Affiché sur la page Valérie.
   Durée (5/11, migration 20261105010000_visites_maquettes.sql) : identifiant de visite au hasard, temps onglet visible envoyé
