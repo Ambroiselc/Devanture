@@ -48,6 +48,12 @@ header.dv-ombre{box-shadow:0 6px 24px rgba(0,0,0,.08)}
 .dv-piste{position:relative;display:flex;gap:18px;width:max-content;will-change:transform}
 .dv-piste>*{opacity:.72;transition:opacity .6s var(--dv-ease),transform .6s var(--dv-ease),box-shadow .6s var(--dv-ease)!important}
 .dv-piste>.dv-centre{opacity:1;transform:scale(1.04);box-shadow:0 18px 40px rgba(0,0,0,.18)}
+/* 19/11 : style sobre (photo + légende dans une <figure>) : l'ombre va sur la photo seule, pas sur le bloc entier
+   (sinon une boîte d'ombre flottait autour de la légende). */
+.dv-piste>figure.work{box-shadow:none!important}
+.dv-piste>figure.work .ph{border-radius:8px;transition:box-shadow .6s var(--dv-ease)}
+.dv-piste>figure.work.dv-centre .ph{box-shadow:0 14px 30px rgba(0,0,0,.20)}
+.dv-piste>figure.work figcaption{padding-inline:2px}
 .dv-piste>.ph{flex:0 0 clamp(240px,30vw,320px)!important;height:clamp(300px,34vw,380px);min-height:0!important;grid-row:auto!important;
   border-radius:22px;background-size:cover!important;background-repeat:no-repeat!important;background-position:center;
   transition:transform .5s var(--dv-ease),box-shadow .5s var(--dv-ease)}
