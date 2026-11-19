@@ -1,2 +1,2 @@
-robots-site
-19/11 : visites du site vitrine venues de l'étranger (CHINANET…) retirées du compteur
+site-jours
+19/11 : compteur du site vitrine jour par jour (lecture seule)
