@@ -1,2 +1,2 @@
-ouvertures-type
-18/11 : ouvertures de maquette par type d'e-mail
+robots-site
+19/11 : visites du site vitrine venues de l'étranger (CHINANET…) retirées du compteur

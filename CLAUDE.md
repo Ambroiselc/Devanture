@@ -84,6 +84,9 @@
   visite du site ET ouverture de maquette (toutes les ouvertures « Microsoft 365 » du 9 au 13/11). `lib/reseau.ts` reconnaît
   les réseaux d'hébergeurs (cf.asn de Cloudflare via `getCloudflareContext`, jamais l'IP) ; migration
   20261113010000_visites_site_robots.sql : colonnes reseau / pays / robot, un robot n'entre pas dans les compteurs par jour.
+  19/11 (visites « CHINANET », 4-11 s) : `PAYS_HUMAINS` dans lib/reseau.ts : une visite venue d'un pays hors France (outre-mer
+  compris) et voisins proches = robot, site ET maquettes ; anciennes visites du site nettoyées par
+  `agents/retirer-robots-site.ts` (« robots-site » en 1re ligne de tests/compteur.txt, relançable).
   Maquettes (13/11) : POST /m/<slug> d'un réseau d'hébergeur ignoré (app/m/[slug]/route.ts) ; historique nettoyé par
   `agents/retirer-robots-maquettes.ts` (« robots-maquettes » dans tests/compteur.txt ; relançable).
   13/11 (bilan sans robots : photo 0/105, A 9/66, B 1/54 ; décisions de Broise) : plus AUCUNE photo dans les e-mails ;

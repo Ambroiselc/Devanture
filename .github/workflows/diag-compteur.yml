@@ -39,5 +39,6 @@ jobs:
           elif head -n1 tests/compteur.txt | grep -qi '^bandeau'; then node agents/diag-bandeau.ts;
           elif head -n1 tests/compteur.txt | grep -qi '^exemples-c'; then node agents/diag-exemples-c.ts;
           elif head -n1 tests/compteur.txt | grep -qi '^ouvertures-type'; then node agents/diag-ouvertures-type.ts;
+          elif head -n1 tests/compteur.txt | grep -qi '^robots-site'; then node agents/retirer-robots-site.ts;
           elif head -n1 tests/compteur.txt | grep -qi '^robots-maquettes'; then node agents/retirer-robots-maquettes.ts "$(head -n1 tests/compteur.txt | awk '{print $2}' | tr -d '\r')";
           elif head -n1 tests/compteur.txt | grep -qi '^site'; then node agents/diag-site.ts; else node agents/diag-compteur.ts; fi
