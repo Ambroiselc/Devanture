@@ -17,6 +17,11 @@ on:
       - "tests/**"
       - "workers/**"
       - "agents/**"
+      # 19/11 : les modèles des maquettes publiques (/m/…) sont dans agents/lib et lus par le site : eux remettent en ligne.
+      - "!agents/lib/demo-*.ts"
+      - "!agents/lib/photo-metier.ts"
+      - "!agents/lib/habillage.ts"
+      - "!agents/lib/site-reel.ts"
       - ".github/workflows/agent-*.yml"
       - "**.md"
   workflow_dispatch:
