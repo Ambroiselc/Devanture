@@ -20,6 +20,17 @@ try {
               where jour = ${l.jour} and page = ${l.page} and source = ${l.source}`;
     }
   });
+  // 19/11 (feu vert de Broise à 12 h 18) : le compteur du jour gardait 1 visite de robot en trop. Depuis le 12/11, chaque
+  // visite a sa ligne détaillée : le compteur de ces jours-là est recalculé à partir des visites humaines détaillées.
+  await sql.begin(async (t) => {
+    await t`delete from public.site_visites where jour >= '2026-11-12'`;
+    await t`insert into public.site_visites (jour, page, source, visites)
+            select (debut at time zone 'Europe/Paris')::date, page, source, count(*)::int
+            from public.site_visites_detail
+            where robot = false and (debut at time zone 'Europe/Paris')::date >= '2026-11-12'
+            group by 1, 2, 3`;
+  });
+  console.log("SJ Compteur recalculé depuis le 12/11 à partir des visites humaines détaillées.");
   const parPays: Record<string, number> = {};
   for (const l of lignes) parPays[`${l.pays} (${l.reseau ?? "?"})`] = (parPays[`${l.pays} (${l.reseau ?? "?"})`] ?? 0) + 1;
   const texte = `${lignes.length} visite(s) de l'étranger retirée(s) du compteur%0A${Object.entries(parPays).map(([k, n]) => `${k} : ${n}`).join("%0A")}`;
