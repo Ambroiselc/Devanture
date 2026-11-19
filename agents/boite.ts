@@ -16,7 +16,7 @@
 // Garde-fous : budget IA du mois, liste d'opposition (vérifiée dans le code ET par la base), 3 erreurs de suite.
 // Test sans Internet ni clés : DEVANTURE_SIMULATION=1 sur une base locale.
 // =====================================================================
-import { connecter, type Sql } from "./lib/db.ts";
+import { connecter, fermerTachesInterrompues, type Sql } from "./lib/db.ts";
 import { http, sleep, SIMULATION } from "./lib/http.ts";
 import {
   adresseReponse, demandeStop, expediteurMachine, objetReponse, prospectDepuisAdresse, sansCitation, sujetsSensibles,
@@ -420,6 +420,7 @@ async function envoyer(sql: Sql, taskId: string): Promise<void> {
 
 async function main() {
   const sql = connecter();
+  await fermerTachesInterrompues(sql); // 19/11 : tâches restées « en cours » après un lancement annulé
   let taskId: string | null = null;
   let nom = "Inès";
   try {

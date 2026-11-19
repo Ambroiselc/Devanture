@@ -22,7 +22,7 @@
 // =====================================================================
 import { parseArgs } from "node:util";
 import { promises as dns } from "node:dns";
-import { connecter, type Sql } from "./lib/db.ts";
+import { connecter, fermerTachesInterrompues, type Sql } from "./lib/db.ts";
 import { http, sleep, SIMULATION } from "./lib/http.ts";
 import { LIEN_DEMO, remplacerSignature } from "./lib/redaction-email.ts";
 import { adresseReponse } from "./lib/boite.ts";
@@ -209,6 +209,7 @@ async function image(sql: Sql, m: AEnvoyer) {
 
 async function main() {
   const sql = connecter();
+  await fermerTachesInterrompues(sql); // 19/11 : tâches restées « en cours » après un lancement annulé
   const bilan = { suivis: 0, rebonds: 0, plaintes: 0, envoyes: 0, relances_preparees: 0, adresses_invalides: 0, opposes: 0, erreurs: 0,
     quota: 0, palier: 0, ralenti: false, recus_boites: 0, canaux: {} as Record<string, { quota: number; envoyes: number }>,
     coco: undefined as BilanRelecture | undefined, arret: undefined as string | undefined };
