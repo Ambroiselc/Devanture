@@ -22,9 +22,9 @@ const pageBrute = (html: string, status = 200) =>
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // 19/11 : essai de la version « moderne » avec ?moderne=1.
-  const moderne = new URL(req.url).searchParams.get("moderne") === "1";
-  const m = moderne ? "&moderne=1" : "";
+  // 19/11 : version « moderne » par défaut (validée par Broise) ; ?moderne=0 montre l'ancienne.
+  const moderne = new URL(req.url).searchParams.get("moderne") !== "0";
+  const m = moderne ? "" : "&moderne=0";
   const page = (html: string, status = 200) => pageBrute(moderne && status === 200 ? moderniser(html) : html, status);
   const demande = new URL(req.url).searchParams.get("style");
   const style = estStyle(demande) ? demande : "chaleureux"; // 19/11 : chaleureux d'abord

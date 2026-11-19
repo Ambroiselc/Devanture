@@ -101,6 +101,10 @@
   l'image) ; jamais sur les sites définitifs de Pedro. Réalisations / « Mes derniers chantiers » (19/11, même demande) :
   remplies de photos d'illustration du métier (`photosChantiers`, autres que celle de l'en-tête), en image de fond des cadres
   (pas de photo = couleur du cadre), avec la mention « Photos d'illustration : vos propres chantiers prendront leur place ».
+  Version « moderne » (19/11, validée par Broise) : `agents/lib/moderne.ts` (`moderniser`) ajoute par-dessus la page rendue
+  une feuille de style + un script (galerie des chantiers qui défile en boucle, haut de page en cascade, zoom lent de la photo,
+  blocs qui apparaissent au défilement, barre de progression, prefers-reduced-motion respecté) ; par défaut sur /m et /demo,
+  `?moderne=0` pour l'ancienne. Pas sur les sites de Pedro.
   Bilan en lecture seule : workflow `bilan.yml` (`agents/bilan.ts`), relancé en modifiant `tests/bilan.txt` ; résultat en annotations.
   Migrations : workflow « Appliquer une migration » (`agents/appliquer-migration.ts`) au lieu du SQL Editor.
   Deux styles (26/10) : chaque maquette existe en « pro » et « chaleureux » (19/11 : chaleureux = style 1, affiché par défaut sur /m et /demo) (`agents/lib/demo-styles.ts`,

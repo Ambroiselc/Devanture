@@ -1,6 +1,6 @@
 // Version « moderne » des maquettes (19/11, essai demandé par Broise) : animations et galerie qui défile toute seule.
-// Pour l'instant activée seulement avec « ?moderne=1 » dans le lien (/m/<slug> et /demo/<id>), pour régler avant de
-// l'appliquer à toutes les maquettes. Ajoutée PAR-DESSUS la page rendue (une feuille de style + un petit script) :
+// Appliquée à toutes les maquettes (/m/<slug> et /demo/<id>) depuis le 19/11 (validée par Broise) ; « ?moderne=0 » montre
+// l'ancienne version. Jamais sur les sites définitifs des clients (Pedro). Ajoutée PAR-DESSUS la page rendue (une feuille de style + un petit script) :
 // les modèles eux-mêmes ne changent pas, et sans JavaScript la page reste exactement la même.
 // Respecte « réduire les animations » (prefers-reduced-motion) : alors rien ne bouge.
 // Lu par les routes du site : n'importe rien.
