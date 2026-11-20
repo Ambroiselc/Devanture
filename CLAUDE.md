@@ -52,7 +52,7 @@
   toutes les relances dues partent d'abord depuis le 5/11 (`PART_RELANCES` = 1 dans envoi.ts ; 0,3 avant, elles s'accumulaient),
   maquettes ouvertes d'abord, puis les plus anciennes ; les premiers e-mails prennent le reste des places.
   Plafond par vague (19/11, demande de Broise : « une douzaine par série, pas tout d'un coup ») : chaque canal envoie au plus
-  ceil(quota du jour / 4) par vague (≈ 14 avec 2 boîtes à 25), même après une vague sautée ; seul le rattrapage
+  ceil(quota du jour / 4) par vague (≈ 14 avec 2 boîtes à 25), envoyés en entier au premier passage de la vague (20/11), même après une vague sautée ; seul le rattrapage
   (à partir de 17 h 30, heure de Paris) envoie tout le reste du quota d'un coup.
   Vagues manquées (19/11 : GitHub a sauté les 2 premières) : cron toutes les 30 min (7,37 7-16 UTC) ; chaque vague a sa plage
   (`DEBUT_VAGUES` : 8 h 30, 10 h, 12 h 30, 15 h) et un passage n'envoie que ce qui manque au plafond de la vague en cours

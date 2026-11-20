@@ -406,7 +406,6 @@ async function main() {
     }
 
     // Part de cette vague pour chaque canal ; en essai, au plus « essai » e-mails en tout.
-    const vaguesRestantes = Math.max(1, VAGUES_PAR_JOUR - vagueDuMoment(heure));
     let budgetEssai = essai || Infinity;
     for (const c of canaux) {
       const reste = Math.max(0, c.quota - c.aujourdhui);
@@ -415,7 +414,10 @@ async function main() {
       // (à partir de 17 h 30) : lui envoie tout ce qui reste du quota, d'un coup.
       const rattrapage = heure >= 17.5;
       const plafondVague = rattrapage ? Infinity : Math.max(0, Math.ceil(c.quota / VAGUES_PAR_JOUR) - c.cetteVague);
-      c.part = Math.min(essai ? reste : Math.min(Math.ceil(reste / vaguesRestantes), plafondVague), budgetEssai);
+      // 20/11 (Broise : « une seule série par vague ») : la vague part en entier au premier passage (plafond de la vague,
+      // dans la limite du quota restant). Avant, ceil(reste / vagues restantes) donnait 6 au lieu de 7 par boîte, et le
+      // passage suivant envoyait les 2 manquants une demi-heure plus tard. Les passages en plus ne servent qu'en secours.
+      c.part = Math.min(essai ? reste : Math.min(reste, plafondVague), budgetEssai);
       budgetEssai -= c.part;
     }
     // Ordre d'envoi : on alterne les canaux (boîte 1, boîte 2, …, boîte 1, …).
