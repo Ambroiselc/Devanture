@@ -13,8 +13,8 @@
 name: Inès — boîte mail
 
 on:
-  schedule:
-    - cron: "23 7-19/2 * * *"
+  # 20/11 : plus de créneau programmé GitHub (il les lançait avec des heures de retard ou pas du tout).
+  # Lancé à l'heure par le Worker Cloudflare « devanture-reveil » (workers/reveil/src/index.ts) : 23 7-19/2 * * * (UTC).
   workflow_dispatch:
   # 5/11 : relancer Inès tout de suite en modifiant tests/ines.txt.
   push:

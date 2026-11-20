@@ -10,8 +10,8 @@
 name: Coco — supervision
 
 on:
-  schedule:
-    - cron: "13 17 * * *"
+  # 20/11 : plus de créneau programmé GitHub (il les lançait avec des heures de retard ou pas du tout).
+  # Lancé à l'heure par le Worker Cloudflare « devanture-reveil » (workers/reveil/src/index.ts) : 13 17 * * * (UTC).
   workflow_dispatch:
     inputs:
       relire:

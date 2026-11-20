@@ -12,11 +12,8 @@
 name: Valérie — envoi des e-mails
 
 on:
-  schedule:
-    # 19/11 : GitHub saute parfois un créneau (2 vagues manquées le matin du 19/11). Passage toutes les 30 min en
-    # journée : chaque passage n'envoie que ce qui manque à la vague en cours (agents/envoi.ts, DEBUT_VAGUES), donc
-    # les passages en plus ne font rien quand la vague est déjà partie.
-    - cron: "7,37 7-16 * * 1-5"
+  # 20/11 : plus de créneau programmé GitHub (il les lançait avec des heures de retard ou pas du tout).
+  # Lancé à l'heure par le Worker Cloudflare « devanture-reveil » (workers/reveil/src/index.ts) : 7,37 7-16 * * 1-5 (UTC).
   workflow_dispatch:
     inputs:
       copie_vers:

@@ -11,8 +11,8 @@
 name: Sauvegarde Supabase
 
 on:
-  schedule:
-    - cron: "17 2 * * 1" # lundi 02:17 UTC
+  # 20/11 : plus de créneau programmé GitHub (il les lançait avec des heures de retard ou pas du tout).
+  # Lancé à l'heure par le Worker Cloudflare « devanture-reveil » (workers/reveil/src/index.ts) : 17 2 * * 1 (UTC).
   workflow_dispatch:
 
 permissions:

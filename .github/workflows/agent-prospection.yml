@@ -16,9 +16,8 @@
 name: Loïc — agent de prospection
 
 on:
-  schedule:
-    # 2 vagues par jour, 7 jours sur 7 : 06:17 et 12:17 UTC (8 h 17 et 14 h 17 l'été, 7 h 17 et 13 h 17 l'hiver à Paris)
-    - cron: "17 6,12 * * *"
+  # 20/11 : plus de créneau programmé GitHub (il les lançait avec des heures de retard ou pas du tout).
+  # Lancé à l'heure par le Worker Cloudflare « devanture-reveil » (workers/reveil/src/index.ts) : 17 6,12 * * * (UTC).
   workflow_dispatch:
     inputs:
       metier:
@@ -36,6 +35,10 @@ on:
         default: false
       rge:
         description: "Méthode « RGE d'abord » : artisans de la liste officielle RGE (ADEME), qui ont déjà un e-mail. Gratuit, ignore métier et commune."
+        type: boolean
+        default: false
+      auto:
+        description: "Vague automatique (RGE d'abord, puis Google) : c'est ce que lance le réveil Cloudflare deux fois par jour"
         type: boolean
         default: false
       renoter:
@@ -85,7 +88,7 @@ jobs:
           METIER: ${{ inputs.metier || 'plombier' }}
           LIMITE: ${{ inputs.limite }}
           COMMUNE: ${{ inputs.commune || '59599' }}
-          AUTO: ${{ github.event_name == 'schedule' && '--auto' || (inputs.renoter && '--renoter' || (inputs.rge && '--rge' || (inputs.tournee && '--tournee' || ''))) }}
+          AUTO: ${{ (github.event_name == 'schedule' || inputs.auto) && '--auto' || (inputs.renoter && '--renoter' || (inputs.rge && '--rge' || (inputs.tournee && '--tournee' || ''))) }}
         run: node agents/prospection.ts --metier "$METIER" --limite "$LIMITE" --commune "$COMMUNE" $AUTO
 
       # Chaîne automatique (26/10) : dès que Loïc a qualifié des prospects, Sid leur prépare une maquette,
