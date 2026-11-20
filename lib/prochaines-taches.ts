@@ -1,8 +1,7 @@
 // « Prochaines tâches » : ce que les agents vont faire tout seuls, et quand.
-// Les horaires viennent des « cron » des workflows GitHub Actions (.github/workflows/*.yml, en heure UTC).
-// Si on change un horaire dans un workflow, il faut le changer ici aussi.
-// 4/11 : GitHub lance les tâches planifiées en retard (30 à 65 min en général). `retards` = retard habituel de chaque
-// créneau (médiane des passages du 29/10 au 3/11) : l'heure affichée est l'heure RÉELLE attendue.
+// 20/11 : les agents ne sont plus lancés par les « cron » de GitHub (en retard ou sautés) mais par le Worker Cloudflare
+// « devanture-reveil » (workers/reveil/src/index.ts, tableau TACHES, heures UTC), à la minute près.
+// Si on change un horaire là-bas, il faut le changer ici aussi. Il reste ~1 à 2 min le temps que GitHub démarre (RETARD_MIN).
 // Une tâche reste affichée tant que GitHub ne l'a pas vraiment lancée (dernier passage du workflow, lu par
 // getPassagesGithub) : « en retard » si elle tarde, « en cours » pendant qu'elle tourne, puis le créneau suivant.
 import type { AgentName, AgentSettings } from "@/lib/types";
@@ -15,11 +14,9 @@ interface Planning {
   description: string;
   /** Rythme lisible par un humain. */
   rythme: string;
-  /** Heures UTC, minute, et jours de la semaine (0 = dimanche) ; vide = tous les jours. */
+  /** Heures UTC, minutes de chaque heure, et jours de la semaine (0 = dimanche) ; vide = tous les jours. */
   heuresUtc: number[];
-  minute: number;
-  /** Retard habituel de GitHub pour chaque heure de `heuresUtc`, en minutes. */
-  retards: number[];
+  minutes: number[];
   jours: number[];
   /** Fichier du workflow (.github/workflows/…), pour savoir s'il est vraiment passé. */
   workflow: string;
@@ -30,37 +27,37 @@ const PLANNINGS: Planning[] = [
   {
     cle: "loic", agent: "prospection", titre: "Loïc : prospection",
     description: "Trouve et note de nouveaux artisans, puis Sid prépare leurs maquettes et Valérie rédige leurs e-mails.",
-    rythme: "2 fois par jour, 7 jours sur 7", heuresUtc: [6, 12], minute: 17, retards: [50, 45], jours: [], workflow: "agent-prospection.yml", href: "/loic",
+    rythme: "2 fois par jour, 7 jours sur 7", heuresUtc: [6, 12], minutes: [17], jours: [], workflow: "agent-prospection.yml", href: "/loic",
   },
   {
     cle: "envoi", agent: "email", titre: "Valérie : envoi des e-mails",
     description: "Coco relit d'abord les e-mails à valider, puis Valérie envoie les validés dans la limite du quota du jour.",
-    rythme: "4 vagues par jour ouvré (passage de secours toutes les 30 min si GitHub en saute une), puis un rattrapage en fin d'après-midi", heuresUtc: [7, 9, 12, 14, 16], minute: 37, retards: [50, 50, 60, 45, 45], jours: [1, 2, 3, 4, 5], workflow: "agent-envoi.yml", href: "/valerie",
+    rythme: "un passage toutes les 30 min en jour ouvré (4 vagues : 8 h 30, 10 h, 12 h 30, 15 h, puis rattrapage à 17 h 30)", heuresUtc: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16], minutes: [7, 37], jours: [1, 2, 3, 4, 5], workflow: "agent-envoi.yml", href: "/valerie",
   },
   {
     cle: "ines", agent: "boite", titre: "Inès : boîte mail",
     description: "Trie les réponses reçues et répond aux messages simples (elle passe aussi à chaque e-mail reçu).",
-    rythme: "toutes les 2 heures en journée", heuresUtc: [7, 9, 11, 13, 15, 17, 19], minute: 23, retards: [55, 40, 35, 50, 40, 35, 35], jours: [], workflow: "agent-boite.yml", href: "/ines",
+    rythme: "toutes les 2 heures en journée", heuresUtc: [7, 9, 11, 13, 15, 17, 19], minutes: [23], jours: [], workflow: "agent-boite.yml", href: "/ines",
   },
   {
     cle: "pedro", agent: "site_production", titre: "Pedro : sites des clients",
     description: "Prépare le site des clients dont les photos et infos sont arrivées ; l'aperçu attend ta validation.",
-    rythme: "chaque jour ouvré, le matin", heuresUtc: [8], minute: 47, retards: [50], jours: [1, 2, 3, 4, 5], workflow: "agent-site.yml", href: "/pedro",
+    rythme: "chaque jour ouvré, le matin", heuresUtc: [8], minutes: [47], jours: [1, 2, 3, 4, 5], workflow: "agent-site.yml", href: "/pedro",
   },
   {
     cle: "coco", agent: "coco", titre: "Coco : bilan du jour",
     description: "Fait le point de la journée et signale ce qui demande ton attention (sa relecture des e-mails a lieu à chaque vague d'envoi).",
-    rythme: "chaque soir, 7 jours sur 7", heuresUtc: [17], minute: 13, retards: [35], jours: [], workflow: "agent-coco.yml", href: "/coco",
+    rythme: "chaque soir, 7 jours sur 7", heuresUtc: [17], minutes: [13], jours: [], workflow: "agent-coco.yml", href: "/coco",
   },
   {
     cle: "spam", agent: null, titre: "Contrôle anti-spam",
     description: "Vérifie que les e-mails ne tombent pas en spam. N'envoie rien.",
-    rythme: "chaque lundi", heuresUtc: [6], minute: 41, retards: [75], jours: [1], workflow: "controle-spam.yml",
+    rythme: "chaque lundi", heuresUtc: [6], minutes: [41], jours: [1], workflow: "controle-spam.yml",
   },
   {
     cle: "sauvegarde", agent: null, titre: "Sauvegarde de la base",
     description: "Copie de sécurité de toutes les données.",
-    rythme: "chaque lundi, la nuit", heuresUtc: [2], minute: 17, retards: [40], jours: [1], workflow: "sauvegarde-supabase.yml",
+    rythme: "chaque lundi, la nuit", heuresUtc: [2], minutes: [17], jours: [1], workflow: "sauvegarde-supabase.yml",
   },
 ];
 
@@ -96,16 +93,19 @@ export interface Passage {
 
 interface Creneau { cron: Date; attendu: Date }
 
+/** Temps pour que GitHub démarre un workflow lancé par le réveil Cloudflare (minutes). */
+const RETARD_MIN = 2;
+
 /** Les créneaux d'un planning, du plus ancien au plus récent, de `j0` jours avant à `j1` jours après aujourd'hui. */
 function creneaux(p: Planning, maintenant: Date, j0: number, j1: number): Creneau[] {
   const liste: Creneau[] = [];
   for (let j = -j0; j <= j1; j++) {
     const jour = new Date(Date.UTC(maintenant.getUTCFullYear(), maintenant.getUTCMonth(), maintenant.getUTCDate() + j));
     if (p.jours.length && !p.jours.includes(jour.getUTCDay())) continue;
-    p.heuresUtc.forEach((h, i) => {
-      const cron = new Date(Date.UTC(jour.getUTCFullYear(), jour.getUTCMonth(), jour.getUTCDate(), h, p.minute));
-      liste.push({ cron, attendu: new Date(cron.getTime() + (p.retards[i] ?? 45) * 60_000) });
-    });
+    for (const h of p.heuresUtc) for (const m of p.minutes) {
+      const cron = new Date(Date.UTC(jour.getUTCFullYear(), jour.getUTCMonth(), jour.getUTCDate(), h, m));
+      liste.push({ cron, attendu: new Date(cron.getTime() + RETARD_MIN * 60_000) });
+    }
   }
   return liste;
 }

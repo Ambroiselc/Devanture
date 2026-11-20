@@ -62,7 +62,7 @@
   GitHub (secret Worker GITHUB_TOKEN = secret GitHub CLE_GITHUB_ACTIONS, posé par le workflow `reveil.yml`).
   20/11 (bilan de Coco à 1 h du matin, Loïc 8 h en retard, Inès 2 passages sur 7 ; feu vert de Broise) : le Worker
   réveille TOUS les agents programmés. Cron Cloudflare chaque minute ; tableau `TACHES` dans workers/reveil/src/index.ts
-  (horaires UTC = anciens cron, à garder alignés avec lib/prochaines-taches.ts). Plus AUCUN `schedule:` dans les workflows
+  (horaires UTC = anciens cron, à garder alignés avec lib/prochaines-taches.ts : `heuresUtc` × `minutes`, retard fixe de 2 min). Plus AUCUN `schedule:` dans les workflows
   (évite les doublons en retard) ; Loïc reçoit l'input `auto: true` (= ancien `--auto` du créneau programmé).
   Visites des maquettes (30/10) : petit script dans `/m/<slug>` → POST `/m/<slug>` après 1,5 s visibles (4 s jusqu'au 5/11 ; ignoré si navigator.webdriver) → `public.maquette_vue`
   (`websites.vues`, `premiere_vue`, `derniere_vue`, une visite par 30 min ; sans cookie ni IP). Affiché sur la page Valérie.
