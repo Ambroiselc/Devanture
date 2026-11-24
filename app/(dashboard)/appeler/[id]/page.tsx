@@ -57,6 +57,11 @@ function jour(iso: string | null | undefined): string {
   return "le " + new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "long" }).format(new Date(iso));
 }
 
+/** « de Lille », « d'Aire-sur-la-Lys ». */
+function de(ville: string): string {
+  return /^[aeiouyhâéèêîôAEIOUYHÂÉÈÊÎÔ]/.test(ville) ? `d'${ville}` : `de ${ville}`;
+}
+
 function liste(mots: string[]): string {
   return mots.length <= 1 ? mots.join("") : `${mots.slice(0, -1).join(", ")} et ${mots[mots.length - 1]}`;
 }
@@ -88,8 +93,8 @@ function Script({ a }: { a: AAppeler }) {
           <p className="text-sm font-medium">S&apos;il l&apos;a regardée :</p>
           <Dire aide="Ouvre sa maquette dans un onglet pendant l'appel (lien en haut de page) pour parler de la même chose que lui.">
             {services.length
-              ? <>J&apos;ai mis en avant {liste(services)}{a.ville ? <>, et votre zone autour de {a.ville}{autres.length ? <> : {liste(autres)}</> : null}</> : null}. </>
-              : <>J&apos;ai mis en avant vos prestations de {metier}{a.ville ? <> autour de {a.ville}</> : null}. </>}
+              ? <>J&apos;ai mis en avant {liste(services)}{a.ville ? <>, et votre zone autour {de(a.ville)}{autres.length ? <> : {liste(autres)}</> : null}</> : null}. </>
+              : <>J&apos;ai mis en avant vos prestations de {metier}{a.ville ? <> autour {de(a.ville)}</> : null}. </>}
             Les photos sont des photos d&apos;illustration : sur le vrai site, ce seraient les vôtres. Il y a des choses que vous changeriez ?
           </Dire>
           <p className="text-sm font-medium">S&apos;il ne l&apos;a pas vue (ou ne s&apos;en souvient pas) :</p>
