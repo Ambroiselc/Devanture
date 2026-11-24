@@ -8,8 +8,9 @@
 //   • formule « 0 € de départ » : l'abonnement à la COMMANDE, le premier mois compte dans les 12 (code LANCEMENT possible).
 
 // Offre de lancement (24/11, décision de Broise) : présentée aux artisans comme un tarif « jusqu'au 31 décembre »,
-// en échange d'un avis Google et du droit de montrer le site en exemple. On ne dit JAMAIS « pour mes 5 premiers
-// clients » (ça dit qu'il n'y en a aucun). En interne, la limite reste de 5 clients (code LANCEMENT limité à 5).
+// en échange du droit de montrer le site en exemple. On ne dit JAMAIS « pour mes 5 premiers
+// clients » (ça dit qu'il n'y en a aucun). JAMAIS d'avis Google en contrepartie d'une réduction : interdit par Google
+// (avis supprimés, fiche suspendue) et pratique commerciale trompeuse en droit français. L'avis se demande à part, sans rien offrir. En interne, la limite reste de 5 clients (code LANCEMENT limité à 5).
 
 /** Interrupteur manuel : passer à false après le 5e client. */
 const OFFRE_LANCEMENT_ACTIVE = true;
@@ -24,7 +25,7 @@ export const OFFRE_LANCEMENT_OUVERTE =
 
 /** La contrepartie demandée, en une phrase (script d'appel, Inès). */
 export const OFFRE_LANCEMENT_CONTREPARTIE =
-  "en échange, je peux montrer votre site en exemple, et vous me laissez un avis Google si vous êtes content";
+  "en échange, vous m'autorisez à montrer votre site en exemple";
 
 export interface LienPaiement {
   cle: string;
@@ -50,7 +51,8 @@ export const LIENS_PAIEMENT: LienPaiement[] = [
 /** Ligne « offre de lancement » du message système d'Inès (vide si l'offre est fermée). */
 export function texteLancementInes(): string {
   if (!OFFRE_LANCEMENT_OUVERTE) return "- (Plus d'offre de lancement : ne propose aucune réduction.)";
-  return `- Tarif de lancement jusqu'au ${OFFRE_LANCEMENT_JUSQU_AU} : création à moitié prix (195 € au lieu de 390 €, 345 € au lieu de 690 €), ou les 3 premiers mois à moitié prix avec 0 € de départ. En échange : Ambroise peut montrer le site en exemple, et l'artisan laisse un avis Google s'il est content. Présente-le TOUJOURS ainsi (une date limite et un échange), JAMAIS comme une offre « pour les premiers clients » ou « les 5 premiers ».
+  return `- Tarif de lancement jusqu'au ${OFFRE_LANCEMENT_JUSQU_AU} : création à moitié prix (195 € au lieu de 390 €, 345 € au lieu de 690 €), ou les 3 premiers mois à moitié prix avec 0 € de départ. En échange, l'artisan autorise Ambroise à montrer son site en exemple (c'est la SEULE contrepartie). Présente-le TOUJOURS ainsi (une date limite et un échange), JAMAIS comme une offre « pour les premiers clients » ou « les 5 premiers ».
+- Ne lie JAMAIS un avis Google à une réduction, un cadeau ou un avantage (interdit par Google et par la loi). Un avis se demande seulement à part, une fois le site en ligne, sans rien offrir : « si vous êtes content, un avis m'aiderait beaucoup ».
 - Si l'artisan demande des références ou d'autres clients : ne mens jamais et n'invente aucun client. Dis simplement qu'Ambroise lance Devanture en ce moment, que c'est la raison du tarif de lancement, et que la maquette qu'il a reçue montre déjà ce que donnera son site.`;
 }
 

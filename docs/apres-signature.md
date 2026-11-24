@@ -22,7 +22,7 @@ sur un lien d'aperçu. Si un client abandonne en route, aucun domaine n'a été 
 | 6 | **Validé par le client** | Broise | Acheter le domaine chez OVH **au nom du client** (voir plus bas), le brancher sur Cloudflare, noter le domaine sur la fiche. |
 | 7 | **Domaine acheté** | Claude | Je publie le site et le relie au domaine. Le client clique sur l'e-mail de vérification de l'AFNIC. |
 | 8 | **En ligne** | Broise | Valider la réponse d'Inès avec le lien d'abonnement correspondant à la formule. Avec 0 € de départ, l'abonnement tourne déjà : rien à envoyer. La date de mise en ligne se remplit seule. |
-| 9 | **Abonné** | Broise | Fini. Modifications à la demande (1 ou 2 par mois selon la formule). Demander un avis Google au bout de 2 semaines. |
+| 9 | **Abonné** | Broise | Fini. Modifications à la demande (1 ou 2 par mois selon la formule). Demander un avis Google au bout de 2 semaines, sans rien offrir en échange (interdit par Google). |
 
 Sorties : **Abandonné** (le client renonce avant la mise en ligne) et **Résilié** (fin d'abonnement : transfert gratuit
 du domaine sur demande, une fois les sommes dues réglées, article 9 des CGV).

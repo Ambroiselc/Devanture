@@ -121,7 +121,7 @@ function Script({ a }: { a: AAppeler }) {
               : <>C&apos;est 390 € de création, </>}
             puis 19 € par mois, sans engagement. Et si vous préférez ne rien avancer, c&apos;est 0 € de départ et 55 € par mois pendant un an.
             Le nom de domaine est à votre nom.
-            {lancement ? <> En échange du tarif de lancement, je vous demande juste deux choses : que je puisse montrer votre site en exemple, et un avis Google si vous êtes content.</> : null}
+            {lancement ? <> En échange du tarif de lancement, je vous demande juste de pouvoir montrer votre site en exemple.</> : null}
           </Dire>
         </Etape>
 

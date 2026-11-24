@@ -27,7 +27,7 @@ export const etapes: Record<EtapeClient, Etape> = {
   en_ligne: { label: "En ligne", tone: "success", qui: "Broise",
     faire: "Formule avec création : valider la réponse d'Inès qui contient le lien d'abonnement (19 € ou 39 €/mois). Avec 0 € de départ, l'abonnement tourne déjà. Penser à la fiche Google du client." },
   abonne: { label: "Abonné", tone: "success", qui: "Broise",
-    faire: "Rien d'autre : modifications à la demande (1 ou 2 par mois selon la formule). Demander un avis Google au bout de 2 semaines." },
+    faire: "Rien d'autre : modifications à la demande (1 ou 2 par mois selon la formule). Demander un avis Google au bout de 2 semaines, sans rien offrir en échange (interdit par Google)." },
   abandonne: { label: "Abandonné", tone: "muted", qui: "Broise",
     faire: "Le client a renoncé avant la mise en ligne. Rien n'a été acheté à son nom si le domaine attendait la validation." },
   resilie: { label: "Résilié", tone: "muted", qui: "Broise",
