@@ -7,8 +7,24 @@
 //   • formule sans engagement : la CRÉATION à la commande, puis l'ABONNEMENT à la mise en ligne du site ;
 //   • formule « 0 € de départ » : l'abonnement à la COMMANDE, le premier mois compte dans les 12 (code LANCEMENT possible).
 
-/** Offre de lancement (5 premiers clients) encore ouverte ? À passer à false après le 5e client. */
-export const OFFRE_LANCEMENT_OUVERTE = true;
+// Offre de lancement (24/11, décision de Broise) : présentée aux artisans comme un tarif « jusqu'au 31 décembre »,
+// en échange d'un avis Google et du droit de montrer le site en exemple. On ne dit JAMAIS « pour mes 5 premiers
+// clients » (ça dit qu'il n'y en a aucun). En interne, la limite reste de 5 clients (code LANCEMENT limité à 5).
+
+/** Interrupteur manuel : passer à false après le 5e client. */
+const OFFRE_LANCEMENT_ACTIVE = true;
+/** Dernier jour de l'offre (inclus), heure de Paris. Pour prolonger : changer les DEUX lignes. */
+export const OFFRE_LANCEMENT_FIN = "2026-12-31";
+export const OFFRE_LANCEMENT_JUSQU_AU = "31 décembre";
+
+/** Offre de lancement encore ouverte ? (interrupteur ET date pas dépassée) */
+export const OFFRE_LANCEMENT_OUVERTE =
+  OFFRE_LANCEMENT_ACTIVE &&
+  new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" }) <= OFFRE_LANCEMENT_FIN;
+
+/** La contrepartie demandée, en une phrase (script d'appel, Inès). */
+export const OFFRE_LANCEMENT_CONTREPARTIE =
+  "en échange, je peux montrer votre site en exemple, et vous me laissez un avis Google si vous êtes content";
 
 export interface LienPaiement {
   cle: string;
@@ -31,16 +47,23 @@ export const LIENS_PAIEMENT: LienPaiement[] = [
   { cle: "pro_sans_frais", formule: "Pro", titre: "0 € de départ (12 mois)", prix: "99 €/mois", quand: "signature", lancement: false, url: "https://buy.stripe.com/bJe4gzafZgDogY2dKLbo407" },
 ];
 
+/** Ligne « offre de lancement » du message système d'Inès (vide si l'offre est fermée). */
+export function texteLancementInes(): string {
+  if (!OFFRE_LANCEMENT_OUVERTE) return "- (Plus d'offre de lancement : ne propose aucune réduction.)";
+  return `- Tarif de lancement jusqu'au ${OFFRE_LANCEMENT_JUSQU_AU} : création à moitié prix (195 € au lieu de 390 €, 345 € au lieu de 690 €), ou les 3 premiers mois à moitié prix avec 0 € de départ. En échange : Ambroise peut montrer le site en exemple, et l'artisan laisse un avis Google s'il est content. Présente-le TOUJOURS ainsi (une date limite et un échange), JAMAIS comme une offre « pour les premiers clients » ou « les 5 premiers ».
+- Si l'artisan demande des références ou d'autres clients : ne mens jamais et n'invente aucun client. Dis simplement qu'Ambroise lance Devanture en ce moment, que c'est la raison du tarif de lancement, et que la maquette qu'il a reçue montre déjà ce que donnera son site.`;
+}
+
 /** Texte pour le message système d'Inès : quel lien, et quand. */
 export function liensPourInes(): string {
   const l = (cle: string) => LIENS_PAIEMENT.find((x) => x.cle === cle)!.url;
   return [
     "Liens de paiement (à n'utiliser que si l'artisan a CLAIREMENT choisi sa formule et veut commander ; la réponse sera relue par Ambroise) :",
     OFFRE_LANCEMENT_OUVERTE
-      ? `- Essentiel sans engagement, création à payer maintenant (offre de lancement, 195 € au lieu de 390 €) : ${l("essentiel_creation_lancement")}`
+      ? `- Essentiel sans engagement, création à payer maintenant (tarif de lancement jusqu'au ${OFFRE_LANCEMENT_JUSQU_AU}, 195 € au lieu de 390 €) : ${l("essentiel_creation_lancement")}`
       : `- Essentiel sans engagement, création à payer maintenant (390 €) : ${l("essentiel_creation")}`,
     OFFRE_LANCEMENT_OUVERTE
-      ? `- Pro sans engagement, création à payer maintenant (offre de lancement, 345 € au lieu de 690 €) : ${l("pro_creation_lancement")}`
+      ? `- Pro sans engagement, création à payer maintenant (tarif de lancement jusqu'au ${OFFRE_LANCEMENT_JUSQU_AU}, 345 € au lieu de 690 €) : ${l("pro_creation_lancement")}`
       : `- Pro sans engagement, création à payer maintenant (690 €) : ${l("pro_creation")}`,
     `- Essentiel « 0 € de départ », premier mois à payer maintenant (55 €/mois sur 12 mois, ce premier mois compte dans les 12) : ${l("essentiel_sans_frais")}`,
     `- Pro « 0 € de départ », premier mois à payer maintenant (99 €/mois sur 12 mois, ce premier mois compte dans les 12) : ${l("pro_sans_frais")}`,

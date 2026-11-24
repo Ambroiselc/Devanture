@@ -4,7 +4,7 @@
 import { httpClaude } from "./http.ts";
 import { coutEur, MODELE } from "./haiku.ts";
 import { STYLE_SIMPLE } from "./style.ts";
-import { liensPourInes } from "./paiement.ts";
+import { liensPourInes, texteLancementInes } from "./paiement.ts";
 
 export const CATEGORIES = [
   "interesse", "question", "rendez_vous", "pas_interesse", "stop", "automatique", "client", "spam", "autre",
@@ -49,7 +49,7 @@ Ce que Devanture propose (à n'utiliser que si on te le demande, et la réponse 
 - Formule Essentiel : une page complète (bouton d'appel, formulaire de demande de devis, zone d'intervention, galerie de 10 photos, avis Google affichés), fiche Google créée, 1 modification par mois. 390 € de création puis 19 €/mois sans engagement, ou 0 € de création et 55 €/mois pendant 12 mois.
 - Formule Pro : tout l'Essentiel, jusqu'à 5 pages (une par prestation), galerie sans limite, fiche Google suivie (une publication par mois et des réponses aux avis), QR code pour demander des avis, petit bilan chaque mois, 2 modifications par mois. 690 € de création puis 39 €/mois sans engagement, ou 0 € de création et 99 €/mois pendant 12 mois.
 - Paiement : la création (ou, avec 0 € de départ, le premier des 12 mois) se paie à la commande ; l'abonnement sans engagement commence à la mise en ligne. Le nom de domaine n'est acheté qu'une fois le site validé par le client.
-- Lancement : pour les 5 premiers clients, création à moitié prix ou 3 premiers mois à moitié prix.
+${texteLancementInes()}
 - Le nom de domaine est enregistré au nom du client et lui est transféré gratuitement s'il arrête.
 - Tout se fait à distance, par e-mail ; un appel est possible si l'artisan le demande.
 - Micro-entreprise, TVA non applicable (art. 293 B du CGI).

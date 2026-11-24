@@ -7,7 +7,7 @@ import Lien from "@/components/lien";
 import { Badge, PageHeader, Panel } from "@/components/ui";
 import { VisitesMaquette } from "@/components/visites-maquette";
 import { noterAppel } from "@/app/appel-actions";
-import { OFFRE_LANCEMENT_OUVERTE } from "@/agents/lib/paiement";
+import { OFFRE_LANCEMENT_JUSQU_AU, OFFRE_LANCEMENT_OUVERTE } from "@/agents/lib/paiement";
 import { aAppeler, lignesAppel, telAffiche, telLien, type AAppeler } from "@/lib/a-appeler";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -117,10 +117,11 @@ function Script({ a }: { a: AAppeler }) {
             Le plus simple, c&apos;est la formule Essentiel : votre site complet avec un bouton d&apos;appel, un formulaire de demande de devis,
             vos photos de chantiers, et je vous crée votre fiche Google.{" "}
             {lancement
-              ? <>Comme vous seriez parmi mes cinq premiers clients, la création est à 195 € au lieu de 390, </>
+              ? <>En ce moment j&apos;ai un tarif de lancement, jusqu&apos;au {OFFRE_LANCEMENT_JUSQU_AU} : la création est à 195 € au lieu de 390, </>
               : <>C&apos;est 390 € de création, </>}
             puis 19 € par mois, sans engagement. Et si vous préférez ne rien avancer, c&apos;est 0 € de départ et 55 € par mois pendant un an.
             Le nom de domaine est à votre nom.
+            {lancement ? <> En échange du tarif de lancement, je vous demande juste deux choses : que je puisse montrer votre site en exemple, et un avis Google si vous êtes content.</> : null}
           </Dire>
         </Etape>
 
@@ -150,8 +151,15 @@ function Objections({ a }: { a: AAppeler }) {
         </Objection>
         <Objection q="C'est combien ?">
           <Dire aide="Réponds franchement et tout de suite : esquiver le prix renforce la méfiance.">
-            Formule Essentiel : {OFFRE_LANCEMENT_OUVERTE ? "195 € de création au lieu de 390 pour mes premiers clients" : "390 € de création"}, puis 19 € par mois sans engagement.
+            Formule Essentiel : {OFFRE_LANCEMENT_OUVERTE ? `195 € de création au lieu de 390, c'est mon tarif de lancement jusqu'au ${OFFRE_LANCEMENT_JUSQU_AU}` : "390 € de création"}, puis 19 € par mois sans engagement.
             Ou 0 € de départ et 55 € par mois pendant un an.
+          </Dire>
+        </Objection>
+        <Objection q="Vous avez d'autres clients ? Je peux voir des sites que vous avez faits ?">
+          <Dire aide="Ne mens jamais et n'invente aucun client : dis-le avec assurance, sans t'excuser. Ta preuve, c'est sa maquette : elle est déjà faite pour lui.">
+            Je lance Devanture en ce moment{OFFRE_LANCEMENT_OUVERTE ? <>, c&apos;est d&apos;ailleurs pour ça que j&apos;ai ce tarif de lancement jusqu&apos;au {OFFRE_LANCEMENT_JUSQU_AU}</> : null}.
+            Mais le mieux, c&apos;est que vous avez déjà vu le travail : la maquette que je vous ai envoyée, je l&apos;ai faite pour vous.
+            Et le site n&apos;est mis en ligne qu&apos;une fois que vous l&apos;avez validé.
           </Dire>
         </Objection>
         <Objection q="J'ai assez de travail, pas besoin">

@@ -1,6 +1,6 @@
 // Carte « Liens de paiement » : les liens Stripe de production, rangés par moment (signature / mise en ligne),
 // avec un bouton pour copier chacun. Affichée sur la page d'Inès et dans la boîte mail (à côté d'une réponse).
-import { LIENS_PAIEMENT, OFFRE_LANCEMENT_OUVERTE, type LienPaiement } from "@/agents/lib/paiement";
+import { LIENS_PAIEMENT, OFFRE_LANCEMENT_JUSQU_AU, OFFRE_LANCEMENT_OUVERTE, type LienPaiement } from "@/agents/lib/paiement";
 import { Copier } from "@/components/copier";
 import { Panel } from "@/components/ui";
 
@@ -9,7 +9,7 @@ function Ligne({ l }: { l: LienPaiement }) {
     <li className="flex items-center justify-between gap-3 px-4 py-2 sm:px-5">
       <span className="min-w-0">
         <span className="font-medium">{l.formule}</span> · {l.titre}
-        <span className="tabular block text-xs text-muted">{l.prix}{l.lancement ? " (5 premiers clients)" : ""}</span>
+        <span className="tabular block text-xs text-muted">{l.prix}{l.lancement ? ` (lancement, jusqu'au ${OFFRE_LANCEMENT_JUSQU_AU})` : ""}</span>
       </span>
       <span className="flex items-center gap-2">
         <a href={l.url} target="_blank" rel="noreferrer" className="text-xs font-medium text-shop hover:underline">Ouvrir</a>
