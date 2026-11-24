@@ -49,23 +49,19 @@ export default async function AppelerPage() {
       erreur = e instanceof Error ? e.message : String(e);
     }
   }
-  const aFaire = liste.filter((a) => !a.dernierAppel && a.statut !== "refuse");
-  const chauds = aFaire.filter((a) => a.chaud);
-  const tiedes = aFaire.filter((a) => !a.chaud);
-  const faits = liste.filter((a) => a.dernierAppel || a.statut === "refuse");
+  // 24/11 (demande de Broise) : seulement ceux qu'on peut appeler (avec un numéro), et seulement les « chauds ».
+  const appelables = liste.filter((a) => telLien(a.telephone));
+  const chauds = appelables.filter((a) => a.chaud && !a.dernierAppel && a.statut !== "refuse");
+  const faits = appelables.filter((a) => a.dernierAppel || a.statut === "refuse");
 
   return (
     <div className="space-y-6">
       <PageHeader title="À appeler"
-        description="Les artisans qui ont ouvert leur maquette. Les « chauds » (ouverte 2 fois ou plus, ou 45 s au total) d'abord. Chaque fiche a un script d'appel préparé pour l'artisan." />
+        description="Les artisans qui ont ouvert leur maquette 2 fois ou plus, ou 45 s au total, et dont on a le numéro. Du plus intéressé au moins intéressé : appelle-les dans l'ordre. Chaque fiche a un script d'appel préparé pour l'artisan." />
       {erreur && <p className="rounded-lg border border-line bg-surface px-4 py-3 text-sm">Lecture impossible : {erreur}</p>}
-      <Panel title={`À appeler en premier (${chauds.length})`}>
+      <Panel title={`À appeler, dans l'ordre (${chauds.length})`}>
         {chauds.length ? <ul className="divide-y divide-line">{chauds.map((a) => <Ligne key={a.prospectId} a={a} />)}</ul>
           : <EmptyState>Personne pour l&apos;instant.</EmptyState>}
-      </Panel>
-      <Panel title={`Ouverte une fois, rapidement (${tiedes.length})`}>
-        {tiedes.length ? <ul className="divide-y divide-line">{tiedes.map((a) => <Ligne key={a.prospectId} a={a} />)}</ul>
-          : <EmptyState>Personne.</EmptyState>}
       </Panel>
       {faits.length > 0 && (
         <Panel title={`Déjà appelés (${faits.length})`}>
