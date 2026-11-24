@@ -258,7 +258,7 @@
   e-mails (sauf nos domaines), téléphones, SIRET, liens /m/<slug>. Tout script agents/*.ts importe db.ts ou ce module.
   bilan.ts : colonnes sensibles affichées « • ». Le détail complet reste dans la base (journal des tâches du tableau de bord).
   Anciens lancements (avec noms) supprimés le 18/11.
-- À appeler (24/11, demande de Broise : 35 maquettes ouvertes, 0 réponse écrite) : page `/appeler` (menu après Prospects),
+- À appeler (24/11, demande de Broise : 35 maquettes ouvertes, 0 réponse écrite) : page `/appeler` (menu après Prospects ; seulement les artisans DÉJÀ relancés par e-mail),
   `lib/a-appeler.ts` : artisans qui ont ouvert leur maquette (hors clients et liste d'opposition), « chauds » = ouverte 2 fois
   ou 45 s au total, avec leur téléphone (`prospects.phone`, liste RGE). Fiche `/appeler/<id prospect>` : script d'appel
   personnalisé (nom, métier, prestations et zone de la maquette, site actuel, offre de `paiement.ts`), objections, répondeur,
