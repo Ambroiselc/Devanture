@@ -10,11 +10,11 @@ export interface VisiteMaquette {
 }
 
 /** Visites par maquette (les plus récentes d'abord), ou une table vide si la migration n'est pas encore appliquée. */
-export async function visitesDe(supabase: SupabaseClient, ids: string[]): Promise<Map<string, VisiteMaquette[]>> {
+export async function visitesDe(supabase: SupabaseClient, ids: string[], max = 200): Promise<Map<string, VisiteMaquette[]>> {
   const parSite = new Map<string, VisiteMaquette[]>();
   if (!ids.length) return parSite;
   const lire = (colonnes: string) => supabase.from("maquette_visites").select(colonnes)
-    .in("website_id", ids).order("debut", { ascending: false }).limit(200);
+    .in("website_id", ids).order("debut", { ascending: false }).limit(max);
   let { data, error } = await lire("website_id, debut, duree_s, appareil, systeme, navigateur, reseau, pays, ville");
   if (error) ({ data, error } = await lire("website_id, debut, duree_s, appareil")); // migration du 19/11 pas encore appliquée
   if (error) return parSite;
@@ -74,7 +74,7 @@ export async function detailsOuvertures(supabase: SupabaseClient, prospects: { i
   if (!prospects.length) return res;
   const [{ data }, fournisseurs] = await Promise.all([
     supabase.from("emails").select("id, prospect_id, sent_at, variant, relance_de, with_image").in("prospect_id", prospects.map((p) => p.id))
-      .not("sent_at", "is", null).order("sent_at", { ascending: true }).limit(200),
+      .not("sent_at", "is", null).order("sent_at", { ascending: true }).limit(500),
     Promise.all(prospects.map((p) => fournisseurMail(p.email))),
   ]);
   prospects.forEach((p, i) => {

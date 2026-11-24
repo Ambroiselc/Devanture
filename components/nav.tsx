@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 const links: { href: string; label: string; groupe?: string }[] = [
   { href: "/", label: "Vue d'ensemble" },
   { href: "/prospects", label: "Prospects" },
+  { href: "/appeler", label: "À appeler" },
   { href: "/clients", label: "Clients" },
   { href: "/boite", label: "Boîte mail" },
   { href: "/coco", label: "Coco", groupe: "Agents" },

@@ -25,6 +25,13 @@ d'attribution — contact@devanture.fr. Pas de DPO (non obligatoire à cette tai
 | **Information des personnes** | Chaque e-mail indique : qui écrit (Devanture, nom, adresse), pourquoi, d'où vient l'adresse, une réponse « STOP » pour ne plus être contacté, et un lien vers la page devanture-artisans.fr/donnees-personnelles (en place depuis le 27/10/2026). (Art. 14 RGPD : au plus tard lors du premier contact.) |
 | **Droit d'opposition** | Toute demande (« stop », « non merci », « ne plus m'écrire ») est ajoutée le jour même à la **liste d'opposition** du tableau de bord. La base de données bloque ensuite automatiquement tout e-mail vers cette adresse. |
 
+### Appels aux artisans qui ont ouvert leur maquette — depuis le 24/11/2026
+- Page « À appeler » du tableau de bord (réservée à Broise) : les artisans déjà contactés par e-mail qui ont ouvert
+  leur maquette, avec le **téléphone professionnel public** déjà collecté (liste RGE de l'ADEME). Appel B2B, en rapport
+  avec l'activité de l'entreprise (Bloctel ne concerne que les particuliers).
+- Le résultat de l'appel (intéressé, à rappeler, messagerie, pas intéressé) et une note courte sont ajoutés aux notes du
+  prospect (même durée de conservation : 3 ans). « Ne m'appelez plus » → liste d'opposition, plus aucun contact.
+
 ### Boîte mail (réponses des artisans) — depuis le 27/10/2026
 - Les e-mails reçus sur …@devanture-artisans.fr passent par Cloudflare (Email Routing + Worker « boite-mail »),
   sont enregistrés dans Supabase (table `mailbox_messages` : expéditeur, objet, texte, noms des pièces jointes)

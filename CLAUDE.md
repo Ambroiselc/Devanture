@@ -258,6 +258,12 @@
   e-mails (sauf nos domaines), téléphones, SIRET, liens /m/<slug>. Tout script agents/*.ts importe db.ts ou ce module.
   bilan.ts : colonnes sensibles affichées « • ». Le détail complet reste dans la base (journal des tâches du tableau de bord).
   Anciens lancements (avec noms) supprimés le 18/11.
+- À appeler (24/11, demande de Broise : 35 maquettes ouvertes, 0 réponse écrite) : page `/appeler` (menu après Prospects),
+  `lib/a-appeler.ts` : artisans qui ont ouvert leur maquette (hors clients et liste d'opposition), « chauds » = ouverte 2 fois
+  ou 45 s au total, avec leur téléphone (`prospects.phone`, liste RGE). Fiche `/appeler/<id prospect>` : script d'appel
+  personnalisé (nom, métier, prestations et zone de la maquette, site actuel, offre de `paiement.ts`), objections, répondeur,
+  résultat (`app/appel-actions.ts` : ligne « [Appel jj/mm hh:mm] … » dans les notes ; intéressé → `interesse`, pas intéressé →
+  `refuse`, ce qui arrête la relance). Ne jamais dire à l'artisan qu'on a vu qu'il avait ouvert la maquette.
 - Données personnelles : respecter `docs/registre-rgpd.md` (B2B uniquement, sources publiques, 3 ans max,
   lien de désinscription dans chaque e-mail). Mettre le registre à jour à chaque nouvel outil.
 - Vérifier avec `npm run typecheck` puis `npm run build` avant de dire que c'est fini.
