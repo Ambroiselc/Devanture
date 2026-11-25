@@ -219,6 +219,7 @@ export default async function FicheAppel({ params, searchParams }: {
   }
   const tel = telLien(a.telephone);
   const appels = lignesAppel(a.notes);
+  const dejaMessagerie = appels.find((l) => /\] Messagerie/.test(l)) ?? null;
   const premierEmail = a.envois.find((e) => e.type !== "relance");
 
   return (
@@ -274,7 +275,14 @@ export default async function FicheAppel({ params, searchParams }: {
       <Objections a={a} />
 
       <Panel title="Répondeur (20 secondes)">
-        <div className="px-4 py-4 sm:px-5">
+        <div className="space-y-3 px-4 py-4 sm:px-5">
+          {/* 25/11 (demande de Broise) : un seul message par artisan ; aux appels suivants, on raccroche. */}
+          {dejaMessagerie && (
+            <p className="rounded-lg border border-[var(--warning,#d97706)] bg-shop-soft px-3 py-2 text-sm font-semibold">
+              ⚠️ Ne laisse PAS de message : tu es déjà tombé sur sa messagerie ({dejaMessagerie.replace(/^\[Appel ([^\]]*)\].*$/, "$1")}).
+              Raccroche, coche « Messagerie » en bas, et réessaie à un autre moment de la journée.
+            </p>
+          )}
           <Dire aide="Puis coche « Messagerie » en bas et rappelle dans 2 ou 3 jours, à un autre moment de la journée.">
             Bonjour, c&apos;est Ambroise Le Clerc, de Devanture. Je vous ai envoyé par e-mail une maquette de site faite pour {a.nom}, et j&apos;aurais aimé avoir votre avis.
             Je vous rappelle dans quelques jours, ou vous pouvez simplement répondre à l&apos;e-mail. Bonne journée !
