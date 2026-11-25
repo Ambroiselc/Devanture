@@ -32,6 +32,12 @@ export interface AAppeler {
   score: number;
   /** Dernière ligne « [Appel …] » des notes (null = jamais appelé). */
   dernierAppel: string | null;
+  /** 25/11 : date (ISO) du dernier appel, lue dans cette ligne. */
+  dateDernierAppel: string | null;
+  /** 25/11 : dernier appel sans réponse (« Messagerie » ou « À rappeler ») et pas de décision : il reste à appeler. */
+  aRappeler: boolean;
+  /** 25/11 : a rouvert sa maquette APRÈS le dernier appel (remonte en tête). */
+  rouvertApresAppel: boolean;
   /** L'artisan a déjà écrit (hors réponses automatiques). */
   aEcrit: boolean;
   /** Prestations mises en avant sur sa maquette, et communes de sa zone. */
@@ -61,6 +67,26 @@ export function dernierAppel(notes: string | null): string | null {
   const lignes = (notes ?? "").match(APPEL);
   return lignes?.length ? lignes[lignes.length - 1] : null;
 }
+
+/** « [Appel 24/11 18:12] … » → date ISO (heure de Paris ; année en cours, ou la précédente si la date serait dans le futur). */
+export function dateAppel(ligne: string | null): string | null {
+  const m = ligne?.match(/^\[Appel (\d{2})\/(\d{2})[^\d]+(\d{1,2}):(\d{2})\]/);
+  if (!m) return null;
+  const [j, mo, h, mi] = m.slice(1).map(Number);
+  const maintenant = new Date();
+  for (const an of [maintenant.getUTCFullYear(), maintenant.getUTCFullYear() - 1]) {
+    const utc = Date.UTC(an, mo - 1, j, h, mi);
+    // Décalage de Paris à cette date (1 h en hiver, 2 h en été).
+    const paris = new Date(new Date(utc).toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+    const local = new Date(new Date(utc).toLocaleString("en-US", { timeZone: "UTC" }));
+    const d = new Date(utc - (paris.getTime() - local.getTime()));
+    if (d.getTime() <= maintenant.getTime() + 60_000) return d.toISOString();
+  }
+  return null;
+}
+
+/** Résultats d'appel qui laissent l'artisan « à rappeler ». */
+const SANS_REPONSE = /\] (Messagerie|À rappeler)/;
 
 export function lignesAppel(notes: string | null): string[] {
   return (notes ?? "").match(APPEL) ?? [];
@@ -131,6 +157,16 @@ export async function aAppeler(supabase: SupabaseClient, seul?: string): Promise
       chaud: w.vues >= 2 || totalS >= 45,
       score: totalS + 40 * (w.vues - 1) + 3 * recence,
       dernierAppel: dernierAppel(p.notes), aEcrit: ontEcrit.has(p.id),
+      ...(() => {
+        const ligne = dernierAppel(p.notes);
+        const quand = dateAppel(ligne);
+        const decide = p.status === "interesse" || p.status === "refuse" || p.status === "client";
+        return {
+          dateDernierAppel: quand,
+          aRappeler: !!ligne && SANS_REPONSE.test(ligne) && !decide,
+          rouvertApresAppel: !!quand && !decide && new Date(w.derniere_vue).getTime() > new Date(quand).getTime(),
+        };
+      })(),
       services: (c.services ?? []).map((s) => s.titre ?? "").filter(Boolean).slice(0, 4),
       zone: (c.zone ?? []).slice(0, 5),
     });

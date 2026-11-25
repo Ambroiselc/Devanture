@@ -264,6 +264,9 @@
   personnalisé (nom, métier, prestations et zone de la maquette, site actuel, offre de `paiement.ts`), objections, répondeur,
   résultat (`app/appel-actions.ts` : ligne « [Appel jj/mm hh:mm] … » dans les notes ; intéressé → `interesse`, pas intéressé →
   `refuse`, ce qui arrête la relance). Ne jamais dire à l'artisan qu'on a vu qu'il avait ouvert la maquette.
+  25/11 (demande de Broise) : « Messagerie » et « À rappeler » restent à appeler (panneau « À rappeler ») ; un artisan qui rouvre
+  sa maquette après le dernier appel (`rouvertApresAppel`, date lue dans la ligne « [Appel jj/mm hh:mm] », `dateAppel`) remonte en tête
+  (panneau « Ont rouvert leur maquette après ton appel »). Seuls Intéressé, Pas intéressé et Mauvais numéro vont dans « Déjà appelés ».
 - Données personnelles : respecter `docs/registre-rgpd.md` (B2B uniquement, sources publiques, 3 ans max,
   lien de désinscription dans chaque e-mail). Mettre le registre à jour à chaque nouvel outil.
 - Vérifier avec `npm run typecheck` puis `npm run build` avant de dire que c'est fini.

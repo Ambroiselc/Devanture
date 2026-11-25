@@ -18,6 +18,7 @@ function Ligne({ a }: { a: AAppeler }) {
         <p className="flex flex-wrap items-center gap-2">
           <Lien href={`/appeler/${a.prospectId}`} className="font-semibold hover:underline">{a.nom}</Lien>
           {a.chaud && !a.dernierAppel && <Badge tone="warning">chaud</Badge>}
+          {a.rouvertApresAppel && <Badge tone="success">a rouvert après ton appel</Badge>}
           {a.statut === "interesse" && <Badge tone="success">intéressé</Badge>}
           {a.statut === "refuse" && <Badge tone="muted">refusé</Badge>}
           {a.aEcrit && <Badge tone="info">a déjà écrit</Badge>}
@@ -56,13 +57,24 @@ export default async function AppelerPage() {
   const chaudsTous = appelables.filter((a) => a.chaud && !a.dernierAppel && a.statut !== "refuse");
   const chauds = chaudsTous.filter(relance);
   const attendentRelance = chaudsTous.length - chauds.length;
-  const faits = appelables.filter((a) => a.dernierAppel || a.statut === "refuse");
+  // 25/11 (demande de Broise) : « Messagerie » et « À rappeler » restent à appeler ; ceux qui ont rouvert leur maquette
+  // après l'appel passent en tête. Seuls Intéressé, Pas intéressé et Mauvais numéro vont dans « Déjà appelés ».
+  const rappels = appelables.filter((a) => a.aRappeler || (a.rouvertApresAppel && a.dernierAppel && !/\] Mauvais numéro/.test(a.dernierAppel)))
+    .sort((a, b) => Number(b.rouvertApresAppel) - Number(a.rouvertApresAppel) || b.score - a.score);
+  const rouverts = rappels.filter((a) => a.rouvertApresAppel);
+  const aRappelerSeuls = rappels.filter((a) => !a.rouvertApresAppel);
+  const faits = appelables.filter((a) => (a.dernierAppel || a.statut === "refuse") && !rappels.includes(a));
 
   return (
     <div className="space-y-6">
       <PageHeader title="À appeler"
         description="Les artisans qui ont ouvert leur maquette 2 fois ou plus, ou 45 s au total, et dont on a le numéro, une fois leur relance par e-mail partie. Du plus intéressé au moins intéressé : appelle-les dans l'ordre. Chaque fiche a un script d'appel préparé pour l'artisan." />
       {erreur && <p className="rounded-lg border border-line bg-surface px-4 py-3 text-sm">Lecture impossible : {erreur}</p>}
+      {rouverts.length > 0 && (
+        <Panel title={`Ont rouvert leur maquette après ton appel (${rouverts.length})`}>
+          <ul className="divide-y divide-line">{rouverts.map((a) => <Ligne key={a.prospectId} a={a} />)}</ul>
+        </Panel>
+      )}
       <Panel title={`À appeler, dans l'ordre (${chauds.length})`}>
         {chauds.length ? <ul className="divide-y divide-line">{chauds.map((a) => <Ligne key={a.prospectId} a={a} />)}</ul>
           : <EmptyState>Personne pour l&apos;instant.</EmptyState>}
@@ -72,6 +84,11 @@ export default async function AppelerPage() {
           </p>
         )}
       </Panel>
+      {aRappelerSeuls.length > 0 && (
+        <Panel title={`À rappeler : pas de réponse la dernière fois (${aRappelerSeuls.length})`}>
+          <ul className="divide-y divide-line">{aRappelerSeuls.map((a) => <Ligne key={a.prospectId} a={a} />)}</ul>
+        </Panel>
+      )}
       {faits.length > 0 && (
         <Panel title={`Déjà appelés (${faits.length})`}>
           <ul className="divide-y divide-line">{faits.map((a) => <Ligne key={a.prospectId} a={a} />)}</ul>
