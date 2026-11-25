@@ -305,6 +305,23 @@ export async function getNomsProspects(ids: string[]): Promise<Map<string, { nam
   return noms;
 }
 
+/**
+ * 25/11 : les e-mails de prospection PARTIS, les plus récents d'abord (par date d'envoi).
+ * getData("emails") lit les 500 derniers e-mails CRÉÉS : avec plus de 1 000 e-mails validés en attente, les e-mails
+ * envoyés aujourd'hui mais rédigés il y a plusieurs jours (Valérie envoie les mieux notés d'abord) n'y étaient pas,
+ * et manquaient dans le dossier « Envoyés » de la boîte mail.
+ */
+export async function getEmailsEnvoyes(limite = 300): Promise<DashboardData["emails"]> {
+  if (!isSupabaseConfigured) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("emails")
+    .select("id, prospect_id, campaign_id, website_id, subject, status, sent_at, is_demo, created_at, updated_at, variant, with_image, provider_id, delivery_status, delivery_checked_at, sender, relance_de, coco_verdict, coco_avis, coco_le")
+    .in("status", ["envoye", "repondu"]).not("sent_at", "is", null)
+    .order("sent_at", { ascending: false }).limit(limite);
+  if (error) return [];
+  return (data ?? []).map((e) => ({ ...e, body: "" })) as unknown as DashboardData["emails"];
+}
+
 /** Les prospects d'un statut (ou tous), les mieux notés d'abord, lus directement dans la base. */
 export async function getProspectsFiltres(statut: ProspectStatus | undefined, limite = 300): Promise<Prospect[] | null> {
   if (!isSupabaseConfigured) return null;

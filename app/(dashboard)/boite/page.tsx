@@ -7,7 +7,7 @@ import Link from "@/components/lien";
 import { writeReply } from "../../boite-actions";
 import { LiensPaiement } from "@/components/liens-paiement";
 import { Badge, DemoTag } from "@/components/ui";
-import { getBoiteSettings, getData, getMailbox, getNomsProspects } from "@/lib/data";
+import { getBoiteSettings, getData, getEmailsEnvoyes, getMailbox, getNomsProspects } from "@/lib/data";
 import { formatDate, mailCategory, mailStatus, type Tone } from "@/lib/format";
 import { corpsProspection, extrait, sansCitation } from "@/lib/mail";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -90,7 +90,11 @@ export default async function BoitePage({ searchParams }: {
   const recherche = (sp.q ?? "").trim().toLowerCase().slice(0, 80);
   const notice = notices[sp.erreur ?? sp.info ?? ""];
 
-  const [{ prospects, emails }, { settings }, { messages, ready }] = await Promise.all([getData("prospects", "emails"), getBoiteSettings(), getMailbox()]);
+  const [{ prospects, emails: emailsRecents }, { settings }, { messages, ready }, envoyesRecents] =
+    await Promise.all([getData("prospects", "emails"), getBoiteSettings(), getMailbox(), getEmailsEnvoyes()]);
+  // 25/11 : on ajoute les derniers e-mails PARTIS (lus par date d'envoi), absents des 500 derniers créés.
+  const dejaLa = new Set(emailsRecents.map((e) => e.id));
+  const emails = [...emailsRecents, ...envoyesRecents.filter((e) => !dejaLa.has(e.id))];
   const nom = settings.display_name;
   const signature = settings.signature?.trim() || "Ambroise Le Clerc\nDevanture";
   const prospectById = new Map(prospects.map((p) => [p.id, p]));
