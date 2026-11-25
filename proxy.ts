@@ -11,7 +11,7 @@ import { estDomaineProspection, SITE_VITRINE } from "@/lib/domaines-prospection"
 // app.devanture-artisans.fr ne garde que les pages publiques et renvoie tout le reste vers Cloud Run.
 const TABLEAU_URL = (process.env.NEXT_PUBLIC_TABLEAU_URL ?? "").replace(/\/$/, "");
 const PAGES_PUBLIQUES = ["/m/", "/bienvenue/"];
-const API_PUBLIQUES = ["/api/devis", "/api/visite"];
+const API_PUBLIQUES = ["/api/devis", "/api/visite", "/api/demande-maquette"];
 
 function estPublique(path: string) {
   return PAGES_PUBLIQUES.some((p) => path.startsWith(p)) || API_PUBLIQUES.includes(path);
@@ -45,6 +45,8 @@ export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === "/api/devis") return NextResponse.next();
   // Compteur de visites du site vitrine (2/11) : appelé depuis devanture-artisans.fr, sans connexion.
   if (request.nextUrl.pathname === "/api/visite") return NextResponse.next();
+  // Formulaire « Ma maquette gratuite » du site vitrine (25/11) : sans connexion.
+  if (request.nextUrl.pathname === "/api/demande-maquette") return NextResponse.next();
 
   let response = NextResponse.next({ request });
 

@@ -235,6 +235,11 @@
   `domaineServi` voit la racine du domaine renvoyer vers le site vitrine (sinon liens laissés sur app.devanture-artisans.fr).
   Le domaine est relié au Worker devanture-app (domaine personnalisé dans Cloudflare) ; `proxy.ts` n'y sert que `/m/…`
   et renvoie tout le reste vers devanture-artisans.fr (`lib/domaines-prospection.ts` : ajouter le 2e domaine ici).
+- Formulaire du site vitrine (25/11) : les boutons « Recevoir ma maquette gratuite » de devanture-artisans.fr ouvrent un
+  formulaire (dépôt devanture-site, `components/Maquette.tsx` ; sans JS, lien mailto) → POST `/api/demande-maquette`
+  (exception dans `proxy.ts`, CORS limité au site vitrine, champ piège `piege`) → `public.demande_maquette` (migration
+  20261125000000) → `mailbox_messages` (entrant, « nouveau », message_id `formulaire-…`, comme un e-mail à contact@) →
+  réveil d'Inès. Au plus 20 demandes par heure, une par adresse toutes les 10 min.
 - Page « Sites web » (/sites) supprimée le 2/11 (plantait, inutilisée) : maquettes sur /sid, sites clients sur /pedro.
 - Prochaines tâches (27/10, `lib/prochaines-taches.ts`, `components/prochaines-taches.tsx`) : vue d'ensemble (version courte)
   et page Tâches (complète). Horaires recopiés des `cron` des workflows : les changer ici aussi si un workflow change.
