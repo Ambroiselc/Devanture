@@ -267,6 +267,9 @@
   25/11 (demande de Broise) : « Messagerie » et « À rappeler » restent à appeler (panneau « À rappeler ») ; un artisan qui rouvre
   sa maquette après le dernier appel (`rouvertApresAppel`, date lue dans la ligne « [Appel jj/mm hh:mm] », `dateAppel`) remonte en tête
   (panneau « Ont rouvert leur maquette après ton appel »). Seuls Intéressé, Pas intéressé et Mauvais numéro vont dans « Déjà appelés ».
+  25/11 (demande de Broise) : le script tient compte des appels déjà notés (`contexteAppels`, page `/appeler/<id>`) :
+  dernier appel « À rappeler » → « on s'est parlé le …, je vous rappelle comme prévu » ; « Messagerie » déjà noté → « je vous ai laissé un message le … »
+  (jamais de 2e message) ; panneau « Avant d'appeler » prévenu aussi si l'artisan a rouvert sa maquette depuis (à ne pas lui dire).
 - Données personnelles : respecter `docs/registre-rgpd.md` (B2B uniquement, sources publiques, 3 ans max,
   lien de désinscription dans chaque e-mail). Mettre le registre à jour à chaque nouvel outil.
 - Vérifier avec `npm run typecheck` puis `npm run build` avant de dire que c'est fini.

@@ -8,7 +8,7 @@ import { Badge, PageHeader, Panel } from "@/components/ui";
 import { VisitesMaquette } from "@/components/visites-maquette";
 import { noterAppel } from "@/app/appel-actions";
 import { OFFRE_LANCEMENT_JUSQU_AU, OFFRE_LANCEMENT_OUVERTE } from "@/agents/lib/paiement";
-import { aAppeler, lignesAppel, telAffiche, telLien, type AAppeler } from "@/lib/a-appeler";
+import { aAppeler, dateAppel, lignesAppel, telAffiche, telLien, type AAppeler } from "@/lib/a-appeler";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { formatDate, formatSecondes } from "@/lib/format";
@@ -62,6 +62,25 @@ function de(ville: string): string {
   return /^[aeiouyhâéèêîôAEIOUYHÂÉÈÊÎÔ]/.test(ville) ? `d'${ville}` : `de ${ville}`;
 }
 
+/**
+ * 25/11 (demande de Broise : « prends en compte que je les ai déjà appelés et laissé un message ») : ce que les notes
+ * disent des appels déjà faits. `messagerie` = la 1re ligne « Messagerie » (le message laissé : on n'en laisse qu'un) ;
+ * `rappel` = le dernier appel est un « À rappeler » (on s'est parlé : on le rappelle comme convenu, pas « je vous ai
+ * laissé un message »).
+ */
+function contexteAppels(notes: string | null) {
+  const appels = lignesAppel(notes);
+  const dernier = appels[appels.length - 1] ?? null;
+  return {
+    appels,
+    messagerie: appels.find((l) => /\] Messagerie/.test(l)) ?? null,
+    rappel: dernier && /\] À rappeler/.test(dernier) ? dernier : null,
+  };
+}
+
+/** « [Appel 25/11 10:12] Messagerie… » → « 25/11 10:12 ». */
+const quandAppel = (ligne: string) => ligne.replace(/^\[Appel ([^\]]*)\].*$/, "$1");
+
 function liste(mots: string[]): string {
   return mots.length <= 1 ? mots.join("") : `${mots.slice(0, -1).join(", ")} et ${mots[mots.length - 1]}`;
 }
@@ -74,14 +93,24 @@ function Script({ a }: { a: AAppeler }) {
   const autres = a.zone.filter((c) => c && c !== a.ville).slice(0, 3);
   const site = a.siteActuel?.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
   const lancement = OFFRE_LANCEMENT_OUVERTE;
+  const { messagerie, rappel } = contexteAppels(a.notes);
+  const emailEnvoye = <>{jour(premier?.sent_at)} par e-mail une maquette de site faite pour vous{relance ? ", puis un petit rappel" : ""}</>;
 
   return (
     <Panel title="Script d'appel">
       <div className="divide-y divide-line">
         <Etape n={1} titre="Se présenter (10 secondes)">
-          <Dire aide="Parle lentement, souris. S'il est sur un chantier ou au volant : demande quand rappeler, note-le et raccroche.">
-            Bonjour, je suis bien chez {a.nom} ? Je suis Ambroise Le Clerc, de Devanture : je fais des sites internet pour les artisans.
-            Je vous ai envoyé {jour(premier?.sent_at)} par e-mail une maquette de site faite pour vous{relance ? ", puis un petit rappel" : ""}.
+          <Dire aide={<>
+            Parle lentement, souris. S&apos;il est sur un chantier ou au volant : demande quand rappeler, note-le et raccroche.
+            {rappel && <> Tu lui avais dit que tu le rappellerais ({quandAppel(rappel)}) : relis la note de l&apos;appel et reprends le jour ou l&apos;heure convenus.</>}
+            {!rappel && messagerie && <> Tu as déjà laissé un message sur sa messagerie ({quandAppel(messagerie)}) : ne le répète pas, et s&apos;il ne décroche pas, raccroche sans en laisser un 2<sup>e</sup>.</>}
+          </>}>
+            Bonjour, je suis bien chez {a.nom} ? Je suis Ambroise Le Clerc, de Devanture : je fais des sites internet pour les artisans.{" "}
+            {rappel
+              ? <>On s&apos;est parlé {jour(dateAppel(rappel))} : je vous rappelle comme prévu, au sujet de la maquette de site que je vous ai envoyée {emailEnvoye}. </>
+              : messagerie
+                ? <>Je vous ai laissé un message {jour(dateAppel(messagerie))}, et je vous ai envoyé {emailEnvoye}. </>
+                : <>Je vous ai envoyé {emailEnvoye}. </>}
             Je vous dérange deux minutes ?
           </Dire>
         </Etape>
@@ -219,7 +248,7 @@ export default async function FicheAppel({ params, searchParams }: {
   }
   const tel = telLien(a.telephone);
   const appels = lignesAppel(a.notes);
-  const dejaMessagerie = appels.find((l) => /\] Messagerie/.test(l)) ?? null;
+  const { messagerie: dejaMessagerie, rappel } = contexteAppels(a.notes);
   const premierEmail = a.envois.find((e) => e.type !== "relance");
 
   return (
@@ -265,6 +294,23 @@ export default async function FicheAppel({ params, searchParams }: {
 
       <Panel title="Avant d'appeler">
         <ul className="list-disc space-y-1 px-9 py-4 text-sm">
+          {rappel && (
+            <li>
+              <span className="font-medium">Tu lui avais promis de le rappeler</span> ({quandAppel(rappel)}). Relis la note ci-dessus : le script commence par « on s&apos;est parlé… ».
+            </li>
+          )}
+          {!rappel && dejaMessagerie && (
+            <li>
+              <span className="font-medium">Tu lui as déjà laissé un message</span> ({quandAppel(dejaMessagerie)}). Ne le répète pas : le script commence par
+              « je vous ai laissé un message… », et s&apos;il ne décroche pas, tu raccroches sans en laisser un 2<sup>e</sup>.
+            </li>
+          )}
+          {a.rouvertApresAppel && (
+            <li>
+              Il a rouvert sa maquette depuis ton dernier appel{dejaMessagerie ? " (peut-être après avoir écouté ton message)" : ""}. Ne le lui dis pas :
+              demande-lui simplement ce qu&apos;il en a pensé.
+            </li>
+          )}
           <li>Les artisans répondent surtout tôt le matin (7 h 30 – 8 h 30), le midi ou en fin de journée (17 h 30 – 19 h).</li>
           <li>Ouvre sa maquette dans un onglet : tu parleras de ce qu&apos;il a vu.</li>
           <li>Le but de l&apos;appel n&apos;est pas de vendre en 3 minutes : c&apos;est de savoir ce qu&apos;il en pense et d&apos;obtenir une prochaine étape.</li>
@@ -279,7 +325,7 @@ export default async function FicheAppel({ params, searchParams }: {
           {/* 25/11 (demande de Broise) : un seul message par artisan ; aux appels suivants, on raccroche. */}
           {dejaMessagerie && (
             <p className="rounded-lg border border-[var(--warning,#d97706)] bg-shop-soft px-3 py-2 text-sm font-semibold">
-              ⚠️ Ne laisse PAS de message : tu es déjà tombé sur sa messagerie ({dejaMessagerie.replace(/^\[Appel ([^\]]*)\].*$/, "$1")}).
+              ⚠️ Ne laisse PAS de message : tu es déjà tombé sur sa messagerie ({quandAppel(dejaMessagerie)}).
               Raccroche, coche « Messagerie » en bas, et réessaie à un autre moment de la journée.
             </p>
           )}
