@@ -1,0 +1,27 @@
+# Test de la nouvelle cible (26/11), EN LECTURE SEULE (voir agents/diag-cible.ts) : fiches Google de métiers
+# « beauté, bien-être, sport… » dans la métropole lilloise, part avec un e-mail trouvable. N'écrit rien dans la base.
+# Se lance à la main (Actions > Run workflow) ou quand tests/cible.txt change.
+name: Test de la nouvelle cible
+
+on:
+  push:
+    branches: [main]
+    paths: [tests/cible.txt]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cible:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Lire les fiches et les sites
+        run: node agents/diag-cible.ts
