@@ -1,1 +1,2 @@
-26/11 : test nouvelle cible (piste 2)
+lot
+26/11 : test n° 2, recherche par lot + règle complète

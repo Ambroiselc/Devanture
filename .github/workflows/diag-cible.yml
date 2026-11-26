@@ -24,4 +24,6 @@ jobs:
         with:
           node-version: 22
       - name: Lire les fiches et les sites
-        run: node agents/diag-cible.ts
+        # 1re ligne de tests/cible.txt : « lot » → test n° 2 (recherche par lot + règle complète, agents/diag-cible-lot.ts).
+        run: |
+          if head -n1 tests/cible.txt | grep -qi '^lot'; then node agents/diag-cible-lot.ts; else node agents/diag-cible.ts; fi
