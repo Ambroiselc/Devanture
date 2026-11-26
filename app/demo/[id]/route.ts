@@ -9,6 +9,7 @@ import { codeHabillage, habillageAuHasard, lireCodeHabillage } from "@/agents/li
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { moderniser } from "@/agents/lib/moderne";
+import { EXEMPLES_INDEPENDANT, renderIndependant } from "@/agents/lib/demo-independant";
 
 const pageBrute = (html: string, status = 200) =>
   new Response(html, {
@@ -34,6 +35,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const code = codeHabillage(habillage);
     return page(renderAvecSelecteur({ ...EXEMPLE_DEMO, habillage }, style, (s) => `/demo/exemple?style=${s}&v=${code}${m}`,
       `/demo/exemple?style=${style}${m}`));
+  }
+  // 26/11 (nouvelle cible) : exemples du modèle « indépendant », palette 0 ou 1 avec ?p=1.
+  if (id === "exemple-photographe" || id === "exemple-coach") {
+    const ex = EXEMPLES_INDEPENDANT[id === "exemple-coach" ? "coach" : "photographe"];
+    const p = new URL(req.url).searchParams.get("p") === "1" ? 1 : 0;
+    const autre = `<a href="/demo/${id}?p=${1 - p}" style="color:#111;background:#FFD866;text-decoration:none;border-radius:999px;padding:6px 14px;font-weight:700">Autre palette</a>`;
+    const barre = `<div style="position:relative;z-index:50;background:#111;color:#fff;font:600 14px/1.2 system-ui,sans-serif;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;padding:8px 16px"><span style="opacity:.75">Exemple fictif · nouvelle cible</span>${autre}</div>`;
+    return pageBrute(renderIndependant({ ...ex, palette: p }).replace("<body>", `<body>\n${barre}`));
   }
   if (!isSupabaseConfigured || !/^[0-9a-f-]{36}$/i.test(id)) return page("<p>Démo introuvable.</p>", 404);
 
