@@ -22,7 +22,7 @@ Appuie-toi d'abord sur le texte de son site actuel (ses vraies prestations, sa s
 
 À rédiger :
 - nom : le nom tel qu'il doit apparaître en haut du site, court et propre (40 caractères au plus), sans mots-clés ajoutés (« Studio Lumière - Photographe mariage Lille » → « Studio Lumière »). Majuscules normales. N'invente jamais un nom.
-- accroche : titre principal, 35 à 70 caractères, concret, qui dit ce qu'il ou elle fait et où (« Photographe de mariage et de famille à Lille », « Coach sportif à Roubaix, chez vous ou au parc »). Pas de slogan creux (« Révélez votre potentiel », « Des souvenirs inoubliables »).
+- accroche : titre principal, 35 à 70 caractères, concret, qui dit ce qu'il ou elle fait et où (par exemple « Photographe de mariage à Douai » ou « Coach sportif à Arras, en salle et en extérieur »). Ces exemples montrent la forme : ne les recopie pas, et ne cite un lieu de séance (domicile, parc, salle, studio) ou une spécialité que si son site en parle. Pas de slogan creux (« Révélez votre potentiel », « Des souvenirs inoubliables »).
 - intro : 1 phrase, 90 à 180 caractères, à la première personne, sur ce que la personne apporte concrètement.
 - prestations : 4 prestations (celles de son site si possible). titre ≤ 28 caractères, description = 1 phrase de 50 à 110 caractères. Jamais de prix ni de durée inventée.
 - apropos : 2 phrases, 150 à 300 caractères, à la première personne, sans fait inventé.
