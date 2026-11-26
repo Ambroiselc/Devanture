@@ -28,7 +28,7 @@ export interface ContenuIndependant {
 const PHOTOS: Record<MetierIndependant, string[]> = {
   "Photographe": [
     "1519741497674-611481863552", "1622277430358-f4d134452e2e", "1769540209420-f137f98194e8",
-    "1757647630063-dd5cd82271f3", "1758810409996-583f3bad7d51", "1617724975854-70b5d0cedb0a", "1519741196428-6a2175fa2557",
+    "1757647630063-dd5cd82271f3", "1758810409996-583f3bad7d51", "1617724975854-70b5d0cedb0a", "1630526720753-aa4e71acf67d", "1519741196428-6a2175fa2557",
   ],
   "Coach sportif": [
     "1758875569256-f37c438cac65", "1648542036561-e1d66a5ae2b1", "1534258936925-c58bed479fcb",
@@ -184,7 +184,7 @@ h2{font-size:clamp(32px,4vw,50px);margin-bottom:12px}
 .galerie{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:clamp(160px,22vw,300px);gap:10px}
 .g{margin:0;overflow:hidden;background:var(--ligne);border-radius:${photographe ? "2px" : "14px"}}
 .g img{transition:transform .8s ease}.g:hover img{transform:scale(1.05)}
-${photographe ? ".g0{grid-row:span 2}.g3{grid-column:span 2}" : ""}
+${photographe ? ".g0{grid-row:span 2}.g3,.g5{grid-column:span 2}" : ""}
 .legende{color:var(--doux);font-size:14px;margin-top:12px}
 .resa{display:grid;grid-template-columns:1fr minmax(0,420px);gap:clamp(28px,5vw,72px);align-items:center;background:${photographe ? "var(--carte)" : "var(--encre)"};color:${photographe ? "var(--encre)" : "#fff"}}
 .resa p{color:${photographe ? "var(--doux)" : "rgba(255,255,255,.78)"};max-width:34em}
@@ -195,13 +195,14 @@ ${photographe ? ".g0{grid-row:span 2}.g3{grid-column:span 2}" : ""}
 .jour,.cr{min-height:44px;border:1px solid #ddd;border-radius:10px;background:#fafafa;font:600 14px/1.1 "${pal.texte}",sans-serif;cursor:pointer;color:#222}
 .jour.on,.cr.on{background:var(--acc);border-color:var(--acc);color:var(--acct)}
 .btn.plein{width:100%;margin-top:4px}
-.note{font-size:13px;color:#777;margin:12px 0 0}
+.resa .agenda .note{font-size:13px;color:#777;margin:12px 0 0}
 .apropos{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:clamp(28px,5vw,64px);align-items:center}
-.apropos .portrait{aspect-ratio:1;border-radius:${photographe ? "2px" : "24px"};border:2px dashed var(--doux);display:grid;place-items:center;color:var(--doux);text-align:center;padding:20px;font-size:15px}
+.apropos .portrait{margin:0;max-width:420px}.apropos .portrait div{aspect-ratio:4/5;border-radius:${photographe ? "2px" : "24px"};overflow:hidden;background:var(--ligne)}
+.apropos .portrait figcaption{font-size:13px;color:var(--doux);margin-top:8px}
 .zone{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.zone span{border:1px solid var(--ligne);border-radius:99px;padding:5px 14px;font-size:14px;background:var(--carte)}
 .contact{text-align:center}.contact .ctas{justify-content:center;margin-top:24px}
 footer{padding:28px max(5vw,16px);color:var(--doux);font-size:14px;border-top:1px solid var(--ligne);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-@media(max-width:820px){nav{display:none}.hero-coach,.resa,.apropos{grid-template-columns:1fr}.hero-coach .hero-img{aspect-ratio:4/3;box-shadow:10px 10px 0 var(--acc)}
+@media(max-width:820px){nav{display:none}.hero-coach,.resa,.apropos{grid-template-columns:1fr}.g5{grid-column:auto}.hero-coach .hero-img{aspect-ratio:4/3;box-shadow:10px 10px 0 var(--acc)}
   .galerie{grid-template-columns:repeat(2,minmax(0,1fr))}.g0,.g3{grid-row:auto;grid-column:auto}}
 @media(prefers-reduced-motion:no-preference){.hero-txt>*{animation:monte .8s cubic-bezier(.2,.7,.2,1) both}.hero-txt>*:nth-child(2){animation-delay:.1s}
   .hero-txt>*:nth-child(3){animation-delay:.2s}.hero-txt>*:nth-child(4){animation-delay:.3s}@keyframes monte{from{opacity:0;transform:translateY(16px)}}}
@@ -224,7 +225,7 @@ ${hero}
 </section>
 ${resa}
 <section id="apropos" class="band apropos">
-  <div class="portrait">Votre portrait<br>(à compléter)</div>
+  <figure class="portrait"><div>${img(ph[ph.length - 1], 800, "Photo d'illustration")}</div><figcaption>Photo d'illustration : votre portrait prendra sa place.</figcaption></figure>
   <div><h2>À propos</h2><p>${e(c.apropos)}</p>
   <div class="zone">${c.zone.map((z) => `<span>${e(z)}</span>`).join("")}</div></div>
 </section>
