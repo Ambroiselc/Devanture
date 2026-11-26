@@ -1,6 +1,7 @@
 // Page « Campagnes » : chaque campagne de prospection, son budget et ses e-mails.
 import type { Metadata } from "next";
 import { Badge, DemoTag, EmptyState, PageHeader } from "@/components/ui";
+import Link from "@/components/lien";
 import { getData } from "@/lib/data";
 import { campaignStatus, emailStatus, formatDay, formatEur, sum } from "@/lib/format";
 
@@ -11,7 +12,7 @@ export default async function CampaignsPage() {
 
   return (
     <>
-      <PageHeader title="Campagnes" description="Une campagne cible un type de commerce dans une ville. Les e-mails restent des brouillons : rien n'est envoyé dans cette version." />
+      <PageHeader title="Campagnes" description="Chaque campagne a sa page d'accueil : clique sur son nom ou sur « Ouvrir »." />
 
       {campaigns.length === 0 && (
         <div className="rounded-xl border border-line bg-surface">
@@ -40,7 +41,9 @@ export default async function CampaignsPage() {
             <article key={c.id} className="rounded-xl border border-line bg-surface">
               <div className="flex flex-col gap-3 px-4 pt-4 sm:flex-row sm:items-start sm:justify-between sm:px-5">
                 <div className="min-w-0">
-                  <h2 className="font-display text-xl font-semibold">{c.name}<DemoTag show={c.is_demo} /></h2>
+                  <h2 className="font-display text-xl font-semibold">
+                    <Link href={`/campagnes/${c.id}`} className="hover:text-shop hover:underline">{c.name}</Link><DemoTag show={c.is_demo} />
+                  </h2>
                   {c.description && <p className="mt-0.5 text-muted">{c.description}</p>}
                   <p className="mt-1 text-sm text-muted">
                     {[c.target_category, c.target_city].filter(Boolean).join(" à ")}
@@ -48,7 +51,11 @@ export default async function CampaignsPage() {
                     {c.ended_at && <> · jusqu&apos;au {formatDay(c.ended_at)}</>}
                   </p>
                 </div>
-                <div className="shrink-0"><Badge tone={campaignStatus[c.status].tone}>{campaignStatus[c.status].label}</Badge></div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <Badge tone={campaignStatus[c.status].tone}>{campaignStatus[c.status].label}</Badge>
+                  {/* 26/11 (demande de Broise) : la page d'accueil de la campagne */}
+                  <Link href={`/campagnes/${c.id}`} className="rounded-lg bg-shop px-3 py-1.5 text-sm font-medium text-white hover:opacity-90">Ouvrir</Link>
+                </div>
               </div>
 
               <div className="grid gap-5 px-4 py-4 sm:px-5 md:grid-cols-[1fr_16rem]">

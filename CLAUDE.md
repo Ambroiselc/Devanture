@@ -240,6 +240,9 @@
   (exception dans `proxy.ts`, CORS limité au site vitrine, champ piège `piege`) → `public.demande_maquette` (migration
   20261125000000) → `mailbox_messages` (entrant, « nouveau », message_id `formulaire-…`, comme un e-mail à contact@) →
   réveil d'Inès. Au plus 20 demandes par heure, une par adresse toutes les 10 min.
+- Page d'accueil de chaque campagne (26/11, demande de Broise) : `/campagnes/<id>` (`app/(dashboard)/campagnes/[id]/page.tsx`,
+  données `getVueCampagne` dans lib/data.ts) : parcours des prospects, envois par jour (14 j), maquettes ouvertes, réponses,
+  intéressés, coûts, recherches Google faites (campagne « Photographes et coachs ») ; lien « Ouvrir » depuis /campagnes.
 - Page « Sites web » (/sites) supprimée le 2/11 (plantait, inutilisée) : maquettes sur /sid, sites clients sur /pedro.
 - Prochaines tâches (27/10, `lib/prochaines-taches.ts`, `components/prochaines-taches.tsx`) : vue d'ensemble (version courte)
   et page Tâches (complète). Horaires recopiés des `cron` des workflows : les changer ici aussi si un workflow change.

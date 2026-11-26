@@ -451,3 +451,128 @@ export const getVueEnsemble = cache(async (): Promise<{
     interets,
   };
 });
+
+/**
+ * Page d'accueil d'UNE campagne (26/11, demande de Broise) : la vue d'ensemble limitée à ses prospects.
+ * Comptes par la base (en-têtes `count`) ou sur des colonnes courtes ; null en mode démo ou si la campagne n'existe pas.
+ */
+export const getVueCampagne = cache(async (id: string): Promise<{
+  campagne: { id: string; name: string; description: string | null; status: string; target_category: string | null;
+    target_city: string | null; started_at: string | null; ended_at: string | null; budget_eur: number | null };
+  parStatut: Record<string, number>;
+  total: number;
+  demos: number;
+  /** Premiers e-mails et relances : validés en attente, partis (total et par jour, 14 derniers jours). */
+  emailsValides: number;
+  emailsAValider: number;
+  premiersPartis: number;
+  relancesParties: number;
+  parJour: { jour: string; premiers: number; relances: number }[];
+  /** Maquettes ouvertes : nombre, artisans contactés, dernières ouvertes (comme sur la vue d'ensemble). */
+  nbOuvertes: number;
+  ouvertes: Ouverte[];
+  /** Réponses reçues (hors réponses automatiques, spam et contacts de chauffe), par catégorie, et les dernières. */
+  reponses: Record<string, number>;
+  dernieresReponses: { id: string; recu: string; nom: string | null; categorie: string | null; resume: string | null; fil: string | null }[];
+  interets: { id: string; cree_le: string; nom: string | null; ville: string | null; traite_le: string | null }[];
+  couts: { agent: string; montant: number }[];
+  /** Pour la nouvelle cible : recherches Google déjà faites (villes × métiers), null pour les autres campagnes. */
+  recherches: { faites: number; fiches: number; qualifies: number } | null;
+} | null> => {
+  if (!isSupabaseConfigured || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const supabase = await createClient();
+  const { data: c } = await supabase.from("campaigns")
+    .select("id, name, description, status, target_category, target_city, started_at, ended_at, budget_eur").eq("id", id).maybeSingle();
+  if (!c) return null;
+  const compte = (r: { count: number | null }) => r.count ?? 0;
+  const il14 = new Date(Date.now() - 13 * 86_400_000);
+  il14.setHours(0, 0, 0, 0);
+  const [statuts, demos, valides, aValider, premiers, relances, recents, vues, couts, interets] = await Promise.all([
+    supabase.from("prospects").select("status").eq("campaign_id", id).range(0, 19999),
+    supabase.from("websites").select("id, prospects!inner(campaign_id)", { count: "exact", head: true })
+      .eq("kind", "demo").in("status", ["pret", "publie"]).eq("prospects.campaign_id", id),
+    supabase.from("emails").select("id", { count: "exact", head: true }).eq("campaign_id", id).eq("status", "valide"),
+    supabase.from("emails").select("id", { count: "exact", head: true }).eq("campaign_id", id).eq("status", "a_valider"),
+    supabase.from("emails").select("id", { count: "exact", head: true }).eq("campaign_id", id).not("sent_at", "is", null).is("relance_de", null),
+    supabase.from("emails").select("id", { count: "exact", head: true }).eq("campaign_id", id).not("sent_at", "is", null).not("relance_de", "is", null),
+    supabase.from("emails").select("sent_at, relance_de").eq("campaign_id", id).gte("sent_at", il14.toISOString()).range(0, 4999),
+    supabase.from("websites").select("id, slug, vues, premiere_vue, derniere_vue, prospects!inner(id, name, city, email, campaign_id)", { count: "exact" })
+      .eq("kind", "demo").gt("vues", 0).eq("prospects.campaign_id", id).order("derniere_vue", { ascending: false }).limit(8),
+    supabase.from("costs").select("amount_eur, tasks(agent)").eq("campaign_id", id).range(0, 19999),
+    supabase.from("maquette_interets").select("id, cree_le, traite_le, prospects!inner(name, city, campaign_id)")
+      .eq("prospects.campaign_id", id).order("cree_le", { ascending: false }).limit(20),
+  ]);
+  const parStatut: Record<string, number> = {};
+  for (const r of statuts.data ?? []) parStatut[r.status as string] = (parStatut[r.status as string] ?? 0) + 1;
+
+  // Envois des 14 derniers jours, jour par jour (heure de Paris).
+  const jourParis = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: "Europe/Paris" });
+  const parJour = Array.from({ length: 14 }, (_, i) => ({ jour: jourParis(new Date(il14.getTime() + (i + 0.5) * 86_400_000)), premiers: 0, relances: 0 }));
+  for (const e of recents.data ?? []) {
+    const j = parJour.find((x) => x.jour === jourParis(new Date(e.sent_at as string)));
+    if (j) { if (e.relance_de) j.relances++; else j.premiers++; }
+  }
+
+  // Maquettes ouvertes : mêmes détails que la vue d'ensemble.
+  const pros = (w: { prospects: unknown }) => (Array.isArray(w.prospects) ? w.prospects[0] : w.prospects) as
+    { id: string; name: string; city: string | null; email: string | null } | null;
+  const lignes = vues.error ? [] : (vues.data ?? []);
+  const [visitesParSite, details] = await Promise.all([
+    visitesDe(supabase, lignes.map((w) => w.id as string)),
+    detailsOuvertures(supabase, lignes.map(pros).filter((p) => p !== null).map((p) => ({ id: p.id, email: p.email }))),
+  ]);
+
+  // Réponses des prospects de la campagne (messages entrants rattachés à un prospect).
+  const { data: msgs } = await supabase.from("mailbox_messages")
+    .select("id, received_at, created_at, category, summary, thread_id, prospects!inner(name, campaign_id)")
+    .eq("direction", "entrant").eq("prospects.campaign_id", id)
+    .or("category.is.null,category.not.in.(automatique,spam,chauffe)").eq("auto_submitted", false)
+    .order("created_at", { ascending: false }).limit(200);
+  const reponses: Record<string, number> = {};
+  for (const m of msgs ?? []) { const k = (m.category as string | null) ?? "autre"; reponses[k] = (reponses[k] ?? 0) + 1; }
+
+  const parAgent = new Map<string, number>();
+  for (const k of couts.data ?? []) {
+    const t = (Array.isArray(k.tasks) ? k.tasks[0] : k.tasks) as { agent: string } | null;
+    parAgent.set(t?.agent ?? "hors", (parAgent.get(t?.agent ?? "hors") ?? 0) + Number(k.amount_eur));
+  }
+
+  let recherches: { faites: number; fiches: number; qualifies: number } | null = null;
+  if (c.name === "Photographes et coachs") {
+    const { data: r, error } = await supabase.from("recherches_independants").select("fiches, qualifies").range(0, 9999);
+    if (!error) recherches = { faites: (r ?? []).length, fiches: (r ?? []).reduce((t, x) => t + (x.fiches as number), 0),
+      qualifies: (r ?? []).reduce((t, x) => t + (x.qualifies as number), 0) };
+  }
+
+  return {
+    campagne: { ...c, budget_eur: c.budget_eur === null ? null : Number(c.budget_eur) } as never,
+    parStatut,
+    total: (statuts.data ?? []).length,
+    demos: compte(demos),
+    emailsValides: compte(valides),
+    emailsAValider: compte(aValider),
+    premiersPartis: compte(premiers),
+    relancesParties: compte(relances),
+    parJour,
+    nbOuvertes: vues.error ? 0 : compte(vues),
+    ouvertes: lignes.map((w) => {
+      const p = pros(w);
+      const d = p ? details.get(p.id) : undefined;
+      return { name: p?.name ?? "?", city: p?.city ?? null, vues: w.vues as number, premiere: (w.premiere_vue as string | null) ?? null,
+               derniere: w.derniere_vue as string, visites: visitesParSite.get(w.id as string) ?? [], slug: (w.slug as string | null) ?? null,
+               fournisseur: d?.fournisseur ?? null, emailId: d?.emailId ?? null, envois: d?.envois ?? [] };
+    }),
+    reponses,
+    dernieresReponses: (msgs ?? []).slice(0, 8).map((m) => ({
+      id: m.id as string, recu: (m.received_at ?? m.created_at) as string,
+      nom: ((Array.isArray(m.prospects) ? m.prospects[0] : m.prospects) as { name: string } | null)?.name ?? null,
+      categorie: m.category as string | null, resume: m.summary as string | null, fil: (m.thread_id as string | null) ?? null,
+    })),
+    interets: interets.error ? [] : (interets.data ?? []).map((i) => {
+      const p = (Array.isArray(i.prospects) ? i.prospects[0] : i.prospects) as { name: string; city: string | null } | null;
+      return { id: i.id as string, cree_le: i.cree_le as string, nom: p?.name ?? null, ville: p?.city ?? null, traite_le: i.traite_le as string | null };
+    }),
+    couts: [...parAgent.entries()].map(([agent, montant]) => ({ agent, montant })).sort((a, b) => b.montant - a.montant),
+    recherches,
+  };
+});
