@@ -211,6 +211,11 @@ async function traiter(sql: Sql, campagneId: string, metier: MetierIndep, c: Com
     siteUrl = analyse.url ?? f.site;
     email = analyse.email;
     emailSource = analyse.emailSource;
+    // 26/11 : site hébergé en sous-domaine d'une plateforme (train.strivee.app) et adresse de la plateforme
+    // (…@strivee.app) : ce n'est pas son adresse à elle.
+    const h = hote(siteUrl) ?? "";
+    const domaine = email?.split("@")[1] ?? "";
+    if (email && h !== domaine && !h.startsWith("www.") && h.endsWith(`.${domaine}`)) { email = null; emailSource = null; }
     if (!eq.repond) raison = "Son site ne répond pas.";
     else if (!email) raison = "Pas d'e-mail trouvé sur son site.";
     else if (eq.resa) raison = "A déjà la réservation en ligne.";

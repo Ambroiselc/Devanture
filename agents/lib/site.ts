@@ -33,6 +33,9 @@ const WEBMAILS = [
   "laposte.net", "icloud.com", "aol.com", "numericable.fr",
 ];
 
+/** Adresses de service (support, administration…) : jamais celles de la personne. Aussi vérifié à l'envoi (envoi.ts). */
+export const ADRESSE_GENERIQUE = /^(support|help|aide|assistance|admin|administrat\w*|webmaster|hostmaster|postmaster|no-?reply|privacy|dpo|rgpd|legal|abuse|billing|sales)@/i;
+
 export function hote(url: string): string | null {
   try {
     return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
@@ -72,6 +75,8 @@ export function extraireEmails(html: string, siteHote: string | null): string[] 
     const email = m[0].toLowerCase().replace(/^mailto:/, "").replace(/\.+$/, "");
     if (/\.(png|jpe?g|gif|svg|webp|css|js)$/.test(email)) continue;
     if (/^(no-?reply|ne-pas-repondre|example|exemple|test|email|nom|votre|your)@/.test(email)) continue;
+    // 26/11 : adresse de la plateforme qui héberge le site (« support@strivee.app » sur train.strivee.app), pas la sienne.
+    if (ADRESSE_GENERIQUE.test(email)) continue;
     trouves.add(email);
   }
 

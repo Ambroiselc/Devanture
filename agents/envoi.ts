@@ -443,6 +443,8 @@ async function main() {
       left join public.websites w on w.id = e.website_id
       ${relancesPretes ? sql`left join public.emails o on o.id = e.relance_de` : sql``}
       where e.status = 'valide' and p.email is not null
+        -- 26/11 : jamais d'envoi à une adresse de service (support@, admin@… d'une plateforme ; voir ADRESSE_GENERIQUE).
+        and p.email !~* '^(support|help|aide|assistance|admin|administrat[a-z]*|webmaster|hostmaster|postmaster|no-?reply|privacy|dpo|rgpd|legal|abuse|billing|sales)@'
         ${args.email ? sql`and e.id = ${args.email}` : sql``}
         ${relancesPretes
           // Une relance ne part pas si l'artisan a répondu entre-temps (le premier e-mail est alors « repondu »).
