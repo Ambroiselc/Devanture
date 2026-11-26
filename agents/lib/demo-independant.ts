@@ -30,9 +30,10 @@ const PHOTOS: Record<MetierIndependant, string[]> = {
     "1519741497674-611481863552", "1622277430358-f4d134452e2e", "1769540209420-f137f98194e8",
     "1757647630063-dd5cd82271f3", "1758810409996-583f3bad7d51", "1617724975854-70b5d0cedb0a", "1630526720753-aa4e71acf67d", "1519741196428-6a2175fa2557",
   ],
+  // 26/11 (avis de Broise : la 1re version « faisait généré par IA ») : photos en extérieur, plus naturelles.
   "Coach sportif": [
-    "1758875569256-f37c438cac65", "1648542036561-e1d66a5ae2b1", "1534258936925-c58bed479fcb",
-    "1554284126-aa88f22d8b74", "1519311965067-36d3e5f33d39", "1758875568932-0eefd3e60090",
+    "1759476532444-fa17a7131941", "1775850576250-d4296a7af153", "1600026453194-11ae289732b8",
+    "1542354771-435b9f200e57", "1759300642211-4e81a270a358", "1759300642338-c5c7cd576a22",
   ],
 };
 
@@ -50,10 +51,10 @@ const PALETTES: Record<MetierIndependant, { fond: string; encre: string; doux: s
   ],
   // Coach : énergique, contrasté, gros titres.
   "Coach sportif": [
-    { fond: "#F6F5F1", encre: "#14181F", doux: "#5A606B", accent: "#E8552B", accentTexte: "#FFFFFF", carte: "#FFFFFF", ligne: "#E2E0DA",
-      titre: "Oswald", texte: "Inter", url: "Oswald:wght@500;700&family=Inter:wght@400;600" },
-    { fond: "#F2F5F8", encre: "#0F1B2D", doux: "#55627A", accent: "#1F6FEB", accentTexte: "#FFFFFF", carte: "#FFFFFF", ligne: "#DCE3EC",
-      titre: "Barlow Condensed", texte: "Barlow", url: "Barlow+Condensed:wght@600;700&family=Barlow:wght@400;600" },
+    { fond: "#F2EFE7", encre: "#1C2420", doux: "#5E655F", accent: "#2E5B44", accentTexte: "#FFFFFF", carte: "#FBFAF6", ligne: "#DDD8CC",
+      titre: "Schibsted Grotesk", texte: "Source Sans 3", url: "Schibsted+Grotesk:wght@600;700&family=Source+Sans+3:wght@400;600" },
+    { fond: "#F5F3EF", encre: "#22201E", doux: "#66605A", accent: "#7A3E2B", accentTexte: "#FFFFFF", carte: "#FFFFFF", ligne: "#E2DDD5",
+      titre: "Libre Franklin", texte: "Libre Franklin", url: "Libre+Franklin:wght@400;600;700" },
   ],
 };
 
@@ -97,23 +98,23 @@ export function renderIndependant(c: ContenuIndependant): string {
   </div>
 </section>`
     : `<section class="hero hero-coach">
+  <div class="hero-img">${img(ph[0], 1800, `Photo d'illustration : ${c.metier}`)}</div>
   <div class="hero-txt">
-    <p class="sur">${e(c.metier)} · ${e(c.commune)}</p>
-    <h1>${e(c.accroche)}</h1>
-    <p class="lead">${e(c.intro)}</p>
-    <div class="ctas"><a class="btn" href="#reserver">${verbe}</a><a class="btn ghost" href="#prestations">Les formules</a></div>
+    <div><p class="sur">${e(c.metier)} · ${e(c.commune)}</p><h1>${e(c.accroche)}</h1></div>
+    <div><p class="lead">${e(c.intro)}</p>
+    <div class="ctas"><a class="btn" href="#reserver">${verbe}</a><a class="btn ghost" href="#prestations">Voir les séances</a></div></div>
   </div>
-  <div class="hero-img">${img(ph[0], 1200, `Photo d'illustration : ${c.metier}`)}</div>
 </section>`;
 
-  const cartes = prestations.map((p, i) => `<article class="carte">
-    ${photographe ? "" : `<span class="num">${i + 1}</span>`}
+  const cartes = photographe ? prestations.map((p) => `<article class="carte">
     <h3>${e(p.titre)}</h3>
     <p>${e(p.description)}</p>
     <div class="bas"><span class="todo">Votre tarif</span><a href="#reserver" class="lien">Réserver →</a></div>
-  </article>`).join("");
+  </article>`).join("")
+    : prestations.map((p) => `<div class="ligne-p"><h3>${e(p.titre)}</h3><p>${e(p.description)}</p>
+    <span class="todo">Votre tarif</span><a href="#reserver" class="lien">Réserver</a></div>`).join("");
 
-  const galerie = (photographe ? ph.slice(1, 7) : ph.slice(1, 4))
+  const galerie = (photographe ? ph.slice(1, 7) : ph.slice(1, 5))
     .map((id, i) => `<figure class="g g${i}">${img(id, 900, `Photo d'illustration ${i + 1}`)}</figure>`).join("");
 
   const resa = `<section id="reserver" class="band resa">
@@ -150,13 +151,13 @@ export function renderIndependant(c: ContenuIndependant): string {
 body{margin:0;background:var(--fond);color:var(--encre);font:17px/1.6 "${pal.texte}",system-ui,sans-serif;overflow-x:clip}
 img{display:block;width:100%;height:100%;object-fit:cover}
 h1,h2,h3{font-family:"${pal.titre}",Georgia,serif;line-height:1.08;margin:0;text-wrap:balance;font-weight:${photographe ? 600 : 700}}
-${photographe ? "" : "h1,h2{text-transform:uppercase;letter-spacing:.01em}"}
+${photographe ? "" : "h1,h2{letter-spacing:-.015em}"}
 a{color:inherit}
 header{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px max(5vw,16px);
   background:color-mix(in srgb,var(--fond) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--ligne)}
 .logo{font-family:"${pal.titre}",serif;font-size:22px;font-weight:700;text-decoration:none}
 nav{display:flex;gap:22px;flex-wrap:wrap}nav a{text-decoration:none;color:var(--doux);font-size:15px}nav a:hover{color:var(--encre)}
-.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border-radius:${photographe ? "2px" : "999px"};
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border-radius:${photographe ? "2px" : "6px"};
   background:var(--acc);color:var(--acct);text-decoration:none;font-weight:600;border:1.5px solid var(--acc);font:600 16px/1 "${pal.texte}",sans-serif;cursor:pointer}
 .btn.ghost{background:transparent;color:var(--encre);border-color:var(--encre)}
 .band{padding:clamp(48px,7vw,104px) max(5vw,16px)}
@@ -169,9 +170,12 @@ nav{display:flex;gap:22px;flex-wrap:wrap}nav a{text-decoration:none;color:var(--
 .hero-photo .hero-txt{position:relative;color:#fff;padding:clamp(28px,5vw,72px) max(5vw,16px);max-width:900px}
 .hero-photo h1{font-size:clamp(40px,6vw,76px)}.hero-photo .lead,.hero-photo .sur{color:rgba(255,255,255,.86)}
 .hero-photo .btn{background:#fff;color:#1e1b18;border-color:#fff}.hero-photo .btn.ghost{background:transparent;color:#fff;border-color:#fff}
-.hero-coach{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,4vw,56px);align-items:center;padding:clamp(36px,5vw,72px) max(5vw,16px)}
-.hero-coach h1{font-size:clamp(42px,6.2vw,84px)}
-.hero-coach .hero-img{aspect-ratio:4/5;border-radius:24px;overflow:hidden;background:var(--ligne);box-shadow:16px 16px 0 var(--acc)}
+.hero-coach .hero-img{height:min(62vh,560px);background:var(--ligne)}
+.hero-coach .hero-txt{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,5vw,72px);align-items:end;padding:clamp(28px,4vw,56px) max(5vw,16px) 0}
+.hero-coach h1{font-size:clamp(38px,5vw,64px)}.hero-coach .lead{margin-top:0}
+.liste-p{border-top:1px solid var(--encre)}
+.ligne-p{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) auto auto;gap:12px 28px;align-items:center;padding:22px 0;border-bottom:1px solid var(--ligne)}
+.ligne-p h3{font-size:22px}.ligne-p p{margin:0;color:var(--doux)}
 h2{font-size:clamp(32px,4vw,50px);margin-bottom:12px}
 .intro2{color:var(--doux);max-width:40em;margin:0 0 36px}
 .cartes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:18px}
@@ -182,12 +186,13 @@ h2{font-size:clamp(32px,4vw,50px);margin-bottom:12px}
 .todo{border:1.5px dashed var(--doux);border-radius:6px;padding:3px 10px;font-size:14px;color:var(--doux)}
 .lien{font-weight:600;text-decoration:none;color:var(--acc)}
 .galerie{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:clamp(160px,22vw,300px);gap:10px}
+${photographe ? "" : ".g0{grid-column:span 2;grid-row:span 2}.g3{grid-column:span 3}"}
 .g{margin:0;overflow:hidden;background:var(--ligne);border-radius:${photographe ? "2px" : "14px"}}
 .g img{transition:transform .8s ease}.g:hover img{transform:scale(1.05)}
 ${photographe ? ".g0{grid-row:span 2}.g3,.g5{grid-column:span 2}" : ""}
 .legende{color:var(--doux);font-size:14px;margin-top:12px}
-.resa{display:grid;grid-template-columns:1fr minmax(0,420px);gap:clamp(28px,5vw,72px);align-items:center;background:${photographe ? "var(--carte)" : "var(--encre)"};color:${photographe ? "var(--encre)" : "#fff"}}
-.resa p{color:${photographe ? "var(--doux)" : "rgba(255,255,255,.78)"};max-width:34em}
+.resa{display:grid;grid-template-columns:1fr minmax(0,420px);gap:clamp(28px,5vw,72px);align-items:center;background:var(--carte);color:var(--encre);border-block:1px solid var(--ligne)}
+.resa p{color:var(--doux);max-width:34em}
 .etapes{padding-left:22px;margin:18px 0 0;display:grid;gap:6px}
 .agenda{background:#fff;color:#1b1b1b;border-radius:18px;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.16);border:1px solid var(--ligne)}
 .ag-tete{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.ag-tete span{font-size:12px;background:#eee;border-radius:99px;padding:3px 10px;color:#555}
@@ -202,8 +207,9 @@ ${photographe ? ".g0{grid-row:span 2}.g3,.g5{grid-column:span 2}" : ""}
 .zone{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.zone span{border:1px solid var(--ligne);border-radius:99px;padding:5px 14px;font-size:14px;background:var(--carte)}
 .contact{text-align:center}.contact .ctas{justify-content:center;margin-top:24px}
 footer{padding:28px max(5vw,16px);color:var(--doux);font-size:14px;border-top:1px solid var(--ligne);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-@media(max-width:820px){nav{display:none}.hero-coach,.resa,.apropos{grid-template-columns:1fr}.g5{grid-column:auto}.hero-coach .hero-img{aspect-ratio:4/3;box-shadow:10px 10px 0 var(--acc)}
-  .galerie{grid-template-columns:repeat(2,minmax(0,1fr))}.g0,.g3{grid-row:auto;grid-column:auto}}
+@media(max-width:820px){nav{display:none}.hero-coach .hero-txt,.resa,.apropos{grid-template-columns:1fr}.g5{grid-column:auto}
+  .ligne-p{grid-template-columns:1fr auto}.ligne-p p{grid-column:1/-1}.hero-coach .hero-img{height:46vh}
+  .galerie{grid-template-columns:repeat(2,minmax(0,1fr))}.g0,.g3{grid-row:auto;grid-column:auto}.galerie .g3{grid-column:1/-1}}
 @media(prefers-reduced-motion:no-preference){.hero-txt>*{animation:monte .8s cubic-bezier(.2,.7,.2,1) both}.hero-txt>*:nth-child(2){animation-delay:.1s}
   .hero-txt>*:nth-child(3){animation-delay:.2s}.hero-txt>*:nth-child(4){animation-delay:.3s}@keyframes monte{from{opacity:0;transform:translateY(16px)}}}
 </style></head>
@@ -216,7 +222,7 @@ ${hero}
 <section id="prestations" class="band">
   <h2>${photographe ? "Prestations" : "Les formules"}</h2>
   <p class="intro2">${photographe ? "Chaque séance est préparée avec vous : le lieu, la lumière, le moment." : "Des séances adaptées à votre niveau et à votre objectif, au rythme qui vous convient."}</p>
-  <div class="cartes">${cartes}</div>
+  <div class="${photographe ? "cartes" : "liste-p"}">${cartes}</div>
 </section>
 <section id="galerie" class="band" style="padding-top:0">
   <h2>${photographe ? "Portfolio" : "En images"}</h2>
@@ -264,8 +270,8 @@ export const EXEMPLES_INDEPENDANT: Record<"photographe" | "coach", ContenuIndepe
     nom: "Julien Dewaele Coaching",
     metier: "Coach sportif",
     commune: "Roubaix",
-    accroche: "Retrouvez la forme, à votre rythme",
-    intro: "Coaching sportif à domicile, en extérieur ou en salle à Roubaix et dans la métropole lilloise.",
+    accroche: "Coach sportif à Roubaix, chez vous ou au parc",
+    intro: "Je vous accompagne en individuel ou en petit groupe, que vous repreniez le sport ou prépariez une course.",
     prestations: [
       { titre: "Séance découverte", description: "Un premier rendez-vous pour faire le point sur votre forme et votre objectif." },
       { titre: "Coaching individuel", description: "Un programme construit pour vous, chez vous, au parc ou en salle." },
