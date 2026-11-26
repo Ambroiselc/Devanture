@@ -15,6 +15,9 @@ create table if not exists public.recherches_independants (
 );
 
 alter table public.recherches_independants enable row level security;
+revoke all on public.recherches_independants from anon;
+grant select on public.recherches_independants to authenticated;
+grant select, insert, update, delete on public.recherches_independants to service_role;
 drop policy if exists recherches_independants_admin on public.recherches_independants;
 create policy recherches_independants_admin on public.recherches_independants for all to authenticated
   using ((select public.is_admin())) with check ((select public.is_admin()));
