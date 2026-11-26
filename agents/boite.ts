@@ -17,6 +17,7 @@
 // Test sans Internet ni clés : DEVANTURE_SIMULATION=1 sur une base locale.
 // =====================================================================
 import { connecter, fermerTachesInterrompues, type Sql } from "./lib/db.ts";
+import { estIndependant } from "./lib/cible.ts";
 import { http, sleep, SIMULATION } from "./lib/http.ts";
 import {
   adresseReponse, demandeStop, expediteurMachine, objetReponse, prospectDepuisAdresse, sansCitation, sujetsSensibles,
@@ -286,6 +287,9 @@ async function trier(sql: Sql, taskId: string, r: Reglages): Promise<void> {
       if (t.reponse.includes("[LIEN DE LA MAQUETTE]")) raisons.push("lien de la maquette à coller à la place de [LIEN DE LA MAQUETTE]");
       if (/\bAmbroise\b/.test(t.reponse.split("Bien cordialement")[0])) raisons.push("parle d'Ambroise à la troisième personne");
       if (!p) raisons.push("expéditeur inconnu");
+      // 26/11 : nouvelle cible (photographes, coachs). L'offre n'est pas encore adaptée (réservation en ligne) :
+      // Inès prépare la réponse, Broise la relit toujours.
+      if (estIndependant(p?.category)) raisons.push("nouvelle cible (photographe ou coach) : à relire");
       if ((m.attachments ?? []).length) raisons.push("pièce jointe");
       if (t.aSignaler) raisons.push(t.aSignaler);
       const [{ aujourdhui }] = await sql<{ aujourdhui: number }[]>`

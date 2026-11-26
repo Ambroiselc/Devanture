@@ -41,6 +41,14 @@ on:
         description: "Vague automatique (RGE d'abord, puis Google) : c'est ce que lance le réveil Cloudflare deux fois par jour"
         type: boolean
         default: false
+      independants:
+        description: "Nouvelle cible (26/11) : photographes et coachs du Nord et du Pas-de-Calais (recherche Google par lot)"
+        type: boolean
+        default: false
+      recherches:
+        description: "Nouvelle cible : nombre de recherches Google (20 fiches chacune) pour ce lancement"
+        type: string
+        default: "15"
       renoter:
         description: "Nouvelle notation des prospects déjà connus (barème du 25/10 : le nombre d'avis compte très peu). Ignore les autres champs."
         type: boolean
@@ -89,7 +97,16 @@ jobs:
           LIMITE: ${{ inputs.limite }}
           COMMUNE: ${{ inputs.commune || '59599' }}
           AUTO: ${{ (github.event_name == 'schedule' || inputs.auto) && '--auto' || (inputs.renoter && '--renoter' || (inputs.rge && '--rge' || (inputs.tournee && '--tournee' || ''))) }}
-        run: node agents/prospection.ts --metier "$METIER" --limite "$LIMITE" --commune "$COMMUNE" $AUTO
+        # 26/11 (décision de Broise) : la vague automatique cherche la nouvelle cible (photographes et coachs,
+        # agents/prospection-independants.ts, voir agents/lib/cible.ts) ; les lancements à la main restent pour les artisans.
+        run: |
+          if [ "${{ inputs.independants }}" = "true" ]; then
+            node agents/prospection-independants.ts --recherches "${{ inputs.recherches || '15' }}"
+          elif [ "$AUTO" = "--auto" ] && grep -q 'CIBLE: "artisans" | "independants" = "independants"' agents/lib/cible.ts; then
+            node agents/prospection-independants.ts
+          else
+            node agents/prospection.ts --metier "$METIER" --limite "$LIMITE" --commune "$COMMUNE" $AUTO
+          fi
 
       # Chaîne automatique (26/10) : dès que Loïc a qualifié des prospects, Sid leur prépare une maquette,
       # puis Valérie rédige le premier e-mail (versions A/B et « avec / sans image » alternées).

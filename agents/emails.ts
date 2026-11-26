@@ -16,6 +16,7 @@ import { connecter, type Sql } from "./lib/db.ts";
 import { MODELE } from "./lib/haiku.ts";
 import { SIMULATION } from "./lib/http.ts";
 import { assemblerEmail, redigerEmail, type Variante } from "./lib/redaction-email.ts";
+import { METIERS_INDEPENDANTS } from "./lib/cible.ts";
 import { VARIANTES_ACTIVES } from "./lib/variantes-email.ts";
 import { relire as relireCoco, renvois } from "./lib/coco.ts";
 import { ajouterResume } from "./lib/sortie-publique.ts";
@@ -259,7 +260,7 @@ async function main() {
         and not exists (select 1 from public.emails e where e.prospect_id = p.id and e.status <> 'erreur')
         ${args.prospect ? sql`and p.id = ${args.prospect}` : sql``}
         ${renvoyesSeulement ? sql`and p.notes like '%[Coco] %'` : sql``}
-      order by p.score desc nulls last, p.created_at
+      order by (p.category = any(${[...METIERS_INDEPENDANTS]})) desc, p.score desc nulls last, p.created_at
       limit ${limite}`;
     let prospects = await choisir(false);
 

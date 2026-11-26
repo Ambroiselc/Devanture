@@ -32,7 +32,7 @@ const PHOTOS: Record<MetierIndependant, string[]> = {
   ],
   // 26/11 (avis de Broise : la 1re version « faisait généré par IA ») : photos en extérieur, plus naturelles.
   "Coach sportif": [
-    "1775850576250-d4296a7af153", "1759476532444-fa17a7131941", "1600026453194-11ae289732b8",
+    "1775850576250-d4296a7af153", "1759476532444-fa17a7131941", "1746003625470-8dde780622f8",
     "1542354771-435b9f200e57", "1759300642211-4e81a270a358", "1759300642338-c5c7cd576a22",
   ],
 };
@@ -170,7 +170,7 @@ nav{display:flex;gap:22px;flex-wrap:wrap}nav a{text-decoration:none;color:var(--
 .hero-photo .hero-txt{position:relative;color:#fff;padding:clamp(28px,5vw,72px) max(5vw,16px);max-width:900px}
 .hero-photo h1{font-size:clamp(40px,6vw,76px)}.hero-photo .lead,.hero-photo .sur{color:rgba(255,255,255,.86)}
 .hero-photo .btn{background:#fff;color:#1e1b18;border-color:#fff}.hero-photo .btn.ghost{background:transparent;color:#fff;border-color:#fff}
-.hero-coach .hero-img{height:min(62vh,560px);background:var(--ligne)}.hero-coach .hero-img img{object-position:50% 35%}
+.hero-coach .hero-img{height:min(72vh,660px);background:var(--ligne)}.hero-coach .hero-img img{object-position:50% 78%}
 .hero-coach .hero-txt{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,5vw,72px);align-items:end;padding:clamp(28px,4vw,56px) max(5vw,16px) 0}
 .hero-coach h1{font-size:clamp(38px,5vw,64px)}.hero-coach .lead{margin-top:0}
 .liste-p{border-top:1px solid var(--encre)}

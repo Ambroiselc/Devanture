@@ -147,7 +147,8 @@ export async function aAppeler(supabase: SupabaseClient, seul?: string): Promise
     const v = visites.get(w.id) ?? [];
     const totalS = v.reduce((t, x) => t + x.duree_s, 0);
     const d = details.get(p.id);
-    const c = (w.content ?? {}) as { services?: { titre?: string }[]; zone?: string[]; metier?: string };
+    // 26/11 : les maquettes « indépendant » ont des « prestations » au lieu de « services ».
+    const c = (w.content ?? {}) as { services?: { titre?: string }[]; prestations?: { titre?: string }[]; zone?: string[]; metier?: string };
     const recence = Math.max(0, 14 - (Date.now() - new Date(w.derniere_vue).getTime()) / 86_400_000); // 0 à 14
     res.push({
       prospectId: p.id, websiteId: w.id, slug: w.slug, nom: p.name, metier: p.category ?? c.metier ?? null, ville: p.city,
@@ -167,7 +168,7 @@ export async function aAppeler(supabase: SupabaseClient, seul?: string): Promise
           rouvertApresAppel: !!quand && !decide && new Date(w.derniere_vue).getTime() > new Date(quand).getTime(),
         };
       })(),
-      services: (c.services ?? []).map((s) => s.titre ?? "").filter(Boolean).slice(0, 4),
+      services: (c.services ?? c.prestations ?? []).map((s) => s.titre ?? "").filter(Boolean).slice(0, 4),
       zone: (c.zone ?? []).slice(0, 5),
     });
   }

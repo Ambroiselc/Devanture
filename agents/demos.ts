@@ -21,6 +21,8 @@ import { MODELE } from "./lib/haiku.ts";
 import { SIMULATION } from "./lib/http.ts";
 import { COMMUNES_PLUS_TARD, LISTE_COMMUNES } from "./lib/metiers.ts";
 import { redigerDemo } from "./lib/redaction-demo.ts";
+import { redigerDemoIndependant } from "./lib/redaction-independant.ts";
+import { estIndependant, METIERS_INDEPENDANTS } from "./lib/cible.ts";
 import { analyserSite } from "./lib/site.ts";
 import { communesVoisines } from "./lib/geo.ts";
 import { ajouterResume } from "./lib/sortie-publique.ts";
@@ -110,7 +112,7 @@ async function habillerAnciennes(sql: Sql) {
     select w.id, w.content, w.prospect_id, p.category, p.city, p.postal_code
     from public.websites w
     join public.prospects p on p.id = w.prospect_id
-    where w.kind = 'demo' and w.status <> 'archive' and w.content is not null
+    where w.kind = 'demo' and w.status <> 'archive' and w.content is not null and w.template <> 'independant'
       and not (w.content ? 'habillage')
       and p.status in ('qualifie', 'demo_prete')
       and not exists (select 1 from public.emails m where m.website_id = w.id and m.status in ('envoye', 'repondu'))
@@ -164,7 +166,7 @@ async function rattraperCaptures(sql: Sql) {
   const maquettes = await sql<{ id: string; content: ContenuDemo }[]>`
     select w.id, w.content from public.websites w
     join public.prospects p on p.id = w.prospect_id
-    where w.kind = 'demo' and w.status <> 'archive' and w.content is not null
+    where w.kind = 'demo' and w.status <> 'archive' and w.content is not null and w.template <> 'independant'
       and p.status in ('qualifie', 'demo_prete')
       and (select count(*) from public.website_captures c where c.website_id = w.id) < 3
     order by w.created_at`;
@@ -213,7 +215,7 @@ async function main() {
           where p.status = 'qualifie'
             and not exists (select 1 from public.websites w
                             where w.prospect_id = p.id and w.kind = 'demo' and w.status <> 'archive')
-          order by p.score desc nulls last, p.created_at
+          order by (p.category = any(${[...METIERS_INDEPENDANTS]})) desc, p.score desc nulls last, p.created_at
           limit ${limite}`;
 
     if (prospects.length === 0) {
@@ -249,6 +251,44 @@ async function main() {
           await journal(sql, taskId, "info", `${p.name} : sur la liste d'opposition, pas de démo.`);
           continue;
         }
+      }
+
+      // 26/11 : nouvelle cible (photographes, coachs) : modèle « indépendant », sans habillage ni captures.
+      if (estIndependant(p.category)) {
+        try {
+          const commune = p.city ?? "votre secteur";
+          const voisines = await communesVoisines(commune, p.postal_code, 10).catch(() => [] as string[]);
+          const site = p.current_website ? await analyserSite(p.current_website) : null;
+          const r = await redigerDemoIndependant(
+            { nom: p.name, metier: p.category, commune, telephone: p.phone, email: p.email, texteSite: site?.indices?.extrait ?? null },
+            voisines.length ? voisines : [commune],
+            Math.random() < 0.5 ? 0 : 1,
+          );
+          tokensEntree += r.tokensEntree;
+          tokensSortie += r.tokensSortie;
+          bilan.cout_ia_eur = Math.round((bilan.cout_ia_eur + r.coutEur) * 1e6) / 1e6;
+          await sql.begin(async (tx) => {
+            await tx`update public.websites set status = 'archive'
+                     where prospect_id = ${p.id} and kind = 'demo' and status <> 'archive'`;
+            await tx`insert into public.websites (prospect_id, kind, status, template, content, slug, is_demo)
+                     values (${p.id}, 'demo', 'pret', 'independant', ${tx.json(r.contenu as never)}, ${slug(p.name, commune)}, ${SIMULATION})`;
+            await tx`update public.prospects set status = 'demo_prete' where id = ${p.id} and status in ('nouveau', 'qualifie')`;
+            await tx`insert into public.costs (task_id, campaign_id, provider, category, amount_eur, description, is_demo)
+                     values (${taskId}, ${p.campaign_id}, 'anthropic', 'api', ${r.coutEur},
+                             ${`Textes de démo (indépendant) : ${p.name}`}, ${SIMULATION})`;
+          });
+          bilan.demos++;
+          erreursDeSuite = 0;
+          await journal(sql, taskId, "info", `${p.name} : maquette « indépendant » prête.`);
+        } catch (err) {
+          bilan.erreurs++;
+          erreursDeSuite++;
+          await journal(sql, taskId, "error", `${p.name} : ${(err as Error).message}`);
+          if (erreursDeSuite >= MAX_ERREURS_DE_SUITE) throw new Error(`${MAX_ERREURS_DE_SUITE} erreurs de suite : arrêt par sécurité.`);
+        }
+        await sql`update public.tasks set output = ${sql.json(bilan as never)}, tokens_input = ${tokensEntree},
+                  tokens_output = ${tokensSortie} where id = ${taskId}`;
+        continue;
       }
 
       try {

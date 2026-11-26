@@ -11,6 +11,7 @@ import { lireReseau } from "@/lib/reseau";
 import { lireAppareil } from "@/lib/appareil";
 import { bandeauInteret } from "@/lib/bandeau-interet";
 import { moderniser } from "@/agents/lib/moderne";
+import { renderIndependant, type ContenuIndependant } from "@/agents/lib/demo-independant";
 
 const page = (html: string, status = 200) =>
   new Response(html, {
@@ -46,8 +47,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   // ?moderne=0 montre l'ancienne version (gardé par le sélecteur de style).
   const moderne = url.searchParams.get("moderne") !== "0";
   const suffixe = (apercu ? "&apercu=1" : "") + (moderne ? "" : "&moderne=0");
-  const rendu = renderAvecSelecteur(contenu, style, (s: string) => `/m/${slug}?style=${s}${suffixe}`);
-  const brut = moderne ? moderniser(rendu) : rendu;
+  // 26/11 : maquettes « indépendant » (photographes, coachs) : un seul style, déjà animé ; l'en-tête ne colle pas
+  // sous le bandeau « Ce site pourrait être le vôtre ».
+  const independant = (contenu as unknown as { modele?: string }).modele === "independant";
+  const rendu = independant
+    ? renderIndependant(contenu as unknown as ContenuIndependant).replace("</head>", "<style>header{position:relative!important}</style></head>")
+    : renderAvecSelecteur(contenu, style, (s: string) => `/m/${slug}?style=${s}${suffixe}`);
+  const brut = moderne && !independant ? moderniser(rendu) : rendu;
   // 13/11 : bandeau « Ce site m'intéresse », tout en haut et collé en haut de l'écran.
   const html = brut.replace("<body>", `<body>\n${bandeauInteret(slug, style, apercu)}`);
   const ajout = apercu ? bandeauApercu : compteur(slug);

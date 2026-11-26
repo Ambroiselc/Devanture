@@ -25,6 +25,7 @@ import { coutEur, MODELE } from "./haiku.ts";
 import { LIEN_DEMO } from "./redaction-email.ts";
 import { phrasesTropLongues } from "./style.ts";
 import { METIERS } from "./metiers.ts";
+import { estIndependant } from "./cible.ts";
 
 /** D'où vient le problème d'un e-mail gardé (30/10) : qui doit le régler. */
 export type Cause = "email" | "maquette" | "artisan" | "autre";
@@ -159,6 +160,15 @@ Le texte que tu relis s'arrête avant la formule finale : la signature et les me
 
 Réponds uniquement avec l'outil « relire_email ».`;
 
+// 26/11 : nouvelle cible (photographes, coachs sportifs). Ce qui change par rapport aux artisans.
+const SYSTEME_INDEPENDANT = `
+
+IMPORTANT : cet e-mail s'adresse à la NOUVELLE CIBLE de Devanture (26/11), pas à un artisan.
+- Le destinataire est photographe ou coach sportif, à son compte. Ce n'est PAS un artisan, et c'est voulu : ne le garde jamais pour cette raison.
+- Il a déjà un site, sans réservation en ligne ni tarifs affichés (Loïc l'a vérifié). Sa maquette n'a qu'UN style : l'e-mail ne parle pas de deux styles, c'est normal.
+- La maquette contient ses prestations, une galerie de photos d'illustration, une page « à propos » et un bloc de réservation en ligne (le client choisit prestation, jour et heure). « Réserver en ligne », « à toute heure », « sans attendre votre réponse » sont donc exacts.
+- Garde avec cause « artisan » (pas une cible) seulement si ce n'est visiblement pas un indépendant de ce métier : une salle de sport, une chaîne, un magasin photo, une école, une grande entreprise.`;
+
 const OUTIL = {
   name: "relire_email",
   description: "Enregistre la décision de Coco sur l'e-mail.",
@@ -182,6 +192,7 @@ async function lire(e: ARelire, message: string, consignes: string | null): Prom
   if (SIMULATION) return { verdict: "ok", avis: "Simulation : relu sans IA.", cause: "autre", metier: null, coutEur: 0, tokensEntree: 0, tokensSortie: 0 };
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY manquante.");
+  const independant = estIndependant(e.category);
   const donnees = {
     entreprise: e.name,
     nom_sur_la_maquette: e.nom_affiche,
@@ -201,7 +212,7 @@ async function lire(e: ARelire, message: string, consignes: string | null): Prom
     body: JSON.stringify({
       model: MODELE,
       max_tokens: 900,
-      system: consignes ? `${SYSTEME}\n\nConsignes supplémentaires de Broise (à respecter) :\n${consignes}` : SYSTEME,
+      system: `${SYSTEME}${independant ? SYSTEME_INDEPENDANT : ""}${consignes ? `\n\nConsignes supplémentaires de Broise (à respecter) :\n${consignes}` : ""}`,
       tools: [OUTIL],
       tool_choice: { type: "tool", name: OUTIL.name },
       messages: [{ role: "user", content: JSON.stringify(donnees) }],
@@ -296,7 +307,9 @@ async function regler(sql: Sql, e: ARelire, avis: string, reglement: Reglement |
   const ajouterNote = (ligne: string) => (notes ? `${notes}\n${ligne}` : ligne);
 
   let quoi: Reglement | "artisan" = reglement;
-  if (quoi === "maquette") {
+  if (quoi === "maquette" && estIndependant(p?.category)) {
+    metier = p!.category; // 26/11 : un photographe ou un coach garde son métier, Sid refait seulement sa maquette
+  } else if (quoi === "maquette") {
     const bon = metier && LIBELLES_METIERS.includes(metier) ? metier
       : p?.category && LIBELLES_METIERS.includes(p.category) ? p.category : null;
     if (!bon) quoi = "email"; else metier = bon;

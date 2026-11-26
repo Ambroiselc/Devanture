@@ -21,6 +21,7 @@
 // Test sans Internet ni clés : DEVANTURE_SIMULATION=1 sur une base locale.
 // =====================================================================
 import { parseArgs } from "node:util";
+import { CIBLE, METIERS_INDEPENDANTS } from "./lib/cible.ts";
 import { promises as dns } from "node:dns";
 import { connecter, fermerTachesInterrompues, type Sql } from "./lib/db.ts";
 import { http, sleep, SIMULATION } from "./lib/http.ts";
@@ -450,6 +451,10 @@ async function main() {
           ? (relances ? sql`and e.relance_de is not null and o.status = 'envoye'
                             and (o.sender = any(${adressesBoites}) or coalesce(o.sender, 'resend') = 'resend')` : sql`and e.relance_de is null`)
           : sql``}
+        ${!relances && CIBLE === "independants" && !args.email
+          // 26/11 (décision de Broise) : les PREMIERS e-mails ne partent plus qu'à la nouvelle cible (photographes, coachs).
+          // Les relances des artisans déjà contactés continuent.
+          ? sql`and p.category = any(${[...METIERS_INDEPENDANTS]})` : sql``}
       order by ${relances ? sql`coalesce(w.vues, 0) > 0 desc, o.sent_at,` : sql``} p.score desc nulls last, e.updated_at, e.created_at
       limit ${limite}`;
     const placesRelances = args.email ? ordre.length : Math.ceil(ordre.length * PART_RELANCES);

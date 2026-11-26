@@ -50,5 +50,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { data } = await supabase.from("websites").select("content").eq("id", id).maybeSingle();
   const contenu = data?.content as ContenuDemo | null | undefined;
   if (!contenu) return page("<p>Démo introuvable (ou pas encore rédigée).</p>", 404);
+  if ((contenu as unknown as { modele?: string }).modele === "independant") return pageBrute(renderIndependant(contenu as never));
   return page(renderAvecSelecteur(contenu, style, lien));
 }
