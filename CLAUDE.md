@@ -275,6 +275,16 @@
   25/11 (demande de Broise) : le script tient compte des appels déjà notés (`contexteAppels`, page `/appeler/<id>`) :
   dernier appel « À rappeler » → « on s'est parlé le …, je vous rappelle comme prévu » ; « Messagerie » déjà noté → « je vous ai laissé un message le … »
   (jamais de 2e message) ; panneau « Avant d'appeler » prévenu aussi si l'artisan a rouvert sa maquette depuis (à ne pas lui dire).
+- Nouvelle cible (26/11, décision de Broise après 504 artisans et 0 intéressé) : photographes et coachs sportifs (`agents/lib/cible.ts`,
+  `CIBLE = "independants"`). Loïc automatique → `agents/prospection-independants.ts` (recherche Google « par lot » : Text Search
+  avec site, avis, téléphone, 1 requête = 20 fiches, plafond 950/mois ; communes ≥ 8 000 hab. du 59, 62, 80, 02, 60 ; une campagne
+  « Indépendants · métier · commune » par couple ; règle : e-mail trouvé, < 30 avis, ni réservation en ligne ni tarifs, sinon
+  « écarté » avec la raison ; input `independants` du workflow pour un lancement à la main). Sid : modèle `agents/lib/demo-independant.ts`
+  (template « independant », textes `redaction-independant.ts`, sans habillage ni captures ; exemples `/demo/exemple-photographe`,
+  `/demo/exemple-coach`), rendu par /m et /demo selon `content.modele`. Valérie : `SYSTEME_INDEPENDANT` (redaction-email.ts) ;
+  Coco : `SYSTEME_INDEPENDANT` (coco.ts), un photographe garde son métier si Sid refait la maquette. Envoi : les PREMIERS e-mails
+  ne partent plus qu'à la cible, les relances des artisans continuent ; jamais d'envoi à une adresse de service (`ADRESSE_GENERIQUE`,
+  site.ts, et filtre SQL dans envoi.ts). Inès : toute réponse à la cible est à relire par Broise.
 - Données personnelles : respecter `docs/registre-rgpd.md` (B2B uniquement, sources publiques, 3 ans max,
   lien de désinscription dans chaque e-mail). Mettre le registre à jour à chaque nouvel outil.
 - Vérifier avec `npm run typecheck` puis `npm run build` avant de dire que c'est fini.
