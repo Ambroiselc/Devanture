@@ -188,7 +188,7 @@ h2{font-size:clamp(32px,4vw,50px);margin-bottom:12px}
 .galerie{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:clamp(160px,22vw,300px);gap:10px}
 ${photographe ? "" : ".g0{grid-column:span 2;grid-row:span 2}"}
 .g{margin:0;overflow:hidden;background:var(--ligne);border-radius:${photographe ? "2px" : "14px"}}
-.g img{transition:transform .8s ease}.g:hover img{transform:scale(1.05)}
+.g img{transition:transform .8s ease;object-position:50% 22%}.g:hover img{transform:scale(1.05)}
 ${photographe ? ".g0{grid-row:span 2}.g3,.g5{grid-column:span 2}" : ""}
 .legende{color:var(--doux);font-size:14px;margin-top:12px}
 .resa{display:grid;grid-template-columns:1fr minmax(0,420px);gap:clamp(28px,5vw,72px);align-items:center;background:var(--carte);color:var(--encre);border-block:1px solid var(--ligne)}
