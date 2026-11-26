@@ -87,8 +87,8 @@ export default async function CampagnePage({ params }: { params: Promise<{ id: s
         </ol>
         {v.recherches && (
           <p className="border-t border-line px-4 py-3 text-sm text-muted sm:px-5">
-            Loïc a déjà cherché <b className="tabular text-ink">{v.recherches.faites}</b> couples ville × métier : {v.recherches.fiches} fiches Google lues,
-            {" "}{v.recherches.qualifies} retenues ({pct(v.recherches.qualifies, v.recherches.fiches)}).
+            Loïc a déjà cherché <b className="tabular text-ink">{v.recherches.faites}</b> couples ville × métier : {v.total} fiches Google gardées,
+            {" "}{v.total - byStatus("ecarte")} retenues ({pct(v.total - byStatus("ecarte"), v.total)}), les autres écartées par la règle.
           </p>
         )}
       </Panel>
