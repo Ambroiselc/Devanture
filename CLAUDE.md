@@ -277,8 +277,8 @@
   (jamais de 2e message) ; panneau « Avant d'appeler » prévenu aussi si l'artisan a rouvert sa maquette depuis (à ne pas lui dire).
 - Nouvelle cible (26/11, décision de Broise après 504 artisans et 0 intéressé) : photographes et coachs sportifs (`agents/lib/cible.ts`,
   `CIBLE = "independants"`). Loïc automatique → `agents/prospection-independants.ts` (recherche Google « par lot » : Text Search
-  avec site, avis, téléphone, 1 requête = 20 fiches, plafond 950/mois ; communes ≥ 8 000 hab. du 59, 62, 80, 02, 60 ; une campagne
-  « Indépendants · métier · commune » par couple ; règle : e-mail trouvé, < 30 avis, ni réservation en ligne ni tarifs, sinon
+  avec site, avis, téléphone, 1 requête = 20 fiches, plafond 950/mois ; communes ≥ 8 000 hab. du 59, 62, 80, 02, 60 ; UNE seule campagne « Photographes et coachs » (26/11, demande de Broise), couples métier + commune déjà
+  cherchés dans `public.recherches_independants` (migration 20261126000000) ; règle : e-mail trouvé, < 30 avis, ni réservation en ligne ni tarifs, sinon
   « écarté » avec la raison ; input `independants` du workflow pour un lancement à la main). Sid : modèle `agents/lib/demo-independant.ts`
   (template « independant », textes `redaction-independant.ts`, sans habillage ni captures ; exemples `/demo/exemple-photographe`,
   `/demo/exemple-coach`), rendu par /m et /demo selon `content.modele`. Valérie : `SYSTEME_INDEPENDANT` (redaction-email.ts) ;

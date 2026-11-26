@@ -7,7 +7,8 @@
 //   2. Visite du site : e-mail (même méthode que pour les artisans), réservation en ligne, tarifs affichés.
 //   3. Règle : e-mail trouvé, moins de 30 avis, ni réservation en ligne ni tarifs → « qualifié » (Sid prend le relais).
 //      Les autres sont enregistrés « écarté » avec la raison (pour ne jamais les relire).
-// Un couple métier + commune n'est cherché qu'une fois : il devient une campagne « Indépendants · <métier> · <commune> ».
+// Tout va dans UNE campagne « Photographes et coachs » (demande de Broise, 26/11). Un couple métier + commune n'est
+// cherché qu'une fois : il est noté dans public.recherches_independants (migration 20261126000000).
 //
 // Usage : node agents/prospection-independants.ts [--recherches 15]
 import { parseArgs } from "node:util";
@@ -146,27 +147,26 @@ async function main() {
       returning id`;
     taskId = tache.id;
 
-    // Couples déjà cherchés (une campagne par couple).
-    const faits = new Set((await sql<{ name: string }[]>`select name from public.campaigns where name like 'Indépendants · %'`).map((r) => r.name));
+    const campagneId = await campagneUnique(sql);
+    // Couples déjà cherchés.
+    const cle = (m: string, d: string, c: string) => `${m}|${d}|${c}`;
+    const faits = new Set((await sql<{ metier: string; departement: string; commune: string }[]>`
+      select metier, departement, commune from public.recherches_independants`).map((r) => cle(r.metier, r.departement, r.commune)));
 
     dehors: for (const dep of DEPARTEMENTS) {
       const communes = await communesDuDepartement(dep);
       for (const c of communes) {
         for (const metier of METIERS_INDEPENDANTS as readonly MetierIndep[]) {
-          const nomCampagne = `Indépendants · ${metier} · ${c.nom} (${dep})`;
-          if (faits.has(nomCampagne)) continue;
+          if (faits.has(cle(metier, dep, c.nom))) continue;
           if (bilan.recherches >= budget) { bilan.arret = `Budget de ${budget} recherche(s) atteint.`; break dehors; }
-          const [camp] = await sql<{ id: string }[]>`
-            insert into public.campaigns (name, description, status, target_city, target_category, started_at, is_demo)
-            values (${nomCampagne}, 'Nouvelle cible du 26/11 : recherche Google par lot', 'en_cours', ${c.nom}, ${metier}, now(), ${SIMULATION})
-            returning id`;
-          faits.add(nomCampagne);
+          faits.add(cle(metier, dep, c.nom));
           bilan.couples.push(`${metier} · ${c.nom}`);
+          const avant = { recherches: bilan.recherches, fiches: bilan.fiches, qualifies: bilan.qualifies };
           let token: string | undefined;
           for (let page = 0; page < pagesPour(c.population) && bilan.recherches < budget; page++) {
             let lot: { fiches: Fiche[]; suivante: string | null };
             try { lot = await rechercherLot(RECHERCHE_METIER[metier], c, token); }
-            catch (e) { bilan.erreurs++; console.log(`${nomCampagne} : ${(e as Error).message}`); break; }
+            catch (e) { bilan.erreurs++; console.log(`${metier} · ${c.nom} : ${(e as Error).message}`); break; }
             bilan.recherches++;
             for (const f of lot.fiches) {
               if (f.statut && f.statut !== "OPERATIONAL") continue;
@@ -174,13 +174,15 @@ async function main() {
               const [connu] = await sql`select 1 from public.prospects where google_place_id = ${f.placeId}`;
               if (connu) { bilan.deja_connues++; continue; }
               bilan.fiches++;
-              await traiter(sql, camp.id, metier, c, f, bilan);
+              await traiter(sql, campagneId, metier, c, f, bilan);
             }
             if (!lot.suivante) break;
             token = lot.suivante;
             await new Promise((r) => setTimeout(r, 2000)); // Google demande un court délai avant la page suivante
           }
-          await sql`update public.campaigns set status = 'terminee' where id = ${camp.id}`;
+          await sql`insert into public.recherches_independants (metier, departement, commune, recherches, fiches, qualifies)
+                    values (${metier}, ${dep}, ${c.nom}, ${bilan.recherches - avant.recherches}, ${bilan.fiches - avant.fiches}, ${bilan.qualifies - avant.qualifies})
+                    on conflict do nothing`;
         }
       }
     }
@@ -197,6 +199,18 @@ async function main() {
   } finally {
     await sql.end();
   }
+}
+
+/** La campagne unique « Photographes et coachs » (créée par la migration 20261126000000, sinon ici). */
+async function campagneUnique(sql: Sql): Promise<string> {
+  const [c] = await sql<{ id: string }[]>`select id from public.campaigns where name = 'Photographes et coachs' limit 1`;
+  if (c) return c.id;
+  const [n] = await sql<{ id: string }[]>`
+    insert into public.campaigns (name, description, status, target_category, started_at, is_demo)
+    values ('Photographes et coachs', 'Nouvelle cible depuis le 26/11 : photographes et coachs sportifs, recherche Google par lot.',
+            'en_cours', 'Photographe, Coach sportif', now(), ${SIMULATION})
+    returning id`;
+  return n.id;
 }
 
 async function traiter(sql: Sql, campagneId: string, metier: MetierIndep, c: Commune, f: Fiche, bilan: { avec_email: number; qualifies: number; ecartes: number; opposes: number }) {
