@@ -32,7 +32,7 @@ const PHOTOS: Record<MetierIndependant, string[]> = {
   ],
   // 26/11 (avis de Broise : la 1re version « faisait généré par IA ») : photos en extérieur, plus naturelles.
   "Coach sportif": [
-    "1759476532444-fa17a7131941", "1775850576250-d4296a7af153", "1600026453194-11ae289732b8",
+    "1775850576250-d4296a7af153", "1759476532444-fa17a7131941", "1600026453194-11ae289732b8",
     "1542354771-435b9f200e57", "1759300642211-4e81a270a358", "1759300642338-c5c7cd576a22",
   ],
 };
@@ -114,7 +114,7 @@ export function renderIndependant(c: ContenuIndependant): string {
     : prestations.map((p) => `<div class="ligne-p"><h3>${e(p.titre)}</h3><p>${e(p.description)}</p>
     <span class="todo">Votre tarif</span><a href="#reserver" class="lien">Réserver</a></div>`).join("");
 
-  const galerie = (photographe ? ph.slice(1, 7) : ph.slice(1, 5))
+  const galerie = (photographe ? ph.slice(1, 7) : ph.slice(1, 4))
     .map((id, i) => `<figure class="g g${i}">${img(id, 900, `Photo d'illustration ${i + 1}`)}</figure>`).join("");
 
   const resa = `<section id="reserver" class="band resa">
@@ -170,7 +170,7 @@ nav{display:flex;gap:22px;flex-wrap:wrap}nav a{text-decoration:none;color:var(--
 .hero-photo .hero-txt{position:relative;color:#fff;padding:clamp(28px,5vw,72px) max(5vw,16px);max-width:900px}
 .hero-photo h1{font-size:clamp(40px,6vw,76px)}.hero-photo .lead,.hero-photo .sur{color:rgba(255,255,255,.86)}
 .hero-photo .btn{background:#fff;color:#1e1b18;border-color:#fff}.hero-photo .btn.ghost{background:transparent;color:#fff;border-color:#fff}
-.hero-coach .hero-img{height:min(62vh,560px);background:var(--ligne)}
+.hero-coach .hero-img{height:min(62vh,560px);background:var(--ligne)}.hero-coach .hero-img img{object-position:50% 35%}
 .hero-coach .hero-txt{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,5vw,72px);align-items:end;padding:clamp(28px,4vw,56px) max(5vw,16px) 0}
 .hero-coach h1{font-size:clamp(38px,5vw,64px)}.hero-coach .lead{margin-top:0}
 .liste-p{border-top:1px solid var(--encre)}
@@ -186,7 +186,7 @@ h2{font-size:clamp(32px,4vw,50px);margin-bottom:12px}
 .todo{border:1.5px dashed var(--doux);border-radius:6px;padding:3px 10px;font-size:14px;color:var(--doux)}
 .lien{font-weight:600;text-decoration:none;color:var(--acc)}
 .galerie{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:clamp(160px,22vw,300px);gap:10px}
-${photographe ? "" : ".g0{grid-column:span 2;grid-row:span 2}.g3{grid-column:span 3}"}
+${photographe ? "" : ".g0{grid-column:span 2;grid-row:span 2}"}
 .g{margin:0;overflow:hidden;background:var(--ligne);border-radius:${photographe ? "2px" : "14px"}}
 .g img{transition:transform .8s ease}.g:hover img{transform:scale(1.05)}
 ${photographe ? ".g0{grid-row:span 2}.g3,.g5{grid-column:span 2}" : ""}
