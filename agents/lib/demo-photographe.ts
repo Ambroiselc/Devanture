@@ -55,7 +55,11 @@ export function renderPhotographe(d: DonneesPhotographe): string {
   const annee = new Date().getFullYear();
   const posHero = d.spe === "portrait" ? "50% 25%" : "50% 40%";
   // 27/11 : cases larges (bandeaux de « Galerie ») → photos horizontales ; cases hautes → photos en hauteur.
-  const galerie = m === 1 ? repartir(ph.slice(1, 7), ["large", "haute", "haute", "large", "haute", "haute"])
+  // « Galerie » : la grande photo du haut doit être horizontale ; si celle de la spécialité est en hauteur, on prend la
+  // première horizontale, qui ne revient alors pas dans la galerie.
+  const hautDePage = m === 1 && EN_HAUTEUR.has(ph[0]) ? (ph.slice(1).find((id) => !EN_HAUTEUR.has(id)) ?? ph[0]) : ph[0];
+  const sansHaut = [ph[0], ...ph.slice(1, 8)].filter((id) => id !== hautDePage).slice(0, 6);
+  const galerie = m === 1 ? repartir(sansHaut, ["large", "haute", "haute", "large", "haute", "haute"])
     : m === 2 ? repartir(ph.slice(1, 7), ["haute", "haute", "haute", "haute", "haute", "haute"]) : ph.slice(1, 7);
   const portrait = ph[ph.length - 1];
   const tarif = `<span class="todo">Votre tarif</span>`;
@@ -107,7 +111,7 @@ export function renderPhotographe(d: DonneesPhotographe): string {
     // « Galerie » (codes de Jose Villa)
     corps = `<header><a class="logo" href="#">${e(c.nom)}</a>${nav}</header>
 <!--principal-->
-<section class="hero-img">${img(EN_HAUTEUR.has(ph[0]) ? (ph.slice(1).find((id) => !EN_HAUTEUR.has(id)) ?? ph[0]) : ph[0], 2000, `Photo d'illustration : ${c.metier}`)}</section>
+<section class="hero-img">${img(hautDePage, 2000, `Photo d'illustration : ${c.metier}`)}</section>
 <section class="band intro">
   <p class="sur">${e(c.metier)} · ${e(c.commune)}</p>
   <h1>${e(c.accroche)}</h1>
