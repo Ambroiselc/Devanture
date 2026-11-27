@@ -190,7 +190,7 @@ export function renderIndependant(c: ContenuIndependant): string {
   <div class="hero-img">${img(ph[0], 1200, `Photo d'illustration : ${c.metier}`)}</div>
 </section>`
     : hab.h === 0
-    ? `<section class="hero hero-photo">
+    ? `<section class="hero hero-photo spe-${spe}">
   <div class="hero-img">${img(ph[0], 1800, `Photo d'illustration : ${c.metier}`)}</div>
   <div class="hero-txt">
     <p class="sur">${e(metierAffiche)} · ${e(c.commune)}</p>
@@ -199,7 +199,7 @@ export function renderIndependant(c: ContenuIndependant): string {
     <div class="ctas"><a class="btn" href="#reserver">${verbe}</a>${voirAutre}</div>
   </div>
 </section>`
-    : `<section class="hero hero-coach">
+    : `<section class="hero hero-coach spe-${spe}">
   <div class="hero-img">${img(ph[0], 1800, `Photo d'illustration : ${c.metier}`)}</div>
   <div class="hero-txt">
     <div><p class="sur">${e(metierAffiche)} · ${e(c.commune)}</p><h1>${e(c.accroche)}</h1></div>
@@ -272,7 +272,7 @@ nav{display:flex;gap:22px;flex-wrap:wrap}nav a{text-decoration:none;color:var(--
 .hero-photo .hero-txt{position:relative;color:#fff;padding:clamp(28px,5vw,72px) max(5vw,16px);max-width:900px}
 .hero-photo h1{font-size:clamp(40px,6vw,76px)}.hero-photo .lead,.hero-photo .sur{color:rgba(255,255,255,.86)}
 .hero-photo .btn{background:#fff;color:#1e1b18;border-color:#fff}.hero-photo .btn.ghost{background:transparent;color:#fff;border-color:#fff}
-.hero-coach .hero-img{height:min(72vh,660px);background:var(--ligne)}.hero-coach .hero-img img{object-position:50% 78%}
+.hero-coach .hero-img{height:min(72vh,660px);background:var(--ligne)}.hero-coach .hero-img img,.hero-photo .hero-img img{object-position:50% 30%}.hero-coach.spe-fitness .hero-img img{object-position:50% 78%}
 .hero-coach .hero-txt{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,5vw,72px);align-items:end;padding:clamp(28px,4vw,56px) max(5vw,16px) 0}
 .hero-coach h1{font-size:clamp(38px,5vw,64px)}.hero-coach .lead{margin-top:0}
 .hero-cote{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,5vw,72px);align-items:center;padding:clamp(36px,5vw,80px) max(5vw,16px)}
