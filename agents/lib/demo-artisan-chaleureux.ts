@@ -7,6 +7,7 @@ import type { ContenuDemo } from "./demo-artisan-pro.ts";
 import { variantes } from "./habillage.ts";
 import { imgPhotoMetier, photosChantiers } from "./photo-metier.ts";
 import { ancre, champPiege, horairesHtml, imgPhoto, lienTel, piedReel, scriptDevis, teteSeo } from "./site-reel.ts";
+import { avecCadrage } from "./cadrage.ts";
 
 /** Palettes du style chaleureux. La 0 est celle d'origine (brique et mousse). */
 const PALETTES = [
@@ -38,7 +39,12 @@ function initiales(nom: string): string {
   return (mots.slice(0, 2).map((m) => m[0]).join("") || nom.slice(0, 2)).toUpperCase();
 }
 
+/** 27/11 : toutes les maquettes reçoivent la feuille de cadrage des photos (agents/lib/cadrage.ts). */
 export function renderArtisanChaleureux(c: ContenuDemo): string {
+  return avecCadrage(renderArtisanChaleureuxSansCadrage(c));
+}
+
+function renderArtisanChaleureuxSansCadrage(c: ContenuDemo): string {
   const annee = new Date().getFullYear();
   const services = c.services.slice(0, 6);
   const v = variantes(c, "chaleureux");

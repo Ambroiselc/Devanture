@@ -6,6 +6,7 @@
 // Ce fichier est lu par l'agent des maquettes ET par le tableau de bord ; il n'importe que demo-coach.ts et demo-photographe.ts (mises en page).
 import { renderCoach } from "./demo-coach.ts";
 import { renderPhotographe } from "./demo-photographe.ts";
+import { avecCadrage } from "./cadrage.ts";
 
 export type MetierIndependant = "Photographe" | "Coach sportif";
 
@@ -112,8 +113,9 @@ export const PHOTOS_INDEPENDANTS: Record<Specialite, string[]> = {
   ],
   // 26/11 (avis de Broise : la 1re version « faisait généré par IA ») : photos en extérieur, plus naturelles.
   fitness: [
-    "1775850576250-d4296a7af153", "1759476532444-fa17a7131941", "1746003625470-8dde780622f8",
-    "1542354771-435b9f200e57", "1759300642211-4e81a270a358", "1759300642338-c5c7cd576a22",
+    // 27/11 (cadrage) : en premier la photo où l'on voit bien la personne (avant : personnes minuscules dans une aire de jeux).
+    "1759300642211-4e81a270a358", "1759476532444-fa17a7131941", "1542354771-435b9f200e57",
+    "1775850576250-d4296a7af153", "1746003625470-8dde780622f8", "1759300642338-c5c7cd576a22",
   ],
   running: [
     "1552674605-db6ffd4facb5", "1502904550040-7534597429ae", "1634921363975-46fa99024422",
@@ -165,7 +167,12 @@ function prochainsJours(): string[] {
   return jours;
 }
 
+/** 27/11 : toutes les maquettes reçoivent la feuille de cadrage des photos (agents/lib/cadrage.ts). */
 export function renderIndependant(c: ContenuIndependant): string {
+  return avecCadrage(renderIndependantSansCadrage(c));
+}
+
+function renderIndependantSansCadrage(c: ContenuIndependant): string {
   const photographe = c.metier === "Photographe";
   const hab = habillageDe(c);
   const spe = c.specialite && SPECIALITES[c.metier].includes(c.specialite) ? c.specialite : photographe ? "mariage" : "fitness";

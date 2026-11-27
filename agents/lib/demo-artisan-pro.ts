@@ -13,6 +13,7 @@
 import { variantes, type Habillage } from "./habillage.ts";
 import { imgPhotoMetier, photosChantiers } from "./photo-metier.ts";
 import { ancre, champPiege, horairesHtml, imgPhoto, lienTel, piedReel, scriptDevis, teteSeo, type Reel } from "./site-reel.ts";
+import { avecCadrage } from "./cadrage.ts";
 
 export const MODELE_DEMO = "artisan-pro";
 
@@ -82,7 +83,12 @@ function e(texte: string | null | undefined): string {
 
 const aCompleter = (texte: string) => `<span class="todo">${e(texte)}</span>`;
 
+/** 27/11 : toutes les maquettes reçoivent la feuille de cadrage des photos (agents/lib/cadrage.ts). */
 export function renderArtisanPro(c: ContenuDemo): string {
+  return avecCadrage(renderArtisanProSansCadrage(c));
+}
+
+function renderArtisanProSansCadrage(c: ContenuDemo): string {
   const annee = new Date().getFullYear();
   const services = c.services.slice(0, 6);
   const v = variantes(c, "pro");
