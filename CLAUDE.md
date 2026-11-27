@@ -292,6 +292,10 @@
   Coco : `SYSTEME_INDEPENDANT` (coco.ts), un photographe garde son métier si Sid refait la maquette. Envoi : les PREMIERS e-mails
   ne partent plus qu'à la cible, les relances des artisans continuent ; jamais d'envoi à une adresse de service (`ADRESSE_GENERIQUE`,
   site.ts, et filtre SQL dans envoi.ts). Inès : toute réponse à la cible est à relire par Broise.
+- Cadrage des photos d'illustration (27/11, demande de Broise) : `agents/lib/cadrage.ts` (`CADRAGE` : identifiant Unsplash → point à garder
+  visible en %) ; `avecCadrage` ajoute une feuille de style (img[src*=…] / [style*=…], !important) à TOUTES les maquettes (renderIndependant,
+  renderArtisanPro, renderArtisanChaleureux). Planche de vérification : `/demo/planche` (photo entière + recadrages large, 4:5, carré).
+  Toute nouvelle photo : l'ajouter à `CADRAGE` si le sujet n'est pas au centre, et la regarder sur la planche.
 - Données personnelles : respecter `docs/registre-rgpd.md` (B2B uniquement, sources publiques, 3 ans max,
   lien de désinscription dans chaque e-mail). Mettre le registre à jour à chaque nouvel outil.
 - Vérifier avec `npm run typecheck` puis `npm run build` avant de dire que c'est fini.
