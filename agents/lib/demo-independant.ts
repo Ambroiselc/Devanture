@@ -3,10 +3,11 @@
 // comblés (bloc « Réserver en ligne » avec des créneaux d'exemple, prestations avec un emplacement de tarif).
 // Même règle d'honnêteté que les maquettes d'artisans : aucune info inventée (pas de prix, d'avis, de diplôme,
 // d'ancienneté). Ce qu'on ne sait pas s'affiche « à compléter » ; les créneaux et les photos sont marqués « exemple ».
-// Ce fichier est lu par l'agent des maquettes ET par le tableau de bord ; il n'importe que demo-coach.ts et demo-photographe.ts (mises en page).
+// Ce fichier est lu par l'agent des maquettes ET par le tableau de bord ; il n'importe que ses modules (mises en page, cadrage, genre).
 import { renderCoach } from "./demo-coach.ts";
 import { renderPhotographe } from "./demo-photographe.ts";
 import { avecCadrage, repartir, secondePhoto } from "./cadrage.ts";
+import { devinerGenre, type Genre } from "./genre.ts";
 
 export type MetierIndependant = "Photographe" | "Coach sportif";
 
@@ -168,6 +169,31 @@ function prochainsJours(): string[] {
 }
 
 /** 27/11 : toutes les maquettes reçoivent la feuille de cadrage des photos (agents/lib/cadrage.ts). */
+/** Photos d'illustration pour « À propos », par genre (27/11). Prises de préférence hors de la spécialité affichée. */
+const PORTRAITS: Record<"photographe" | "sport" | "calme", Record<Genre, string[]>> = {
+  photographe: {
+    f: ["1573496358961-3c82861ab8f4", "1685760259914-ee8d2c92d2e0", "1494790108377-be9c29b29330", "1573497019940-1c28c88b4f3e"],
+    m: ["1568602471122-7832951cc4c5", "1500648767791-00dcc994a43e", "1560250097-0b93528c311a"],
+  },
+  sport: { f: ["1759476532444-fa17a7131941", "1542354771-435b9f200e57"], m: ["1759300642338-c5c7cd576a22", "1759300642211-4e81a270a358"] },
+  calme: { f: ["1573496358961-3c82861ab8f4", "1494790108377-be9c29b29330"], m: ["1500648767791-00dcc994a43e", "1568602471122-7832951cc4c5"] },
+};
+
+function portraitPour(metier: MetierIndependant, spe: Specialite, genre: Genre, nom: string): string {
+  const pool = PORTRAITS[metier === "Photographe" ? "photographe" : spe === "mental" || spe === "yoga" ? "calme" : "sport"][genre];
+  const hors = pool.filter((id) => !PHOTOS_INDEPENDANTS[spe].slice(0, -1).includes(id));
+  const liste = hors.length ? hors : pool;
+  let h = 0;
+  for (const ch of nom) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return liste[h % liste.length];
+}
+
+/** Met `portrait` en dernière position (case « À propos ») et l'enlève du reste ; la longueur de la liste ne baisse pas. */
+function avecPortrait(ph: string[], portrait: string): string[] {
+  if (ph[ph.length - 1] === portrait) return ph;
+  return [...ph.filter((id) => id !== portrait), portrait];
+}
+
 export function renderIndependant(c: ContenuIndependant): string {
   return avecCadrage(renderIndependantSansCadrage(c));
 }
@@ -176,7 +202,13 @@ function renderIndependantSansCadrage(c: ContenuIndependant): string {
   const photographe = c.metier === "Photographe";
   const hab = habillageDe(c);
   const spe = c.specialite && SPECIALITES[c.metier].includes(c.specialite) ? c.specialite : photographe ? "mariage" : "fitness";
-  const ph = PHOTOS_INDEPENDANTS[spe];
+  // 27/11 (demande de Broise) : photo « À propos » du même genre que l'indépendant (genre.ts), ou par défaut femme pour les
+  // photographes et le yoga, homme pour les coachs. Elle va en dernier (= case « À propos ») et sort de la galerie.
+  const genre = devinerGenre(c.nom, c.email, [c.apropos, c.intro, c.accroche]) ?? (c.metier === "Photographe" || spe === "yoga" ? "f" : "m");
+  const ph = avecPortrait(PHOTOS_INDEPENDANTS[spe], portraitPour(c.metier, spe, genre, c.nom));
+  // Photos en hauteur de secours pour les cases larges (deux côte à côte) : jamais celle d'« À propos ».
+  const reserveDuo = [ph[0], ...SPECIALITES[c.metier].filter((x) => x !== spe).flatMap((x) => PHOTOS_INDEPENDANTS[x])]
+    .filter((id) => id !== ph[ph.length - 1]);
   const jours = prochainsJours();
   if (!photographe) {
     const calme = spe === "mental" || spe === "yoga";
@@ -189,7 +221,7 @@ function renderIndependantSansCadrage(c: ContenuIndependant): string {
   }
 
   const pal = PALETTES_PHOTOGRAPHE[hab.p % PALETTES_PHOTOGRAPHE.length];
-  if (hab.m) return renderPhotographe({ c, spe, ph, m: hab.m, couleurs: pal, jours, creneaux: ["10:00", "14:00", "16:30"] });
+  if (hab.m) return renderPhotographe({ c, spe, ph, reserveDuo, m: hab.m, couleurs: pal, jours, creneaux: ["10:00", "14:00", "16:30"] });
   // Mise en page 0 « Classique » : celle d'avant le 27/11 (Broise l'aime), seules la palette et les photos changent.
   const prestations = c.prestations.slice(0, 4);
   const creneaux = ["10:00", "14:00", "16:30"];
@@ -199,7 +231,7 @@ function renderIndependantSansCadrage(c: ContenuIndependant): string {
   // Case large sans photo horizontale disponible (spécialité « portrait ») : deux photos en hauteur côte à côte.
   const casesGalerie = repartir(ph.slice(1, 7), ["haute", "libre", "libre", "large", "libre", "large"]);
   const galerie = casesGalerie.map((id, i) => {
-    const deux = i === 3 || i === 5 ? secondePhoto(id, casesGalerie, [ph[ph.length - 1], ph[0]]) : null;
+    const deux = i === 3 || i === 5 ? secondePhoto(id, casesGalerie, reserveDuo) : null;
     return deux
       ? `<figure class="g g${i} duo"><div>${img(id, 700, `Photo d'illustration ${i + 1}`)}</div><div>${img(deux, 700, `Photo d'illustration ${i + 1} bis`)}</div></figure>`
       : `<figure class="g g${i}">${img(id, 900, `Photo d'illustration ${i + 1}`)}</figure>`;

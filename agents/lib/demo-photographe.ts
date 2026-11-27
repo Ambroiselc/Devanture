@@ -20,6 +20,8 @@ export interface DonneesPhotographe {
   /** Photos de la spécialité : [0] haut de page, [1..6] galerie, dernière = portrait. */
   ph: string[];
   m: number;
+  /** Photos en hauteur de secours pour les bandeaux larges (jamais celle d'« À propos »). */
+  reserveDuo?: string[];
   couleurs: CouleursPhoto;
   jours: string[];
   creneaux: string[];
@@ -101,7 +103,7 @@ export function renderPhotographe(d: DonneesPhotographe): string {
 
   // Bandeau large de « Galerie » : une photo horizontale, sinon deux photos en hauteur côte à côte (jamais une tranche de visage).
   const bandeau = (id: string, classe: string, n: number) => {
-    const deux = secondePhoto(id, galerie, [portrait, ph[0]]);
+    const deux = secondePhoto(id, [...galerie, portrait], d.reserveDuo ?? [ph[0]]);
     return deux
       ? `<div class="paire">${[id, deux].map((x, k) => `<figure>${img(x, 1000, `Photo d'illustration ${n}${k ? " bis" : ""}`)}</figure>`).join("")}</div>`
       : `<figure class="${classe}">${img(id, 2000, `Photo d'illustration ${n}`)}</figure>`;

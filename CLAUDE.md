@@ -298,6 +298,9 @@
   Toute nouvelle photo : l'ajouter à `CADRAGE` si le sujet n'est pas au centre, à `EN_HAUTEUR` si elle est prise en hauteur, et la
   regarder sur la planche. Cases larges / hautes : `repartir` (photo horizontale dans une case large ; sinon `secondePhoto` = deux
   photos en hauteur côte à côte), utilisé par les galeries des photographes et des coachs (27/11 midi, demande de Broise).
+  Photo « À propos » (27/11, demande de Broise) : du genre de l'indépendant (`agents/lib/genre.ts`, `devinerGenre` : prénom dans le nom
+  de l'activité, puis dans l'e-mail, puis accords « passionnée / passionné » des textes ; sinon femme pour les photographes et le yoga,
+  homme pour les coachs), `PORTRAITS` + `portraitPour` dans demo-independant.ts, calculé à l'affichage (vaut pour les anciennes maquettes).
 - Données personnelles : respecter `docs/registre-rgpd.md` (B2B uniquement, sources publiques, 3 ans max,
   lien de désinscription dans chaque e-mail). Mettre le registre à jour à chaque nouvel outil.
 - Vérifier avec `npm run typecheck` puis `npm run build` avant de dire que c'est fini.
