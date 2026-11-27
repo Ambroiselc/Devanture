@@ -471,9 +471,10 @@ export const getVueCampagne = cache(async (id: string): Promise<{
   /** Maquettes ouvertes : nombre, artisans contactés, dernières ouvertes (comme sur la vue d'ensemble). */
   nbOuvertes: number;
   ouvertes: Ouverte[];
-  /** Réponses reçues (hors réponses automatiques, spam et contacts de chauffe), par catégorie, et les dernières. */
+  /** Réponses reçues (hors réponses automatiques, spam et contacts de chauffe), comptées PAR PERSONNE (27/11, demande de
+   *  Broise) : chaque prospect compte une fois, dans la catégorie de son dernier message ; la liste montre une ligne par personne. */
   reponses: Record<string, number>;
-  dernieresReponses: { id: string; recu: string; nom: string | null; categorie: string | null; resume: string | null; fil: string | null }[];
+  dernieresReponses: { id: string; recu: string; nom: string | null; categorie: string | null; resume: string | null; fil: string | null; nbMessages: number }[];
   interets: { id: string; cree_le: string; nom: string | null; ville: string | null; traite_le: string | null }[];
   couts: { agent: string; montant: number }[];
   /** Pour la nouvelle cible : recherches Google déjà faites (villes × métiers), null pour les autres campagnes. */
@@ -524,12 +525,19 @@ export const getVueCampagne = cache(async (id: string): Promise<{
 
   // Réponses des prospects de la campagne (messages entrants rattachés à un prospect).
   const { data: msgs } = await supabase.from("mailbox_messages")
-    .select("id, received_at, created_at, category, summary, thread_id, prospects!inner(name, campaign_id)")
+    .select("id, prospect_id, received_at, created_at, category, summary, thread_id, prospects!inner(name, campaign_id)")
     .eq("direction", "entrant").eq("prospects.campaign_id", id)
     .or("category.is.null,category.not.in.(automatique,spam,chauffe)").eq("auto_submitted", false)
     .order("created_at", { ascending: false }).limit(200);
+  // Une personne = un prospect : on garde son dernier message (les messages arrivent du plus récent au plus ancien).
+  const parPersonne = new Map<string, { m: NonNullable<typeof msgs>[number]; n: number }>();
+  for (const m of msgs ?? []) {
+    const cle = (m.prospect_id as string | null) ?? (m.id as string);
+    const deja = parPersonne.get(cle);
+    if (deja) deja.n++; else parPersonne.set(cle, { m, n: 1 });
+  }
   const reponses: Record<string, number> = {};
-  for (const m of msgs ?? []) { const k = (m.category as string | null) ?? "autre"; reponses[k] = (reponses[k] ?? 0) + 1; }
+  for (const { m } of parPersonne.values()) { const k = (m.category as string | null) ?? "autre"; reponses[k] = (reponses[k] ?? 0) + 1; }
 
   const parAgent = new Map<string, number>();
   for (const k of couts.data ?? []) {
@@ -563,10 +571,11 @@ export const getVueCampagne = cache(async (id: string): Promise<{
                fournisseur: d?.fournisseur ?? null, emailId: d?.emailId ?? null, envois: d?.envois ?? [] };
     }),
     reponses,
-    dernieresReponses: (msgs ?? []).slice(0, 8).map((m) => ({
+    dernieresReponses: [...parPersonne.values()].slice(0, 8).map(({ m, n }) => ({
       id: m.id as string, recu: (m.received_at ?? m.created_at) as string,
       nom: ((Array.isArray(m.prospects) ? m.prospects[0] : m.prospects) as { name: string } | null)?.name ?? null,
       categorie: m.category as string | null, resume: m.summary as string | null, fil: (m.thread_id as string | null) ?? null,
+      nbMessages: n,
     })),
     interets: interets.error ? [] : (interets.data ?? []).map((i) => {
       const p = (Array.isArray(i.prospects) ? i.prospects[0] : i.prospects) as { name: string; city: string | null } | null;

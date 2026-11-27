@@ -37,7 +37,7 @@ export default async function CampagnePage({ params }: { params: Promise<{ id: s
     { label: "contactés (1er e-mail parti)", value: String(contactes), href: "/valerie" },
     { label: "relances parties", value: String(v.relancesParties), href: "/valerie" },
     { label: "maquettes ouvertes", value: `${v.nbOuvertes} · ${pct(v.nbOuvertes, contactes)}`, href: "#maquettes-ouvertes" },
-    { label: "réponses (hors automatiques)", value: `${totalReponses} · ${pct(totalReponses, contactes)}`, href: "#reponses" },
+    { label: "personnes qui ont répondu (hors automatiques)", value: `${totalReponses} · ${pct(totalReponses, contactes)}`, href: "#reponses" },
   ];
 
   return (
@@ -144,7 +144,7 @@ export default async function CampagnePage({ params }: { params: Promise<{ id: s
                   {v.dernieresReponses.map((r) => (
                     <li key={r.id} className="px-4 py-3 sm:px-5">
                       <Link href={r.fil ? `/boite?m=${r.fil}` : "/boite"} className="font-medium hover:underline">{r.nom ?? "?"}</Link>
-                      <span className="text-muted"> · {formatDay(r.recu)} · {mailCategory[r.categorie as MailCategory]?.label ?? r.categorie ?? "non trié"}</span>
+                      <span className="text-muted"> · {formatDay(r.recu)} · {mailCategory[r.categorie as MailCategory]?.label ?? r.categorie ?? "non trié"}{r.nbMessages > 1 ? ` · ${r.nbMessages} messages` : ""}</span>
                       {r.resume && <p className="text-muted">{r.resume}</p>}
                     </li>
                   ))}
