@@ -133,27 +133,35 @@ async function retirerProspect(sql: Sql, id: string, nom: string): Promise<void>
 /**
  * Rattrapage (5/11) : un STOP rangé par erreur comme « automatique » ou « spam » (60 derniers jours) passe sur la liste
  * d'opposition et dans la bonne catégorie. Sans IA, à chaque passage d'Inès.
+ * 27/11 : aussi les messages des 14 derniers jours rangés dans une autre catégorie (ex. « supprimez ce site », reconnu
+ * comme STOP depuis le 27/11) ; le prospect est retrouvé même s'il a répondu d'une autre adresse, et sa maquette retirée.
  */
 async function rattraperStop(sql: Sql, taskId: string | null): Promise<number> {
-  const ranges = await sql<{ id: string; from_email: string | null; subject: string; body_text: string; prospect_id: string | null }[]>`
-    select id, from_email, subject, body_text, prospect_id from public.mailbox_messages
-    where direction = 'entrant' and category in ('automatique', 'spam') and created_at > now() - interval '60 days'
-    order by created_at desc limit 300`;
+  const ranges = await sql<(Recu & { prospect_id: string | null; category: string | null })[]>`
+    select id, from_email, from_name, to_email, subject, body_text, message_id, in_reply_to, references_ids, attachments,
+           auto_submitted, received_at, created_at, prospect_id, category
+    from public.mailbox_messages
+    where direction = 'entrant' and status <> 'nouveau' and coalesce(category, '') not in ('stop', 'chauffe')
+      and (category in ('automatique', 'spam') and created_at > now() - interval '60 days' or created_at > now() - interval '14 days')
+    order by created_at desc limit 500`;
   let n = 0;
   for (const m of ranges) {
     if (!demandeStop(m.subject ?? "", m.body_text ?? "")) continue;
-    const [p] = m.prospect_id ? await sql<{ name: string }[]>`select name from public.prospects where id = ${m.prospect_id}` : [];
+    const p = m.prospect_id
+      ? (await sql<{ id: string; name: string }[]>`select id, name from public.prospects where id = ${m.prospect_id}`)[0]
+      : await retrouverProspect(sql, m);
     if (m.from_email) {
       await sql`insert into public.opposition_list (email, business_name, reason, notes, is_demo)
-                values (${m.from_email}, ${p?.name ?? null}, 'desinscription', 'Demande reçue par e-mail (rattrapée : rangée comme automatique).', ${SIMULATION})
+                values (${m.from_email}, ${p?.name ?? null}, 'desinscription', 'Demande reçue par e-mail (rattrapée).', ${SIMULATION})
                 on conflict do nothing`;
     }
-    if (m.prospect_id) {
-      await sql`update public.emails set status = 'repondu' where prospect_id = ${m.prospect_id} and status = 'envoye'`;
+    if (p) {
+      await sql`update public.emails set status = 'repondu' where prospect_id = ${p.id} and status = 'envoye'`;
+      await retirerProspect(sql, p.id, p.name);
     }
-    await sql`update public.mailbox_messages set status = 'traite', category = 'stop',
+    await sql`update public.mailbox_messages set status = 'traite', category = 'stop', prospect_id = coalesce(prospect_id, ${p?.id ?? null}::uuid),
               summary = 'Demande à ne plus être contacté : ajouté à la liste d''opposition.' where id = ${m.id}`;
-    const texte = `${p?.name ?? m.from_email ?? "inconnu"} : STOP rangé par erreur comme automatique, rattrapé et ajouté à la liste d'opposition.`;
+    const texte = `${p?.name ?? m.from_email ?? "inconnu"} : STOP rangé dans « ${m.category ?? "sans catégorie"} », rattrapé : liste d'opposition${p ? ", maquette retirée" : ""}.`;
     if (taskId) await journal(sql, taskId, "warning", texte); else console.log(texte);
     n++;
   }
