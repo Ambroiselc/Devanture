@@ -35,6 +35,7 @@ jobs:
           if head -n1 tests/compteur.txt | grep -qi '^retirer '; then node agents/retirer-visite.ts "$(head -n1 tests/compteur.txt | cut -c9- | tr -d '\r')";
           elif head -n1 tests/compteur.txt | grep -qi '^retrouvees'; then node agents/visites-retrouvees.ts;
           elif head -n1 tests/compteur.txt | grep -qi '^detail-site'; then node agents/visites-site-detail-retrouvees.ts;
+          elif head -n1 tests/compteur.txt | grep -qi '^boite-stop'; then node agents/diag-boite-stop.ts;
           elif head -n1 tests/compteur.txt | grep -qi '^azure'; then node agents/diag-azure.ts;
           elif head -n1 tests/compteur.txt | grep -qi '^bandeau'; then node agents/diag-bandeau.ts;
           elif head -n1 tests/compteur.txt | grep -qi '^exemples-c'; then node agents/diag-exemples-c.ts;
