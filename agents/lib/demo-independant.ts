@@ -20,20 +20,98 @@ export interface ContenuIndependant {
   zone: string[];
   telephone?: string | null;
   email?: string | null;
-  /** Palette (0 ou 1), pour que deux voisins n'aient pas le même site. */
+  /** Palette d'avant le 27/11 (0 ou 1) : remplacée par habillage.p. */
   palette?: number;
+  /** 27/11 (demande de Broise) : ce que fait la personne, pour choisir des photos qui lui ressemblent. */
+  specialite?: Specialite;
+  /** 27/11 : variante de la maquette (palette, haut de page, prestations, galerie), choisie par Sid loin de celles des voisins. */
+  habillage?: HabillageIndep;
 }
 
-/** Photos d'illustration (Unsplash, licence libre). Si une photo ne charge pas, elle s'efface (onerror). */
-const PHOTOS: Record<MetierIndependant, string[]> = {
-  "Photographe": [
+/** Spécialités reconnues (27/11) : un coach mental ne doit pas voir que des photos de musculation. */
+export type Specialite = "fitness" | "running" | "yoga" | "mental" | "mariage" | "famille" | "portrait";
+export const SPECIALITES: Record<MetierIndependant, Specialite[]> = {
+  "Photographe": ["mariage", "famille", "portrait"],
+  "Coach sportif": ["fitness", "running", "yoga", "mental"],
+};
+
+/** p : palette (0-3), h : haut de page (0 plein écran, 1 photo puis titre, 2 photo à côté), s : prestations (0 cartes, 1 liste),
+ *  g : galerie (0 mosaïque, 1 rangée). 4 × 3 × 2 × 2 = 48 combinaisons par métier. */
+export interface HabillageIndep { p: number; h: number; s: number; g: number }
+export const NB_VARIANTES_INDEP = { p: 4, h: 3, s: 2, g: 2 } as const;
+
+/** L'apparence d'avant le 27/11 (celle validée par Broise) quand la maquette n'a pas d'habillage. */
+export function habillageDe(c: Pick<ContenuIndependant, "metier" | "palette" | "habillage">): HabillageIndep {
+  if (c.habillage) return c.habillage;
+  return c.metier === "Photographe" ? { p: c.palette ?? 0, h: 0, s: 0, g: 0 } : { p: c.palette ?? 0, h: 1, s: 1, g: 0 };
+}
+
+/** Toutes les combinaisons, puis celle qui ressemble le moins aux voisins (même métier, même département). */
+export function choisirHabillage(voisins: HabillageIndep[], hasard: () => number = Math.random): HabillageIndep {
+  const toutes: HabillageIndep[] = [];
+  for (let p = 0; p < NB_VARIANTES_INDEP.p; p++) for (let h = 0; h < NB_VARIANTES_INDEP.h; h++)
+    for (let s = 0; s < NB_VARIANTES_INDEP.s; s++) for (let g = 0; g < NB_VARIANTES_INDEP.g; g++) toutes.push({ p, h, s, g });
+  const ecart = (a: HabillageIndep, b: HabillageIndep) => Number(a.p !== b.p) + Number(a.h !== b.h) + Number(a.s !== b.s) + Number(a.g !== b.g);
+  const note = (x: HabillageIndep) => (voisins.length ? Math.min(...voisins.map((v) => ecart(x, v))) : 4)
+    // à égalité, la combinaison la moins utilisée par les voisins
+    - voisins.filter((v) => ecart(x, v) === 0).length;
+  const max = Math.max(...toutes.map(note));
+  const meilleures = toutes.filter((x) => note(x) === max);
+  return meilleures[Math.floor(hasard() * meilleures.length)];
+}
+
+/** Devine la spécialité d'après le nom, les textes de la maquette et de son site (sans IA). */
+export function detecterSpecialite(metier: MetierIndependant, texte: string): Specialite {
+  const t = texte.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const compte = (re: RegExp) => (t.match(re) ?? []).length;
+  const scores: [Specialite, number][] = metier === "Photographe"
+    ? [
+      ["portrait", compte(/corporate|entreprise|portrait pro|professionnel|linkedin|packshot|produit|immobilier|culinaire|headshot|cv\b/g)],
+      ["famille", compte(/naissance|nouveau-ne|newborn|bebe|grossesse|maternite|famille|familial|enfant/g)],
+      ["mariage", compte(/mariage|wedding|maries|fiancailles|evjf|ceremonie/g)],
+    ]
+    : [
+      ["mental", compte(/mental|preparat\w* mental|sophro|coach(ing)? de vie|life coach|developpement personnel|hypno|confiance en soi|stress|emotion|therap|psycho|reconversion|motivation personnelle/g) * 2],
+      ["yoga", compte(/yoga|pilates|stretching|meditation|respiration|souplesse/g)],
+      ["running", compte(/running|course a pied|trail|marathon|athletisme|runner|semi-marathon|10 ?km/g)],
+      ["fitness", compte(/musculation|fitness|crossfit|remise en forme|perte de poids|boxe|cardio|renforcement|halt[eè]ro|salle/g)],
+    ];
+  const [meilleur, n] = scores.reduce((a, b) => (b[1] > a[1] ? b : a));
+  return n > 0 ? meilleur : metier === "Photographe" ? "mariage" : "fitness";
+}
+
+/** Photos d'illustration (Unsplash, licence libre), par spécialité : la 1re en haut de page, la dernière pour le portrait,
+ *  les autres dans la galerie. Si une photo ne charge pas, elle s'efface (onerror). */
+const PHOTOS: Record<Specialite, string[]> = {
+  mariage: [
     "1519741497674-611481863552", "1622277430358-f4d134452e2e", "1769540209420-f137f98194e8",
     "1757647630063-dd5cd82271f3", "1758810409996-583f3bad7d51", "1617724975854-70b5d0cedb0a", "1630526720753-aa4e71acf67d", "1519741196428-6a2175fa2557",
   ],
+  famille: [
+    "1602255680702-c47261041a97", "1685873875056-bb96de15555c", "1561524891-8e08ab8569f3", "1559734840-f9509ee5677f",
+    "1542037104857-ffbb0b9155fb", "1529518152792-d08317b26e22", "1685873875872-ecd77ba5a2b0", "1573496358961-3c82861ab8f4",
+  ],
+  portrait: [
+    "1573497019940-1c28c88b4f3e", "1560250097-0b93528c311a", "1781888681811-332968760c2a", "1500648767791-00dcc994a43e",
+    "1573496359142-b8d87734a5a2", "1568602471122-7832951cc4c5", "1685760259914-ee8d2c92d2e0", "1494790108377-be9c29b29330",
+  ],
   // 26/11 (avis de Broise : la 1re version « faisait généré par IA ») : photos en extérieur, plus naturelles.
-  "Coach sportif": [
+  fitness: [
     "1775850576250-d4296a7af153", "1759476532444-fa17a7131941", "1746003625470-8dde780622f8",
     "1542354771-435b9f200e57", "1759300642211-4e81a270a358", "1759300642338-c5c7cd576a22",
+  ],
+  running: [
+    "1552674605-db6ffd4facb5", "1502904550040-7534597429ae", "1634921363975-46fa99024422",
+    "1607962837359-5e7e89f86776", "1571008887538-b36bb32f4571", "1759300642338-c5c7cd576a22",
+  ],
+  yoga: [
+    "1761035005546-62b8018b212a", "1758274535230-3641d0632878", "1506126613408-eca07ce68773",
+    "1544367567-0f2fcb009e0b", "1787647089633-37e49ee2e054", "1588286840104-8957b019727f",
+  ],
+  // 27/11 (demande de Broise : un coach mental avait ouvert une maquette pleine de musculation)
+  mental: [
+    "1758273241078-8eec353836be", "1616740793717-0aca29b92221", "1461468611824-46457c0e11fd",
+    "1642086545847-7b7c16631fa9", "1526779259212-939e64788e3c", "1573496358961-3c82861ab8f4",
   ],
 };
 
@@ -48,6 +126,10 @@ const PALETTES: Record<MetierIndependant, { fond: string; encre: string; doux: s
       titre: "Cormorant Garamond", texte: "Jost", url: "Cormorant+Garamond:wght@500;600&family=Jost:wght@400;500;600" },
     { fond: "#F4F6F5", encre: "#1B2A2A", doux: "#5D6B6A", accent: "#2F5D56", accentTexte: "#FFFFFF", carte: "#FFFFFF", ligne: "#DCE3E1",
       titre: "Playfair Display", texte: "Karla", url: "Playfair+Display:wght@500;600&family=Karla:wght@400;600" },
+    { fond: "#F3F0EB", encre: "#2A2522", doux: "#6E6660", accent: "#8C5A3C", accentTexte: "#FFFFFF", carte: "#FBF9F6", ligne: "#E3DCD3",
+      titre: "Fraunces", texte: "Inter", url: "Fraunces:wght@500;600&family=Inter:wght@400;600" },
+    { fond: "#FFFFFF", encre: "#141414", doux: "#666666", accent: "#141414", accentTexte: "#FFFFFF", carte: "#F6F6F4", ligne: "#E6E6E3",
+      titre: "DM Serif Display", texte: "DM Sans", url: "DM+Serif+Display&family=DM+Sans:wght@400;600" },
   ],
   // Coach : énergique, contrasté, gros titres.
   "Coach sportif": [
@@ -55,6 +137,10 @@ const PALETTES: Record<MetierIndependant, { fond: string; encre: string; doux: s
       titre: "Schibsted Grotesk", texte: "Source Sans 3", url: "Schibsted+Grotesk:wght@600;700&family=Source+Sans+3:wght@400;600" },
     { fond: "#F5F3EF", encre: "#22201E", doux: "#66605A", accent: "#7A3E2B", accentTexte: "#FFFFFF", carte: "#FFFFFF", ligne: "#E2DDD5",
       titre: "Libre Franklin", texte: "Libre Franklin", url: "Libre+Franklin:wght@400;600;700" },
+    { fond: "#F4F6F8", encre: "#18212B", doux: "#5B6673", accent: "#2F5E8C", accentTexte: "#FFFFFF", carte: "#FFFFFF", ligne: "#DDE3EA",
+      titre: "Manrope", texte: "Manrope", url: "Manrope:wght@400;600;800" },
+    { fond: "#F7F3EC", encre: "#2A2420", doux: "#6E6358", accent: "#9A5B22", accentTexte: "#FFFFFF", carte: "#FFFDF9", ligne: "#E6DED2",
+      titre: "Karla", texte: "Karla", url: "Karla:wght@400;600;800" },
   ],
 };
 
@@ -79,22 +165,36 @@ function prochainsJours(): string[] {
 
 export function renderIndependant(c: ContenuIndependant): string {
   const photographe = c.metier === "Photographe";
-  const pal = PALETTES[c.metier][(c.palette ?? 0) % 2];
-  const ph = PHOTOS[c.metier];
+  const hab = habillageDe(c);
+  const pal = PALETTES[c.metier][hab.p % PALETTES[c.metier].length];
+  const spe = c.specialite && SPECIALITES[c.metier].includes(c.specialite) ? c.specialite : photographe ? "mariage" : "fitness";
+  const ph = PHOTOS[spe];
+  const calme = spe === "mental" || spe === "yoga";
   const prestations = c.prestations.slice(0, 4);
   const jours = prochainsJours();
-  const creneaux = photographe ? ["10:00", "14:00", "16:30"] : ["07:30", "12:15", "18:00", "19:15"];
+  const creneaux = photographe ? ["10:00", "14:00", "16:30"] : calme ? ["09:00", "11:00", "14:30", "18:00"] : ["07:30", "12:15", "18:00", "19:15"];
   const verbe = photographe ? "Réserver une séance" : "Réserver un créneau";
   const annee = new Date().getFullYear();
 
-  const hero = photographe
+  const voirAutre = photographe ? `<a class="btn ghost" href="#galerie">Voir des photos</a>` : `<a class="btn ghost" href="#prestations">Voir les séances</a>`;
+  const hero = hab.h === 2
+    ? `<section class="hero hero-cote">
+  <div class="hero-txt">
+    <p class="sur">${e(c.metier)} · ${e(c.commune)}</p>
+    <h1>${e(c.accroche)}</h1>
+    <p class="lead">${e(c.intro)}</p>
+    <div class="ctas"><a class="btn" href="#reserver">${verbe}</a>${voirAutre}</div>
+  </div>
+  <div class="hero-img">${img(ph[0], 1200, `Photo d'illustration : ${c.metier}`)}</div>
+</section>`
+    : hab.h === 0
     ? `<section class="hero hero-photo">
   <div class="hero-img">${img(ph[0], 1800, `Photo d'illustration : ${c.metier}`)}</div>
   <div class="hero-txt">
     <p class="sur">${e(c.metier)} · ${e(c.commune)}</p>
     <h1>${e(c.accroche)}</h1>
     <p class="lead">${e(c.intro)}</p>
-    <div class="ctas"><a class="btn" href="#reserver">${verbe}</a><a class="btn ghost" href="#galerie">Voir des photos</a></div>
+    <div class="ctas"><a class="btn" href="#reserver">${verbe}</a>${voirAutre}</div>
   </div>
 </section>`
     : `<section class="hero hero-coach">
@@ -102,11 +202,11 @@ export function renderIndependant(c: ContenuIndependant): string {
   <div class="hero-txt">
     <div><p class="sur">${e(c.metier)} · ${e(c.commune)}</p><h1>${e(c.accroche)}</h1></div>
     <div><p class="lead">${e(c.intro)}</p>
-    <div class="ctas"><a class="btn" href="#reserver">${verbe}</a><a class="btn ghost" href="#prestations">Voir les séances</a></div></div>
+    <div class="ctas"><a class="btn" href="#reserver">${verbe}</a>${voirAutre}</div></div>
   </div>
 </section>`;
 
-  const cartes = photographe ? prestations.map((p) => `<article class="carte">
+  const cartes = hab.s === 0 ? prestations.map((p) => `<article class="carte">
     <h3>${e(p.titre)}</h3>
     <p>${e(p.description)}</p>
     <div class="bas"><span class="todo">Votre tarif</span><a href="#reserver" class="lien">Réserver →</a></div>
@@ -114,7 +214,7 @@ export function renderIndependant(c: ContenuIndependant): string {
     : prestations.map((p) => `<div class="ligne-p"><h3>${e(p.titre)}</h3><p>${e(p.description)}</p>
     <span class="todo">Votre tarif</span><a href="#reserver" class="lien">Réserver</a></div>`).join("");
 
-  const galerie = (photographe ? ph.slice(1, 7) : ph.slice(1, 4))
+  const galerie = (photographe ? ph.slice(1, 7) : hab.g === 1 ? ph.slice(1, 5) : ph.slice(1, 4))
     .map((id, i) => `<figure class="g g${i}">${img(id, 900, `Photo d'illustration ${i + 1}`)}</figure>`).join("");
 
   const resa = `<section id="reserver" class="band resa">
@@ -173,6 +273,8 @@ nav{display:flex;gap:22px;flex-wrap:wrap}nav a{text-decoration:none;color:var(--
 .hero-coach .hero-img{height:min(72vh,660px);background:var(--ligne)}.hero-coach .hero-img img{object-position:50% 78%}
 .hero-coach .hero-txt{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(24px,5vw,72px);align-items:end;padding:clamp(28px,4vw,56px) max(5vw,16px) 0}
 .hero-coach h1{font-size:clamp(38px,5vw,64px)}.hero-coach .lead{margin-top:0}
+.hero-cote{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(24px,5vw,72px);align-items:center;padding:clamp(36px,5vw,80px) max(5vw,16px)}
+.hero-cote h1{font-size:clamp(38px,5vw,66px)}.hero-cote .hero-img{aspect-ratio:4/5;max-height:640px;border-radius:${photographe ? "2px" : "18px"};overflow:hidden;background:var(--ligne)}
 .liste-p{border-top:1px solid var(--encre)}
 .ligne-p{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) auto auto;gap:12px 28px;align-items:center;padding:22px 0;border-bottom:1px solid var(--ligne)}
 .ligne-p h3{font-size:22px}.ligne-p p{margin:0;color:var(--doux)}
@@ -190,6 +292,8 @@ ${photographe ? "" : ".g0{grid-column:span 2;grid-row:span 2}"}
 .g{margin:0;overflow:hidden;background:var(--ligne);border-radius:${photographe ? "2px" : "14px"}}
 .g img{transition:transform .8s ease;object-position:50% 22%}.g:hover img{transform:scale(1.05)}
 ${photographe ? ".g0{grid-row:span 2}.g3,.g5{grid-column:span 2}" : ""}
+.galerie.rangee{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:${photographe ? "minmax(240px,30%)" : "minmax(220px,1fr)"};grid-auto-rows:auto;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}
+.galerie.rangee .g{grid-row:auto;grid-column:auto;aspect-ratio:${photographe ? "3/4" : "4/5"};scroll-snap-align:start}
 .legende{color:var(--doux);font-size:14px;margin-top:12px}
 .resa{display:grid;grid-template-columns:1fr minmax(0,420px);gap:clamp(28px,5vw,72px);align-items:center;background:var(--carte);color:var(--encre);border-block:1px solid var(--ligne)}
 .resa p{color:var(--doux);max-width:34em}
@@ -207,7 +311,8 @@ ${photographe ? ".g0{grid-row:span 2}.g3,.g5{grid-column:span 2}" : ""}
 .zone{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}.zone span{border:1px solid var(--ligne);border-radius:99px;padding:5px 14px;font-size:14px;background:var(--carte)}
 .contact{text-align:center}.contact .ctas{justify-content:center;margin-top:24px}
 footer{padding:28px max(5vw,16px);color:var(--doux);font-size:14px;border-top:1px solid var(--ligne);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-@media(max-width:820px){nav{display:none}.hero-coach .hero-txt,.resa,.apropos{grid-template-columns:1fr}.g5{grid-column:auto}
+@media(max-width:820px){nav{display:none}.hero-coach .hero-txt,.hero-cote,.resa,.apropos{grid-template-columns:1fr}.hero-cote .hero-img{aspect-ratio:4/3}
+  .galerie.rangee{grid-auto-columns:72%}.g5{grid-column:auto}
   .ligne-p{grid-template-columns:1fr auto}.ligne-p p{grid-column:1/-1}.hero-coach .hero-img{height:46vh}
   .galerie{grid-template-columns:repeat(2,minmax(0,1fr))}.g0,.g3{grid-row:auto;grid-column:auto}.galerie .g3{grid-column:1/-1}}
 @media(prefers-reduced-motion:no-preference){.hero-txt>*{animation:monte .8s cubic-bezier(.2,.7,.2,1) both}.hero-txt>*:nth-child(2){animation-delay:.1s}
@@ -220,14 +325,16 @@ footer{padding:28px max(5vw,16px);color:var(--doux);font-size:14px;border-top:1p
 <!--principal-->
 ${hero}
 <section id="prestations" class="band">
-  <h2>${photographe ? "Prestations" : "Les formules"}</h2>
-  <p class="intro2">${photographe ? "Chaque séance est préparée avec vous : le lieu, la lumière, le moment." : "Des séances adaptées à votre niveau et à votre objectif, au rythme qui vous convient."}</p>
-  <div class="${photographe ? "cartes" : "liste-p"}">${cartes}</div>
+  <h2>${photographe ? "Prestations" : spe === "mental" ? "Les accompagnements" : "Les formules"}</h2>
+  <p class="intro2">${photographe ? "Chaque séance est préparée avec vous : le lieu, la lumière, le moment."
+    : spe === "mental" ? "Un accompagnement adapté à votre situation et à vos objectifs, à votre rythme."
+    : "Des séances adaptées à votre niveau et à votre objectif, au rythme qui vous convient."}</p>
+  <div class="${hab.s === 0 ? "cartes" : "liste-p"}">${cartes}</div>
 </section>
 <section id="galerie" class="band" style="padding-top:0">
   <h2>${photographe ? "Portfolio" : "En images"}</h2>
-  <div class="galerie">${galerie}</div>
-  <p class="legende">Photos d'illustration : ${photographe ? "vos propres photos prendront leur place." : "vos propres photos de séances prendront leur place."}</p>
+  <div class="galerie${hab.g === 1 ? " rangee" : ""}">${galerie}</div>
+  <p class="legende">Photos d'illustration : ${photographe ? "vos propres photos prendront leur place." : "vos propres photos prendront leur place."}</p>
 </section>
 ${resa}
 <section id="apropos" class="band apropos">
@@ -244,6 +351,26 @@ ${resa}
 <footer><span>© ${annee} ${e(c.nom)} · ${e(c.metier)} à ${e(c.commune)}</span><span>Mentions légales</span></footer>
 </body></html>`;
 }
+
+/** 27/11 : exemple fictif d'un coach mental, pour voir les photos « mental » avec des textes qui vont avec. */
+export const EXEMPLE_COACH_MENTAL: ContenuIndependant = {
+  modele: "independant",
+  nom: "Claire Delattre Coaching",
+  metier: "Coach sportif",
+  commune: "Arras",
+  accroche: "Préparation mentale et coaching à Arras",
+  intro: "J'aide les sportifs et les personnes en transition à gérer le stress, retrouver confiance et avancer vers leurs objectifs.",
+  prestations: [
+    { titre: "Premier échange", description: "Une séance pour faire le point sur votre situation et ce que vous voulez changer." },
+    { titre: "Préparation mentale", description: "Gérer la pression avant une compétition, un examen ou un entretien important." },
+    { titre: "Confiance en soi", description: "Des outils simples pour mieux vous connaître et oser avancer." },
+    { titre: "Suivi sur plusieurs mois", description: "Des rendez-vous réguliers pour garder le cap sur vos objectifs." },
+  ],
+  apropos: "Je vous reçois dans un cadre calme et bienveillant. Chaque accompagnement part de votre situation, à votre rythme, avec des exercices concrets entre les séances.",
+  zone: ["Arras", "Saint-Laurent-Blangy", "Achicourt", "Beaurains", "Dainville"],
+  telephone: null,
+  email: null,
+};
 
 /** Exemples fictifs pour le tableau de bord (/demo/exemple-photographe, /demo/exemple-coach). */
 export const EXEMPLES_INDEPENDANT: Record<"photographe" | "coach", ContenuIndependant> = {

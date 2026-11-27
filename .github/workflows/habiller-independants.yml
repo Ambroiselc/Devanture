@@ -1,0 +1,27 @@
+# 27/11 : spécialité et variante des maquettes photographes et coachs déjà faites (agents/habiller-independants.ts).
+# Simulation par défaut ; « appliquer » en 1re ligne de tests/habiller-independants.txt pour enregistrer.
+name: Variantes des maquettes photographes et coachs
+
+on:
+  push:
+    branches: [main]
+    paths: [tests/habiller-independants.txt]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  habiller:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: node agents/habiller-independants.ts

@@ -283,7 +283,11 @@
   avec site, avis, téléphone, 1 requête = 20 fiches, plafond 950/mois ; communes ≥ 8 000 hab. du 59, 62, 80, 02, 60 ; UNE seule campagne « Photographes et coachs » (26/11, demande de Broise), couples métier + commune déjà
   cherchés dans `public.recherches_independants` (migration 20261126000000) ; règle : e-mail trouvé, < 30 avis, ni réservation en ligne ni tarifs, sinon
   « écarté » avec la raison ; input `independants` du workflow pour un lancement à la main). Sid : modèle `agents/lib/demo-independant.ts`
-  (template « independant », textes `redaction-independant.ts`, sans habillage ni captures ; exemples `/demo/exemple-photographe`,
+  (template « independant », textes `redaction-independant.ts`, sans captures ; 27/11, demande de Broise : `content.specialite`
+  (photos par spécialité : fitness, running, yoga, mental ; mariage, famille, portrait — `detecterSpecialite`, sans IA) et
+  `content.habillage` {p,h,s,g} = 4 palettes × 3 hauts de page × 2 prestations × 2 galeries, `choisirHabillage` loin des voisins
+  (même métier, même département) ; rattrapage `agents/habiller-independants.ts`, workflow `habiller-independants.yml`,
+  « appliquer » en 1re ligne de tests/habiller-independants.txt ; aperçus `/demo/exemple-coach?v=1210&spe=mental` ; exemples `/demo/exemple-photographe`,
   `/demo/exemple-coach`), rendu par /m et /demo selon `content.modele`. Valérie : `SYSTEME_INDEPENDANT` (redaction-email.ts) ;
   Coco : `SYSTEME_INDEPENDANT` (coco.ts), un photographe garde son métier si Sid refait la maquette. Envoi : les PREMIERS e-mails
   ne partent plus qu'à la cible, les relances des artisans continuent ; jamais d'envoi à une adresse de service (`ADRESSE_GENERIQUE`,

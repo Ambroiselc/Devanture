@@ -22,6 +22,7 @@ import { SIMULATION } from "./lib/http.ts";
 import { COMMUNES_PLUS_TARD, LISTE_COMMUNES } from "./lib/metiers.ts";
 import { redigerDemo } from "./lib/redaction-demo.ts";
 import { redigerDemoIndependant } from "./lib/redaction-independant.ts";
+import { choisirHabillage as choisirHabillageIndep, detecterSpecialite, habillageDe, type ContenuIndependant, type HabillageIndep } from "./lib/demo-independant.ts";
 import { estIndependant, METIERS_INDEPENDANTS } from "./lib/cible.ts";
 import { analyserSite } from "./lib/site.ts";
 import { communesVoisines } from "./lib/geo.ts";
@@ -66,6 +67,15 @@ interface ProspectDemo {
 const COMMUNES_MEL = [...LISTE_COMMUNES, ...COMMUNES_PLUS_TARD].map(([, nom]) => nom);
 
 /** « Plomberie Dupont », « Roubaix » → plomberie-dupont-roubaix-7k2f */
+/** Habillages des maquettes « indépendant » du même métier dans le même département (27/11). */
+async function habillagesVoisins(sql: Sql, metier: string, cp: string | null, sauf: string): Promise<HabillageIndep[]> {
+  const lignes = await sql<{ content: ContenuIndependant }[]>`
+    select w.content from public.websites w join public.prospects p on p.id = w.prospect_id
+    where w.kind = 'demo' and w.template = 'independant' and w.status <> 'archive' and p.category = ${metier} and p.id <> ${sauf}
+      and (${cp ?? ""} = '' or left(p.postal_code, 2) = left(${cp ?? ""}, 2))`;
+  return lignes.map((l) => habillageDe(l.content));
+}
+
 function slug(nom: string, commune: string): string {
   const base = `${nom} ${commune}`
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
@@ -262,8 +272,14 @@ async function main() {
           const r = await redigerDemoIndependant(
             { nom: p.name, metier: p.category, commune, telephone: p.phone, email: p.email, texteSite: site?.indices?.extrait ?? null },
             voisines.length ? voisines : [commune],
-            Math.random() < 0.5 ? 0 : 1,
+            0,
           );
+          // 27/11 (demande de Broise) : photos selon ce que fait la personne, et une variante loin de celles des voisins
+          // (même métier, même département).
+          r.contenu.specialite = detecterSpecialite(p.category, [p.name, site?.indices?.extrait ?? "", r.contenu.accroche, r.contenu.intro,
+            ...r.contenu.prestations.flatMap((x) => [x.titre, x.description]), r.contenu.apropos].join(" "));
+          r.contenu.habillage = choisirHabillageIndep(await habillagesVoisins(sql, p.category, p.postal_code, p.id));
+          delete r.contenu.palette;
           tokensEntree += r.tokensEntree;
           tokensSortie += r.tokensSortie;
           bilan.cout_ia_eur = Math.round((bilan.cout_ia_eur + r.coutEur) * 1e6) / 1e6;
