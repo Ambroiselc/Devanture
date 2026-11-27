@@ -135,7 +135,7 @@
   Boîte mail (27/10, `docs/boite-mail.md`) : Worker Cloudflare `workers/boite-mail` (Email Routing → `mailbox_messages`,
   copie Gmail, réveille le workflow `agent-boite.yml`) ; Inès (`agents/boite.ts`, agent `boite`, page `/ines` ; la boîte mail elle-même,
   façon messagerie — Reçus, Envoyés avec la prospection de Valérie, Brouillons, Spam — est sur `/boite?dossier=…&m=<fil>`) trie,
-  met les STOP en opposition (détection codée, sans IA ; 27/11 : « supprimez ce site » compte comme STOP, la maquette est alors archivée, la fiche passe « refusé », son adresse en opposition, et le prospect est retrouvé par le fil In-Reply-To s'il répond d'une autre adresse ; `retirerProspect`, rattrapage 14 jours dans `rattraperStop`), répond seule aux messages simples (questions, « pas intéressé »)
+  met les STOP en opposition (détection codée, sans IA ; 27/11 : « supprimez ce site » compte comme STOP, la maquette est alors archivée, la fiche passe « refusé », son adresse en opposition, et le prospect est retrouvé par le fil In-Reply-To s'il répond d'une autre adresse ; `retirerProspect`, rattrapage 14 jours dans `rattraperStop` ; migration 20261127000000_reponse_au_stop.sql : UNE réponse écrite par Broise au message STOP lui-même, dans les 7 jours, passe malgré la liste d'opposition, pour confirmer le retrait), répond seule aux messages simples (questions, « pas intéressé »)
   et prépare les autres (prix, contrat, paiement, appel, intéressés, inconnus, pièces jointes → garde-fous
   `agents/lib/boite.ts`) ; envoi via Resend 8 h – 20 h. Adresse de réponse par prospect : `ambroise+p-<id>@…`
   (`adresseReponse`, aussi utilisée par Valérie). Nettoyage : `public.nettoyer_boite()`.
