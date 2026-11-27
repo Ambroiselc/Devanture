@@ -97,7 +97,7 @@ export function detecterSpecialite(metier: MetierIndependant, texte: string): Sp
 
 /** Photos d'illustration (Unsplash, licence libre), par spécialité : la 1re en haut de page, la dernière pour le portrait,
  *  les autres dans la galerie. Si une photo ne charge pas, elle s'efface (onerror). */
-const PHOTOS: Record<Specialite, string[]> = {
+export const PHOTOS_INDEPENDANTS: Record<Specialite, string[]> = {
   mariage: [
     "1519741497674-611481863552", "1622277430358-f4d134452e2e", "1769540209420-f137f98194e8",
     "1757647630063-dd5cd82271f3", "1758810409996-583f3bad7d51", "1617724975854-70b5d0cedb0a", "1630526720753-aa4e71acf67d", "1519741196428-6a2175fa2557",
@@ -169,7 +169,7 @@ export function renderIndependant(c: ContenuIndependant): string {
   const photographe = c.metier === "Photographe";
   const hab = habillageDe(c);
   const spe = c.specialite && SPECIALITES[c.metier].includes(c.specialite) ? c.specialite : photographe ? "mariage" : "fitness";
-  const ph = PHOTOS[spe];
+  const ph = PHOTOS_INDEPENDANTS[spe];
   const jours = prochainsJours();
   if (!photographe) {
     const calme = spe === "mental" || spe === "yoga";

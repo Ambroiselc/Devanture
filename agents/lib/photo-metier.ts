@@ -100,3 +100,11 @@ export function imgPhotoMetier(metier: string, nom: string, classe: string, alt:
   const altSur = alt.replace(/[&<>"']/g, " ");
   return `<img class="${classe}" src="${src}" alt="${altSur}" width="1000" height="750" loading="eager" fetchpriority="high" referrerpolicy="no-referrer" onerror="this.remove()">`;
 }
+
+/** Toutes les photos rangées par métier (27/11, pour la planche de cadrage /demo/planche). */
+export const PHOTOS_METIERS_PAR_GROUPE: Record<string, string[]> = Object.fromEntries([
+  ...Object.entries(PHOTOS).map(([m, l]) => [`${m} · en-tête`, l] as const),
+  ["Par défaut · en-tête", PAR_DEFAUT] as const,
+  ...Object.entries(CHANTIERS).map(([m, l]) => [`${m} · chantiers`, l] as const),
+  ["Par défaut · chantiers", CHANTIERS_PAR_DEFAUT] as const,
+]);
