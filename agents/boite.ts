@@ -392,8 +392,10 @@ async function envoyer(sql: Sql, taskId: string): Promise<void> {
 
   const aEnvoyer = await sql<{ id: string; prospect_id: string | null; to_email: string; subject: string; body_text: string;
     category: string | null; name: string | null; recu_texte: string | null; recu_de: string | null; recu_date: Date | null;
-    recu_message_id: string | null; recu_references: string | null }[]>`
+    recu_message_id: string | null; recu_references: string | null; confirmation_stop: boolean | null }[]>`
     select s.id, s.prospect_id, s.to_email, s.subject, s.body_text, s.category, p.name,
+           (s.sent_by = 'broise' and r.category = 'stop' and lower(r.from_email) = lower(s.to_email)
+            and r.created_at > now() - interval '7 days') as confirmation_stop,
            r.body_text as recu_texte, r.from_email as recu_de, coalesce(r.received_at, r.created_at) as recu_date,
            r.message_id as recu_message_id, r.references_ids as recu_references
     from public.mailbox_messages s
@@ -408,7 +410,8 @@ async function envoyer(sql: Sql, taskId: string): Promise<void> {
     const qui = m.name ?? m.to_email;
     try {
       const [{ oppose }] = await sql<{ oppose: boolean }[]>`select public.is_opposed(${m.to_email}) as oppose`;
-      if (oppose) {
+      // 27/11 : seule exception, la réponse écrite par Broise pour confirmer une demande d'arrêt (même règle que la base).
+      if (oppose && !m.confirmation_stop) {
         await sql`update public.mailbox_messages set status = 'erreur', error_message = 'Adresse sur la liste d''opposition.' where id = ${m.id}`;
         continue;
       }
