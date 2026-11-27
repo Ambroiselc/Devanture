@@ -291,7 +291,10 @@
   `/demo/exemple-coach`), rendu par /m et /demo selon `content.modele`. Valérie : `SYSTEME_INDEPENDANT` (redaction-email.ts) ;
   Coco : `SYSTEME_INDEPENDANT` (coco.ts), un photographe garde son métier si Sid refait la maquette. Envoi : les PREMIERS e-mails
   ne partent plus qu'à la cible, les relances des artisans continuent ; jamais d'envoi à une adresse de service (`ADRESSE_GENERIQUE`,
-  site.ts, et filtre SQL dans envoi.ts). Inès : toute réponse à la cible est à relire par Broise.
+  site.ts, et filtre SQL dans envoi.ts). Inès : toute réponse à la cible est à relire par Broise ; 27/11 (décision de Broise) :
+  la RÉSERVATION EN LIGNE fait partie de l'offre des indépendants (outil prévu : Cal.com, offre gratuite, à intégrer aux sites de Pedro
+  au 1er client) ; `SYSTEME_INDEPENDANT` dans redaction-reponse.ts (formules sans devis / zone d'intervention, réservation incluse,
+  Pro conseillée aux photographes) et signature « sites web pour les indépendants et les artisans » pour eux (boite.ts).
 - Cadrage des photos d'illustration (27/11, demande de Broise) : `agents/lib/cadrage.ts` (`CADRAGE` : identifiant Unsplash → point à garder
   visible en %) ; `avecCadrage` ajoute une feuille de style (img[src*=…] / [style*=…], !important) à TOUTES les maquettes (renderIndependant,
   renderArtisanPro, renderArtisanChaleureux). Planche de vérification : `/demo/planche` (photo entière + recadrages large, 4:5, carré).

@@ -5,6 +5,7 @@ import { httpClaude } from "./http.ts";
 import { coutEur, MODELE } from "./haiku.ts";
 import { STYLE_SIMPLE } from "./style.ts";
 import { liensPourInes, texteLancementInes } from "./paiement.ts";
+import { estIndependant } from "./cible.ts";
 
 export const CATEGORIES = [
   "interesse", "question", "rendez_vous", "pas_interesse", "stop", "automatique", "client", "spam", "autre",
@@ -106,10 +107,25 @@ const OUTIL = {
   },
 };
 
+/** 27/11 (décision de Broise : la réservation en ligne fait partie de l'offre des indépendants) : même consigne, mais
+ *  vocabulaire des photographes et des coachs, et pas d'arguments d'artisans (devis, zone d'intervention, bouton d'appel). */
+const SYSTEME_INDEPENDANT = SYSTEME
+  .replace("crée des sites web pour les artisans du bâtiment et du jardin (métropole lilloise, puis toute la France).",
+    "crée des sites web pour les indépendants (en ce moment les photographes et les coachs sportifs) et les artisans, dans le Nord et les départements voisins.")
+  .replace("Devanture a écrit à des artisans en leur montrant une maquette gratuite de leur futur site (deux styles : un sobre, un chaleureux).",
+    "Devanture a écrit à ce photographe ou à ce coach en lui montrant une maquette gratuite de son futur site, avec la réservation en ligne de ses séances.")
+  .replace("- Formule Essentiel : une page complète (bouton d'appel, formulaire de demande de devis, zone d'intervention, galerie de 10 photos, avis Google affichés), fiche Google créée, 1 modification par mois.",
+    "- Formule Essentiel : une page complète (ses prestations, la réservation en ligne de ses séances, une galerie de 10 photos, ses avis Google affichés), fiche Google créée, 1 modification par mois.")
+  .replace("- Formule Pro : tout l'Essentiel, jusqu'à 5 pages (une par prestation), galerie sans limite,",
+    "- Formule Pro : tout l'Essentiel, jusqu'à 5 pages (une par type de séance ou de prestation), galeries sans limite de photos,")
+  .replace("- Tout se fait à distance, par e-mail ; un appel est possible si l'artisan le demande.",
+    "- La réservation en ligne est incluse dans les deux formules : le client choisit sa séance et son créneau, et reçoit la confirmation ; l'indépendant voit les réservations dans son agenda.\n- Tout se fait à distance, par e-mail ; un appel est possible si la personne le demande.\n- Pour un photographe, la formule Pro est souvent plus adaptée (une galerie par type de séance) : tu peux le dire, sans insister.\n- Ne parle jamais de devis, de chantier, de zone d'intervention ni d'artisan à un photographe ou à un coach.");
+
 export async function traiterMessage(c: Contexte, consignes: string | null): Promise<Traitement> {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY manquante.");
 
+  const systeme = estIndependant(c.metier) ? SYSTEME_INDEPENDANT : SYSTEME;
   const donnees = {
     expediteur: c.expediteur,
     entreprise_connue: c.entreprise,
@@ -131,7 +147,7 @@ export async function traiterMessage(c: Contexte, consignes: string | null): Pro
       body: JSON.stringify({
         model: MODELE,
         max_tokens: 900,
-        system: consignes ? `${SYSTEME}\n\nConsignes supplémentaires d'Ambroise (à respecter) :\n${consignes}` : SYSTEME,
+        system: consignes ? `${systeme}\n\nConsignes supplémentaires d'Ambroise (à respecter) :\n${consignes}` : systeme,
         tools: [OUTIL],
         tool_choice: { type: "tool", name: OUTIL.name },
         messages: [{ role: "user", content: JSON.stringify(donnees) }],

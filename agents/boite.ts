@@ -343,7 +343,7 @@ async function trier(sql: Sql, taskId: string, r: Reglages): Promise<void> {
                    (direction, thread_id, prospect_id, email_id, reply_to_id, to_email, subject, body_text,
                     status, review_reason, sent_by, category, is_demo)
                  values ('sortant', ${threadId}, ${p?.id ?? null}, ${envoi?.id ?? null}, ${m.id}, ${m.from_email},
-                         ${objetReponse(m.subject)}, ${assemblerReponse(t.reponse, signature)},
+                         ${objetReponse(m.subject)}, ${assemblerReponse(t.reponse, estIndependant(p?.category) ? signature.replace(/sites web pour les artisans\b/, "sites web pour les indépendants et les artisans") : signature)},
                          ${seule ? "valide" : "a_valider"}, ${seule ? null : raisons.join(" · ")},
                          ${seule ? "agent" : null}, ${t.categorie}, ${SIMULATION})`;
         await tx`update public.mailbox_messages set status = 'traite', category = ${t.categorie}, summary = ${t.resume},
