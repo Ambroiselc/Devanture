@@ -295,7 +295,9 @@
 - Cadrage des photos d'illustration (27/11, demande de Broise) : `agents/lib/cadrage.ts` (`CADRAGE` : identifiant Unsplash → point à garder
   visible en %) ; `avecCadrage` ajoute une feuille de style (img[src*=…] / [style*=…], !important) à TOUTES les maquettes (renderIndependant,
   renderArtisanPro, renderArtisanChaleureux). Planche de vérification : `/demo/planche` (photo entière + recadrages large, 4:5, carré).
-  Toute nouvelle photo : l'ajouter à `CADRAGE` si le sujet n'est pas au centre, et la regarder sur la planche.
+  Toute nouvelle photo : l'ajouter à `CADRAGE` si le sujet n'est pas au centre, à `EN_HAUTEUR` si elle est prise en hauteur, et la
+  regarder sur la planche. Cases larges / hautes : `repartir` (photo horizontale dans une case large ; sinon `secondePhoto` = deux
+  photos en hauteur côte à côte), utilisé par les galeries des photographes et des coachs (27/11 midi, demande de Broise).
 - Données personnelles : respecter `docs/registre-rgpd.md` (B2B uniquement, sources publiques, 3 ans max,
   lien de désinscription dans chaque e-mail). Mettre le registre à jour à chaque nouvel outil.
 - Vérifier avec `npm run typecheck` puis `npm run build` avant de dire que c'est fini.
