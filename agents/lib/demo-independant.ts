@@ -6,7 +6,9 @@
 // Ce fichier est lu par l'agent des maquettes ET par le tableau de bord ; il n'importe que ses modules (mises en page, cadrage, genre).
 import { renderCoach } from "./demo-coach.ts";
 import { renderPhotographe } from "./demo-photographe.ts";
-import { avecCadrage, repartir, secondePhoto } from "./cadrage.ts";
+import { avecCadrage, estEnHauteur, repartir, secondePhoto } from "./cadrage.ts";
+import type { ReelIndependant } from "./site-reel.ts";
+import { jetonsReels, versVraiSite, type ContenuSiteIndependant } from "./site-independant.ts";
 import { devinerGenre, type Genre } from "./genre.ts";
 
 export type MetierIndependant = "Photographe" | "Coach sportif";
@@ -19,7 +21,8 @@ export interface ContenuIndependant {
   /** Phrase d'accroche du haut de page. */
   accroche: string;
   intro: string;
-  prestations: { titre: string; description: string }[];
+  /** `prix` : seulement sur le site définitif, quand le client a donné son tarif (jamais inventé). */
+  prestations: { titre: string; description: string; prix?: string | null }[];
   apropos: string;
   zone: string[];
   telephone?: string | null;
@@ -30,6 +33,8 @@ export interface ContenuIndependant {
   specialite?: Specialite;
   /** 27/11 : variante de la maquette (palette ; mise en page pour les coachs), choisie par Sid loin de celles des voisins. */
   habillage?: HabillageIndep;
+  /** 27/11 : site définitif (Pedro) : photos, réservation et contact du client. Absent = maquette. */
+  reel?: ReelIndependant;
 }
 
 /** Spécialités reconnues (27/11) : un coach mental ne doit pas voir que des photos de musculation. */
@@ -195,7 +200,8 @@ function avecPortrait(ph: string[], portrait: string): string[] {
 }
 
 export function renderIndependant(c: ContenuIndependant): string {
-  return avecCadrage(renderIndependantSansCadrage(c));
+  const html = avecCadrage(renderIndependantSansCadrage(c));
+  return c.reel ? versVraiSite(html, c as ContenuSiteIndependant) : html;
 }
 
 function renderIndependantSansCadrage(c: ContenuIndependant): string {
@@ -205,10 +211,12 @@ function renderIndependantSansCadrage(c: ContenuIndependant): string {
   // 27/11 (demande de Broise) : photo « À propos » du même genre que l'indépendant (genre.ts), ou par défaut femme pour les
   // photographes et le yoga, homme pour les coachs. Elle va en dernier (= case « À propos ») et sort de la galerie.
   const genre = devinerGenre(c.nom, c.email, [c.apropos, c.intro, c.accroche]) ?? (c.metier === "Photographe" || spe === "yoga" ? "f" : "m");
-  const ph = avecPortrait(PHOTOS_INDEPENDANTS[spe], portraitPour(c.metier, spe, genre, c.nom));
+  // Site définitif (27/11) : repères des photos du client à la place des photos d'illustration (site-independant.ts).
+  const ph = c.reel ? jetonsReels(c.reel) : avecPortrait(PHOTOS_INDEPENDANTS[spe], portraitPour(c.metier, spe, genre, c.nom));
   // Photos en hauteur de secours pour les cases larges (deux côte à côte) : jamais celle d'« À propos ».
-  const reserveDuo = [ph[0], ...SPECIALITES[c.metier].filter((x) => x !== spe).flatMap((x) => PHOTOS_INDEPENDANTS[x])]
-    .filter((id) => id !== ph[ph.length - 1]);
+  const reserveDuo = c.reel ? ph.filter((id) => estEnHauteur(id))
+    : [ph[0], ...SPECIALITES[c.metier].filter((x) => x !== spe).flatMap((x) => PHOTOS_INDEPENDANTS[x])]
+      .filter((id) => id !== ph[ph.length - 1]);
   const jours = prochainsJours();
   if (!photographe) {
     const calme = spe === "mental" || spe === "yoga";

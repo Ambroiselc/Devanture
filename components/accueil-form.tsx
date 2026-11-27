@@ -113,8 +113,10 @@ function ZoneDepot({ name, titre, aide, multiple, accept, legendes }: {
   );
 }
 
-export function AccueilForm({ jeton, contenu, commune, pro }: {
+export function AccueilForm({ jeton, contenu, commune, pro, independant = false }: {
   jeton: string; contenu: ContenuAccueil; commune: string | null; pro: boolean;
+  /** 27/11 : photographe ou coach (site « indépendant ») : autres consignes pour les photos. */
+  independant?: boolean;
 }) {
   const [etat, setEtat] = useState<"pret" | "envoi" | "fini" | "erreur">("pret");
   const [progres, setProgres] = useState("");
@@ -193,8 +195,11 @@ export function AccueilForm({ jeton, contenu, commune, pro }: {
       <fieldset className="space-y-4 rounded-xl border border-line bg-surface px-4 py-5 sm:px-5">
         <legend className="px-1 font-display text-lg font-semibold">Vos photos</legend>
         <ZoneDepot name="photos" accept="image/*" multiple legendes
-          titre={`Appuyez ici pour ajouter les photos de vos chantiers${pro ? "" : " (10 environ)"}`}
-          aide="Avant / après, réalisations, vous au travail, votre camion… Prises au téléphone, c'est parfait." />
+          titre={independant ? `Appuyez ici pour ajouter vos plus belles photos${pro ? "" : " (10 environ)"}`
+            : `Appuyez ici pour ajouter les photos de vos chantiers${pro ? "" : " (10 environ)"}`}
+          aide={independant
+            ? "Vos photos préférées, en bonne qualité. Ajoutez aussi un portrait de vous et écrivez « moi » dans sa légende : il ira dans la partie « À propos »."
+            : "Avant / après, réalisations, vous au travail, votre camion… Prises au téléphone, c'est parfait."} />
         <ZoneDepot name="logo" accept="image/*,.pdf"
           titre="Votre logo, si vous en avez un"
           aide="Une photo ou un fichier, même un vieux papier à en-tête pris en photo." />

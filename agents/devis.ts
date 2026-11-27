@@ -21,6 +21,7 @@ interface Demande {
   entreprise: string;
   destinataire: string | null;
   url: string | null;
+  template: string | null;
 }
 
 /** « Ambroise <ambroise@mail.devanture-artisans.fr> » → « mail.devanture-artisans.fr ». */
@@ -35,7 +36,7 @@ async function main() {
     await sql`delete from public.demandes_devis where created_at < now() - interval '3 years'`;
     const demandes = await sql<Demande[]>`
       select d.id, d.nom, d.telephone, d.email, d.commune, d.message, d.created_at,
-             p.name as entreprise, p.email as destinataire, w.url
+             p.name as entreprise, p.email as destinataire, w.url, w.template
       from public.demandes_devis d
       join public.websites w on w.id = d.website_id
       join public.prospects p on p.id = w.prospect_id
@@ -57,10 +58,12 @@ async function main() {
         continue;
       }
       const quand = d.created_at.toLocaleString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "full", timeStyle: "short" });
+      // 27/11 : sur le site d'un photographe ou d'un coach, c'est un message de contact, pas une demande de devis.
+      const quoi = d.template === "site-independant" ? "Nouveau message" : "Nouvelle demande de devis";
       const texte = [
         "Bonjour,",
         "",
-        `Nouvelle demande de devis reçue sur votre site${d.url ? ` (${d.url})` : ""}, le ${quand}.`,
+        `${quoi} reçu${d.template === "site-independant" ? "" : "e"} sur votre site${d.url ? ` (${d.url})` : ""}, le ${quand}.`,
         "",
         `Nom : ${d.nom ?? "non indiqué"}`,
         `Téléphone : ${d.telephone ?? "non indiqué"}`,
@@ -81,7 +84,7 @@ async function main() {
           from: `${d.entreprise.replace(/[<>"]/g, "").slice(0, 60)} (site web) <devis@${domaine}>`,
           to: [d.destinataire],
           ...(d.email ? { reply_to: d.email } : {}),
-          subject: `Demande de devis${d.nom ? ` de ${d.nom}` : ""}${d.commune ? ` (${d.commune})` : ""}`,
+          subject: `${d.template === "site-independant" ? "Message" : "Demande de devis"}${d.nom ? ` de ${d.nom}` : ""}${d.commune ? ` (${d.commune})` : ""}`,
           text: texte,
         }),
       }, 20_000);

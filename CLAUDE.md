@@ -305,6 +305,18 @@
   Photo « À propos » (27/11, demande de Broise) : du genre de l'indépendant (`agents/lib/genre.ts`, `devinerGenre` : prénom dans le nom
   de l'activité, puis dans l'e-mail, puis accords « passionnée / passionné » des textes ; sinon femme pour les photographes et le yoga,
   homme pour les coachs), `PORTRAITS` + `portraitPour` dans demo-independant.ts, calculé à l'affichage (vaut pour les anciennes maquettes).
+- Site définitif des photographes et coachs (27/11, demande de Broise, avant l'appel de Rémi) : Pedro (agents/site.ts,
+  `preparerIndependant`, template `site-independant`) part de la maquette « indépendant » rendue avec des REPÈRES de photos
+  (`jetonsReels` : reelL<n> / reelH<n> selon le sens, reelP0 = portrait ; `estEnHauteur` dans cadrage.ts les reconnaît) puis
+  `versVraiSite` (agents/lib/site-independant.ts) : photos du client (point de cadrage `centre` donné par Haiku), galerie de
+  TOUTES ses photos entières (insérée si la mise en page n'en a pas), tarifs du client seulement (`prix`, vérifié par
+  `prixVerifie` : ses chiffres doivent être dans ce qu'il a écrit), plus de « illustration » / « exemple » / « Votre tarif » ;
+  réservation = son lien Cal.com (`contenu.reservation`, `lienReservation`), agenda chargé dans la page SEULEMENT au clic
+  (aucune connexion à Cal.com avant) ; sans lien, la partie disparaît et tout mène au contact ; formulaire de contact =
+  circuit des devis (devis.ts dit « Message » pour ce modèle). Portrait « À propos » = photo légendée « moi » par le client
+  (consigne sur /bienvenue pour les indépendants), sinon pas de photo. Textes : `redigerSiteIndependant`, photos :
+  `regarderPhotosIndependant` (redaction-site.ts) ; pages Pro + mentions légales (Cal.com cité) : site-final-independant.ts.
+  Aperçu : /demo/exemple-photographe?site=1 (et exemple-coach ; `&resa=0`, `&portrait=0`).
 - Données personnelles : respecter `docs/registre-rgpd.md` (B2B uniquement, sources publiques, 3 ans max,
   lien de désinscription dans chaque e-mail). Mettre le registre à jour à chaque nouvel outil.
 - Vérifier avec `npm run typecheck` puis `npm run build` avant de dire que c'est fini.

@@ -38,6 +38,12 @@ import { heberger, relier } from "./lib/polices.ts";
 import { brancherAdresse, workerSitesExiste, zoneDuDomaine } from "./lib/cloudflare.ts";
 import { redigerDemo } from "./lib/redaction-demo.ts";
 import { ajouterResume } from "./lib/sortie-publique.ts";
+import { estIndependant } from "./lib/cible.ts";
+import type { ContenuIndependant } from "./lib/demo-independant.ts";
+import type { ReelIndependant } from "./lib/site-reel.ts";
+import { lienReservation, type ContenuSiteIndependant } from "./lib/site-independant.ts";
+import { construireSiteIndependant } from "./lib/site-final-independant.ts";
+import { redigerSiteIndependant, regarderPhotosIndependant } from "./lib/redaction-site.ts";
 
 export const APERCU = "https://apercu.devanture-artisans.fr";
 const ZONE_APERCU = "devanture-artisans.fr";
@@ -76,6 +82,7 @@ interface Client {
 }
 
 interface SiteExistant { id: string; slug: string; content: ContenuDemo & { reel: Reel }; template: string | null }
+interface SiteExistantIndep { id: string; slug: string; content: ContenuSiteIndependant; template: string | null }
 
 const bilan = { sites: 0, en_ligne: 0, photos: 0, erreurs: 0, cout_ia_eur: 0, apercus: [] as string[], avertissements: [] as string[] };
 let tokensEntree = 0;
@@ -199,6 +206,52 @@ async function siteExistant(sql: Sql, prospectId: string): Promise<SiteExistant 
 // Préparer le site
 // ---------------------------------------------------------------------------------------------
 
+/** Étape 6 de « Préparer » : le site dans la base, la fiche client, le coût, l'e-mail d'aperçu à valider. */
+async function enregistrer(sql: Sql, taskId: string, c: Client, existant: SiteExistant | null, contenu: object,
+  template: string, slug: string, apercu: string, cout: number) {
+  const nomClient = c.name;
+  await sql.begin(async (tx) => {
+    if (existant) {
+      await tx`update public.websites set content = ${tx.json(contenu as never)}, template = ${template},
+               status = case when status = 'publie' then 'publie' else 'pret' end,
+               url = case when status = 'publie' then url else ${apercu} end, updated_at = now()
+               where id = ${existant.id}`;
+    } else {
+      await tx`insert into public.websites (prospect_id, kind, status, template, content, slug, url, is_demo)
+               values (${c.prospect_id}, 'production', 'pret', ${template}, ${tx.json(contenu as never)}, ${slug}, ${apercu}, ${SIMULATION})`;
+    }
+    await tx`update public.clients set etape = 'site_en_preparation'
+             where id = ${c.id} and etape in ('paye', 'contenu_demande', 'contenu_recu')`;
+    await tx`insert into public.costs (task_id, campaign_id, provider, category, amount_eur, description, is_demo)
+             values (${taskId}, ${c.campaign_id}, 'anthropic', 'api', ${cout}, ${`Site définitif (${MODELE}) : ${nomClient}`}, ${SIMULATION})`;
+    if (c.email && !existant) {
+      const [{ signature } = { signature: null }] = await tx<{ signature: string | null }[]>`
+        select signature from public.agent_settings where agent = 'boite'`;
+      const corps = [
+        "Bonjour,",
+        "",
+        "Votre site est prêt. Vous pouvez le regarder ici, sur votre téléphone comme sur un ordinateur :",
+        apercu,
+        "",
+        "Prenez le temps de tout relire. Dites-moi ce que vous voulez changer, même un détail, en répondant à cet e-mail.",
+        "",
+        "Quand tout vous convient, répondez simplement « c'est bon pour moi ». Je réserve alors votre adresse et je mets le site en ligne.",
+        "",
+        "Bien cordialement,",
+        signature?.trim() || "Ambroise Le Clerc\nDevanture",
+      ].join("\n");
+      const [m] = await tx<{ id: string }[]>`
+        insert into public.mailbox_messages (direction, prospect_id, to_email, subject, body_text, category, status,
+                                             review_reason, sent_by, is_demo)
+        values ('sortant', ${c.prospect_id}, ${c.email}, ${OBJET_APERCU}, ${corps}, 'client', 'a_valider',
+                ${`Aperçu du site prêt : ouvre ${apercu} et relis-le avant de valider. Ensuite, passe la fiche à « Aperçu envoyé ».`},
+                'agent', ${SIMULATION})
+        returning id`;
+      await tx`update public.mailbox_messages set thread_id = ${m.id} where id = ${m.id}`;
+    }
+  });
+}
+
 async function preparer(sql: Sql, taskId: string, c: Client) {
   const nomClient = c.name;
   if (["abandonne", "resilie"].includes(c.etape)) throw new Error(`${nomClient} : fiche « ${c.etape} », pas de site.`);
@@ -211,6 +264,12 @@ async function preparer(sql: Sql, taskId: string, c: Client) {
     where prospect_id = ${c.prospect_id} and kind = 'demo' and content is not null
     order by (status <> 'archive') desc, created_at desc limit 1`;
   const commune = c.city ?? "votre secteur";
+  // 27/11 : photographes et coachs → leur propre modèle (site-independant.ts).
+  const modele = (demo?.content as { modele?: string } | undefined)?.modele;
+  if (modele === "independant" || estIndependant(c.category)) {
+    if (modele !== "independant") throw new Error(`${nomClient} : pas de maquette « indépendant » (Sid doit d'abord la faire).`);
+    return preparerIndependant(sql, taskId, c, demo!.content as unknown as ContenuIndependant);
+  }
   let maquette = demo?.content ?? null;
   let cout = 0;
   if (!maquette) {
@@ -325,51 +384,116 @@ async function preparer(sql: Sql, taskId: string, c: Client) {
   const apercu = reel.domaine ? `https://${reel.domaine}/` : `${APERCU}/${slug}/`;
 
   // 6. Base : le site, la fiche, l'e-mail d'aperçu à valider.
-  await sql.begin(async (tx) => {
-    if (existant) {
-      await tx`update public.websites set content = ${tx.json(contenu as never)}, template = ${`site-${style}`},
-               status = case when status = 'publie' then 'publie' else 'pret' end,
-               url = case when status = 'publie' then url else ${apercu} end, updated_at = now()
-               where id = ${existant.id}`;
-    } else {
-      await tx`insert into public.websites (prospect_id, kind, status, template, content, slug, url, is_demo)
-               values (${c.prospect_id}, 'production', 'pret', ${`site-${style}`}, ${tx.json(contenu as never)}, ${slug}, ${apercu}, ${SIMULATION})`;
-    }
-    await tx`update public.clients set etape = 'site_en_preparation'
-             where id = ${c.id} and etape in ('paye', 'contenu_demande', 'contenu_recu')`;
-    await tx`insert into public.costs (task_id, campaign_id, provider, category, amount_eur, description, is_demo)
-             values (${taskId}, ${c.campaign_id}, 'anthropic', 'api', ${cout}, ${`Site définitif (${MODELE}) : ${nomClient}`}, ${SIMULATION})`;
-    if (c.email && !existant) {
-      const [{ signature } = { signature: null }] = await tx<{ signature: string | null }[]>`
-        select signature from public.agent_settings where agent = 'boite'`;
-      const corps = [
-        "Bonjour,",
-        "",
-        "Votre site est prêt. Vous pouvez le regarder ici, sur votre téléphone comme sur un ordinateur :",
-        apercu,
-        "",
-        "Prenez le temps de tout relire. Dites-moi ce que vous voulez changer, même un détail, en répondant à cet e-mail.",
-        "",
-        "Quand tout vous convient, répondez simplement « c'est bon pour moi ». Je réserve alors votre adresse et je mets le site en ligne.",
-        "",
-        "Bien cordialement,",
-        signature?.trim() || "Ambroise Le Clerc\nDevanture",
-      ].join("\n");
-      const [m] = await tx<{ id: string }[]>`
-        insert into public.mailbox_messages (direction, prospect_id, to_email, subject, body_text, category, status,
-                                             review_reason, sent_by, is_demo)
-        values ('sortant', ${c.prospect_id}, ${c.email}, ${OBJET_APERCU}, ${corps}, 'client', 'a_valider',
-                ${`Aperçu du site prêt : ouvre ${apercu} et relis-le avant de valider. Ensuite, passe la fiche à « Aperçu envoyé ».`},
-                'agent', ${SIMULATION})
-        returning id`;
-      await tx`update public.mailbox_messages set thread_id = ${m.id} where id = ${m.id}`;
-    }
-  });
+  await enregistrer(sql, taskId, c, existant, contenu, `site-${style}`, slug, apercu, cout);
   bilan.cout_ia_eur = Math.round((bilan.cout_ia_eur + cout) * 1e6) / 1e6;
   bilan.sites++;
   bilan.apercus.push(`${nomClient} : ${apercu}`);
   await journal(sql, taskId, "info", `${nomClient} : site prêt (${style}, ${photos.length} photo(s), ${reel.pages.length} page(s) de prestation) → ${apercu}`);
 }
+
+
+// ---------------------------------------------------------------------------------------------
+// Préparer le site d'un photographe ou d'un coach (27/11)
+// ---------------------------------------------------------------------------------------------
+
+/** Légende du client qui désigne son portrait (« moi », « c'est moi », « mon portrait ») : photo de la partie À propos. */
+const LEGENDE_PORTRAIT = /^\s*(moi|c'?est moi|mon portrait|portrait de moi|photo de moi|moi[- ]m[eê]me)\b/i;
+
+async function preparerIndependant(sql: Sql, taskId: string, c: Client, maquette: ContenuIndependant) {
+  const nomClient = c.name;
+  let cout = 0;
+  const avertir = (t: string) => bilan.avertissements.push(`${nomClient} : ${t}`);
+  const compter = (u: { coutEur: number; tokensEntree: number; tokensSortie: number }) => {
+    cout += u.coutEur; tokensEntree += u.tokensEntree; tokensSortie += u.tokensSortie;
+  };
+
+  // 1. Les textes, avec ce que le client a écrit.
+  const nbPages = c.formule === "pro" ? PAGES_PRO : 0;
+  const { textes, usage: u1 } = await redigerSiteIndependant({
+    nom: maquette.nom, metier: maquette.metier, commune: maquette.commune,
+    prestations: c.contenu.prestations ?? null, zone: c.contenu.zone ?? null,
+    telephone: c.contenu.telephone ?? c.phone ?? null, message: c.contenu.message ?? null,
+    maquette: { accroche: maquette.accroche, intro: maquette.intro, prestations: maquette.prestations, apropos: maquette.apropos, zone: maquette.zone },
+    nbPages,
+  });
+  compter(u1);
+
+  // 2. Les photos : le portrait (légende « moi ») à part, les autres regardées par Claude Haiku.
+  const binaires = new Map<string, Buffer>();
+  const prets: (PhotoPrete & { nom: string; legende: string | null })[] = [];
+  for (const f of c.fichiers.filter((x) => x.sorte === "photo").slice(0, 40)) {
+    try {
+      prets.push({ ...(await preparerPhoto(f.nom, await telecharger(f.chemin))), nom: f.nom, legende: f.legende ?? null });
+    } catch (err) {
+      avertir(`photo « ${f.nom} » écartée (${(err as Error).message}).`);
+    }
+  }
+  const { avis, usage: u2 } = await regarderPhotosIndependant(prets.map((p) => p.miniature), maquette.metier,
+    textes.prestations.map((p) => p.titre), prets.map((p) => p.legende));
+  compter(u2);
+  const versSite = (p: PhotoPrete, a: (typeof avis)[number]): PhotoSite => {
+    const h = empreinte(p.grande);
+    binaires.set(`photos/${h}-1600.webp`, p.grande);
+    binaires.set(`photos/${h}-800.webp`, p.petite);
+    return { src: `{{R}}photos/${h}-1600.webp`, petit: `{{R}}photos/${h}-800.webp`, largeur: p.largeur, hauteur: p.hauteur,
+      alt: a.alt, prestation: a.prestation, centre: a.centre };
+  };
+  const iPortrait = prets.findIndex((p) => LEGENDE_PORTRAIT.test(p.legende ?? ""));
+  const portrait = iPortrait >= 0 && avis[iPortrait] ? versSite(prets[iPortrait], avis[iPortrait]) : null;
+  const gardees = prets.map((p, i) => ({ p, a: avis[i], i })).filter((x) => x.i !== iPortrait && x.a?.garder !== false);
+  const ecartees = prets.length - gardees.length - (portrait ? 1 : 0);
+  if (ecartees > 0) avertir(`${ecartees} photo(s) écartée(s) par Pedro (floues, documents ou sans rapport) : à vérifier sur l'aperçu.`);
+  // En-tête : la plus belle des photos horizontales (une photo en hauteur y serait trop coupée), sinon la plus belle.
+  const horizontales = gardees.filter((x) => x.p.largeur >= x.p.hauteur);
+  const candidates = horizontales.length ? horizontales : gardees;
+  const vitrine = candidates.reduce<(typeof gardees)[number] | null>((m, x) => (!m || x.a.vitrine > m.a.vitrine ? x : m), null);
+  const ordre = vitrine ? [vitrine, ...gardees.filter((x) => x !== vitrine)] : [];
+  const photos = ordre.slice(0, PHOTOS_MAX[c.formule]).map(({ p, a }) => versSite(p, a));
+  if (ordre.length > photos.length) avertir(`${ordre.length - photos.length} photo(s) de plus que la formule n'en prévoit (${PHOTOS_MAX[c.formule]}) : non publiées.`);
+  if (photos.length < 4) avertir(`seulement ${photos.length} photo(s) : le site sera plus beau avec 6 photos ou plus (redemander au client).`);
+  if (!portrait) avertir("pas de portrait (photo légendée « moi ») : la partie À propos est sans photo.");
+  bilan.photos += photos.length + (portrait ? 1 : 0);
+
+  // 3. Réservation en ligne (page Cal.com du client, guide : docs/reservation-en-ligne.md).
+  const reservation = lienReservation(c.contenu.reservation);
+  if (!reservation) avertir("pas encore de lien de réservation (Cal.com) : le site mène au contact. Le noter sur la fiche puis refaire le site.");
+
+  // 4. Le site.
+  const existant = await siteExistant(sql, c.prospect_id) as unknown as SiteExistantIndep | null;
+  const slug = existant?.slug ?? `${versSlug(maquette.nom, 40)}-${Math.random().toString(36).slice(2, 6)}`;
+  const reel: ReelIndependant = {
+    telephone: textes.telephone, photos, portrait, reservation,
+    devis: { url: `${URL_APP}/api/devis`, site: slug },
+    domaine: existant?.content?.reel?.domaine ?? null,
+    pages: textes.pages.map((p) => ({ ...p, slug: versSlug(textes.prestations[p.prestation]?.titre ?? p.titre, 40) }))
+      .filter((p, i, t) => t.findIndex((q) => q.slug === p.slug) === i && !["photos", "polices", "mentions-legales"].includes(p.slug)),
+    description: textes.description,
+  };
+  const contenu: ContenuSiteIndependant = {
+    ...maquette, email: c.email ?? maquette.email ?? null, telephone: textes.telephone,
+    accroche: textes.accroche, intro: textes.intro, prestations: textes.prestations, zone: textes.zone, apropos: textes.apropos,
+    reel,
+  };
+  const pages = construireSiteIndependant(contenu, mentionsDe(c, textes.telephone));
+  const fichiers = await avecPolices(pages);
+  for (const [k, v] of binaires) fichiers.set(k, v);
+
+  // 5. Publication de l'aperçu, puis la base.
+  await publier(slug, fichiers);
+  const apercu = reel.domaine ? `https://${reel.domaine}/` : `${APERCU}/${slug}/`;
+  await enregistrer(sql, taskId, c, existant as unknown as SiteExistant | null, contenu, "site-independant", slug, apercu, cout);
+  bilan.cout_ia_eur = Math.round((bilan.cout_ia_eur + cout) * 1e6) / 1e6;
+  bilan.sites++;
+  bilan.apercus.push(`${nomClient} : ${apercu}`);
+  await journal(sql, taskId, "info", `${nomClient} : site prêt (indépendant, ${photos.length} photo(s)${portrait ? " + portrait" : ""}, `
+    + `${reservation ? "réservation en ligne" : "sans réservation"}, ${reel.pages.length} page(s) de prestation) → ${apercu}`);
+}
+
+const mentionsDe = (c: Client, telephone: string | null): MentionsClient => ({
+  entreprise: c.name, siret: c.siret,
+  adresse: [c.address, c.postal_code && c.city ? `${c.postal_code} ${c.city}` : c.city].filter(Boolean).join(", ") || null,
+  telephone, email: c.email,
+});
 
 // ---------------------------------------------------------------------------------------------
 // Mettre en ligne
@@ -394,11 +518,12 @@ async function mettreEnLigne(sql: Sql, taskId: string, c: Client) {
   // Pages refaites avec l'adresse définitive (Google, partage, plan du site). Photos et logo ne changent pas.
   const contenu = { ...site.content, reel: { ...site.content.reel, domaine } };
   const style: StyleDemo = site.template === "site-chaleureux" ? "chaleureux" : "pro";
-  const mentions: MentionsClient = {
-    entreprise: c.name, siret: c.siret, adresse: [c.address, c.postal_code && c.city ? `${c.postal_code} ${c.city}` : c.city].filter(Boolean).join(", ") || null,
-    telephone: contenu.reel.telephone, email: c.email,
-  };
-  const fichiers = await avecPolices(construireSite(contenu, style, mentions));
+  const mentions = mentionsDe(c, contenu.reel.telephone);
+  // 27/11 : site d'un photographe ou d'un coach.
+  const pages = site.template === "site-independant"
+    ? construireSiteIndependant(contenu as unknown as ContenuSiteIndependant, mentions)
+    : construireSite(contenu, style, mentions);
+  const fichiers = await avecPolices(pages);
   await publier(site.slug, fichiers, true);
   await majHotes(domaine, site.slug);
   await majHotes(`www.${domaine}`, site.slug);

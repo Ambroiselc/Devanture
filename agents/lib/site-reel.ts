@@ -22,6 +22,8 @@ export interface PhotoSite {
   legende?: string;
   /** Index de la prestation (dans `services`) que montre la photo, ou null. */
   prestation: number | null;
+  /** Point à garder visible quand la photo est recadrée (% depuis la gauche, % depuis le haut), ou absent (= centre). */
+  centre?: [number, number];
 }
 
 export interface PageSite {
@@ -54,6 +56,25 @@ export interface Reel {
   description: string;
 }
 
+/**
+ * Site définitif d'un photographe ou d'un coach (27/11, Pedro) : la maquette « indépendant » (demo-independant.ts),
+ * avec les photos du client, sa page de réservation en ligne (Cal.com) et un formulaire de contact qui marche.
+ */
+export interface ReelIndependant {
+  telephone: string | null;
+  /** Dans l'ordre d'affichage ; la première sert de grande photo d'en-tête, les autres de galerie. */
+  photos: PhotoSite[];
+  /** Portrait de la personne pour « À propos » (photo légendée « moi » par le client), sinon null : pas de photo. */
+  portrait: PhotoSite | null;
+  /** Page de réservation du client (Cal.com), sinon null : la partie Réserver disparaît, tout mène au contact. */
+  reservation: string | null;
+  /** Formulaire de contact : adresse de l'API et identifiant du site (même circuit que les devis des artisans). */
+  devis: { url: string; site: string };
+  domaine: string | null;
+  pages: PageSite[];
+  description: string;
+}
+
 export function esc(texte: string | null | undefined): string {
   return String(texte ?? "")
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -80,11 +101,13 @@ export function imgPhoto(p: PhotoSite, classe: string, prioritaire = false): str
 export const ancre = (r: Reel | undefined, id: string) => (r ? `{{R}}#${id}` : `#${id}`);
 
 /** En-tête de la page : description, adresse canonique, partage, et fiche « entreprise locale » pour Google. */
-export function teteSeo(r: Reel, c: { nom: string; metier: string; commune: string; adresse: string | null; email: string | null; zone: string[] }): string {
+export function teteSeo(r: Pick<Reel, "domaine" | "photos" | "description" | "telephone">,
+  c: { nom: string; metier: string; commune: string; adresse: string | null; email: string | null; zone: string[] },
+  type = "HomeAndConstructionBusiness"): string {
   const url = r.domaine ? `https://${r.domaine}/` : null;
   const image = r.photos[0] && url ? `${url}${r.photos[0].src.replace("{{R}}", "")}` : null;
   const fiche: Record<string, unknown> = {
-    "@context": "https://schema.org", "@type": "HomeAndConstructionBusiness",
+    "@context": "https://schema.org", "@type": type,
     name: c.nom, description: r.description, areaServed: c.zone.map((z) => ({ "@type": "City", name: z })),
   };
   if (url) fiche.url = url;
@@ -108,7 +131,7 @@ export function teteSeo(r: Reel, c: { nom: string; metier: string; commune: stri
 export const champPiege = `<div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden"><label>Ne pas remplir<input name="site_web" tabindex="-1" autocomplete="off"></label></div>`;
 
 /** Script du formulaire de devis : envoi à l'API, message de confirmation, et repli sur l'appel en cas d'échec. */
-export function scriptDevis(r: Reel): string {
+export function scriptDevis(r: Pick<Reel, "telephone" | "devis">): string {
   const secours = r.telephone ? ` Vous pouvez aussi appeler le ${r.telephone}.` : "";
   return `<script>
 (function () {

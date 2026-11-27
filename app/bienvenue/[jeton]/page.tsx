@@ -5,6 +5,7 @@
 // le plan gratuit de Cloudflare), puis enregistre les infos avec accueil_enregistrer.
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
+import { estIndependant } from "@/agents/lib/cible";
 import { AccueilForm, type ContenuAccueil } from "@/components/accueil-form";
 import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "@/lib/supabase/config";
 
@@ -77,7 +78,8 @@ export default async function BienvenuePage({ params }: { params: Promise<{ jeto
           J&apos;ai déjà bien reçu {accueil.nb_fichiers} fichier{accueil.nb_fichiers > 1 ? "s" : ""}. Vous pouvez en ajouter d&apos;autres.
         </p>
       )}
-      <AccueilForm jeton={jeton} contenu={accueil.contenu ?? {}} commune={accueil.commune} pro={accueil.formule === "pro"} />
+      <AccueilForm jeton={jeton} contenu={accueil.contenu ?? {}} commune={accueil.commune} pro={accueil.formule === "pro"}
+        independant={estIndependant(accueil.metier)} />
     </Cadre>
   );
 }

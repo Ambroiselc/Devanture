@@ -278,3 +278,210 @@ export async function redigerSite(c: InfosClient): Promise<{ textes: TextesSite;
     usage,
   };
 }
+
+// ---------------------------------------------------------------------------------------------
+// 3. Photographes et coachs (27/11) : leurs photos et leurs textes
+// ---------------------------------------------------------------------------------------------
+
+export interface AvisPhotoIndependant {
+  alt: string;
+  prestation: number | null;
+  garder: boolean;
+  vitrine: number;
+  /** Point à garder visible si la photo est recadrée (visage, sujet principal), en % ; [50, 50] par défaut. */
+  centre: [number, number];
+}
+
+const SYSTEME_PHOTOS_INDEP = `Tu aides à préparer le site web d'un photographe ou d'un coach (sportif, yoga, coach de vie) indépendant, en France.
+Tu reçois ses photos (en petit, numérotées dans l'ordre), la liste de ses prestations, et parfois la légende qu'il a écrite. Pour un photographe, ce sont ses propres photos : son portfolio (portraits, mariages, familles…), les visages des personnes photographiées sont normaux. Pour chaque photo :
+- alt : le texte pour les malvoyants et Google, 40 à 110 caractères : ce que montre la photo (« Portrait d'une femme en lumière naturelle », « Séance de renforcement en extérieur »), sans nommer personne, sans ville, sans date, sans marque. Si l'auteur a écrit une légende, pars d'elle.
+- prestation : l'index de la prestation que montre la photo, ou null si aucune ne correspond clairement.
+- garder : false pour une photo floue (sans intention artistique), très sombre, une capture d'écran, un document, une affiche avec beaucoup de texte, un logo, ou une photo sans rapport avec son métier. true sinon.
+- vitrine : de 0 à 10, à quel point la photo ferait une belle grande image horizontale en haut du site (nette, lumineuse, forte, qui donne envie). Un logo vaut 0.
+- centre_x et centre_y : où se trouve le sujet principal (les visages s'il y en a), en pourcentage de la largeur depuis la gauche et de la hauteur depuis le haut (0 à 100), pour que le recadrage ne coupe jamais une tête.
+
+Réponds uniquement avec l'outil « regarder_photos », avec exactement une entrée par photo, dans l'ordre.`;
+
+export async function regarderPhotosIndependant(miniatures: Buffer[], metier: string, prestations: string[],
+  legendesClient: (string | null)[] = []): Promise<{ avis: AvisPhotoIndependant[]; usage: Usage }> {
+  if (miniatures.length === 0) return { avis: [], usage: { tokensEntree: 0, tokensSortie: 0, coutEur: 0 } };
+  const contenu: unknown[] = [{ type: "text", text: JSON.stringify({ metier, prestations: prestations.map((p, i) => ({ index: i, titre: p })) }) }];
+  miniatures.forEach((m, i) => {
+    const sienne = legendePropre(legendesClient[i]);
+    contenu.push({ type: "text", text: sienne ? `Photo ${i + 1} (légende écrite par l'auteur : « ${sienne} »)` : `Photo ${i + 1}` });
+    contenu.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: m.toString("base64") } });
+  });
+  const { sortie, usage } = await appeler(SYSTEME_PHOTOS_INDEP, {
+    name: "regarder_photos",
+    description: "Enregistre ce que montre chaque photo.",
+    input_schema: {
+      type: "object",
+      properties: {
+        photos: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              alt: { type: "string" },
+              prestation: { type: ["integer", "null"] },
+              garder: { type: "boolean" },
+              vitrine: { type: "integer", minimum: 0, maximum: 10 },
+              centre_x: { type: "integer", minimum: 0, maximum: 100 },
+              centre_y: { type: "integer", minimum: 0, maximum: 100 },
+            },
+            required: ["alt", "prestation", "garder", "vitrine", "centre_x", "centre_y"],
+          },
+        },
+      },
+      required: ["photos"],
+    },
+  }, contenu, 200 + miniatures.length * 100);
+  const liste = Array.isArray(sortie.photos) ? (sortie.photos as Record<string, unknown>[]) : [];
+  const borne = (v: unknown) => Math.max(0, Math.min(100, Math.round(Number.isFinite(Number(v)) ? Number(v) : 50)));
+  const avis = miniatures.map((_, i): AvisPhotoIndependant => {
+    const x = liste[i] ?? {};
+    const p = typeof x.prestation === "number" && x.prestation >= 0 && x.prestation < prestations.length ? x.prestation : null;
+    return {
+      alt: court(x.alt, 120) || legendePropre(legendesClient[i]) || (metier === "Photographe" ? "Photo du portfolio" : "Photo de séance"),
+      prestation: p,
+      garder: x.garder !== false,
+      vitrine: Math.max(0, Math.min(10, Math.round(Number(x.vitrine) || 0))),
+      centre: [borne(x.centre_x), borne(x.centre_y)],
+    };
+  });
+  return { avis, usage };
+}
+
+export interface InfosIndependant {
+  nom: string;
+  metier: string;
+  commune: string;
+  prestations: string | null;
+  zone: string | null;
+  telephone: string | null;
+  message: string | null;
+  maquette: { accroche: string; intro: string; prestations: { titre: string; description: string }[]; apropos: string; zone: string[] };
+  nbPages: number;
+}
+
+export interface TextesIndependant {
+  accroche: string;
+  intro: string;
+  prestations: { titre: string; description: string; prix: string | null }[];
+  zone: string[];
+  apropos: string;
+  telephone: string | null;
+  description: string;
+  pages: { prestation: number; titre: string; paragraphes: string[] }[];
+}
+
+const SYSTEME_TEXTES_INDEP = `Tu rédiges les textes du VRAI site web d'un photographe ou d'un coach indépendant, en France, qui vient de commander son site (avec réservation en ligne).
+Tu pars des textes de sa maquette et de ce qu'il a lui-même écrit (ses prestations, ses tarifs, sa zone, son message). Ce qu'il a écrit passe toujours avant la maquette. Le site parle à la première personne (« je ») et vouvoie le visiteur. Ton chaleureux et simple, français correct, sans fautes, phrases courtes. Jamais le mot « devis » ni « intervention ».
+
+Règle absolue : n'invente AUCUN fait. Pas d'année de début, pas d'ancienneté, pas de diplôme ou de certification, pas de nombre de clients, pas d'avis, pas de récompense, pas de marque de matériel, pas de durée de séance ni de délai de livraison des photos, sauf si la personne l'a écrit elle-même.
+
+À rédiger :
+- accroche : titre principal, 40 à 90 caractères, ce qu'elle fait, pour qui, où.
+- intro : 1 à 2 phrases, 110 à 230 caractères, centrées sur ce que vivent ses clients et la réservation.
+- prestations : 2 à 4. Reprends SES prestations si elle en a donné (dans son ordre, regroupe si besoin), sinon garde celles de la maquette. titre ≤ 32 caractères, description = 1 phrase de 60 à 130 caractères. prix = son tarif pour cette prestation, recopié tel qu'elle l'a écrit (« 150 € », « à partir de 90 € », « 45 € la séance »), ou null si elle n'en a pas donné. Ne calcule ni n'estime jamais un prix.
+- zone : les communes où elle travaille, d'après ce qu'elle a écrit (sa commune en premier, 10 au plus) ; si elle n'a rien écrit, garde celles de la maquette.
+- apropos : 2 à 4 phrases à la première personne, avec ce qu'elle dit d'elle dans son message ; sinon neutre (sa façon de travailler, sans fait inventé).
+- telephone : son numéro au format « 06 12 34 56 78 », ou null.
+- description : la description pour Google, 130 à 155 caractères : métier, commune, prestations principales, réservation en ligne.
+- pages : exactement le nombre demandé (« nb_pages », parfois 0). Une page pour chacune de ses prestations principales (prestation = index dans prestations). titre ≤ 60 caractères. paragraphes = 2 ou 3 paragraphes de 2 à 4 phrases : ce qu'apporte la prestation, comment se passe une séance en général (prise de contact, préparation, séance, suite), et l'invitation à réserver. Général et exact, sans fait inventé.
+
+Réponds uniquement avec l'outil « rediger_site_independant ».`;
+
+/** Un prix n'est gardé que si ses chiffres figurent dans ce que la personne a écrit. */
+function prixVerifie(prix: unknown, source: string): string | null {
+  const p = court(prix, 40);
+  const chiffres = p.match(/\d+(?:[.,]\d+)?/g);
+  if (!p || !chiffres) return null;
+  const s = source.replace(/\s/g, "");
+  return chiffres.every((ch) => s.includes(ch) || s.includes(ch.replace(",", ".")) || s.includes(ch.replace(".", ","))) ? p : null;
+}
+
+export async function redigerSiteIndependant(c: InfosIndependant): Promise<{ textes: TextesIndependant; usage: Usage }> {
+  const { sortie: s, usage } = await appeler(SYSTEME_TEXTES_INDEP, {
+    name: "rediger_site_independant",
+    description: "Enregistre les textes du site.",
+    input_schema: {
+      type: "object",
+      properties: {
+        accroche: { type: "string" },
+        intro: { type: "string" },
+        prestations: {
+          type: "array", minItems: 2, maxItems: 4,
+          items: {
+            type: "object",
+            properties: { titre: { type: "string" }, description: { type: "string" }, prix: { type: ["string", "null"] } },
+            required: ["titre", "description", "prix"],
+          },
+        },
+        zone: { type: "array", items: { type: "string" } },
+        apropos: { type: "string" },
+        telephone: { type: ["string", "null"] },
+        description: { type: "string" },
+        pages: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              prestation: { type: "integer" },
+              titre: { type: "string" },
+              paragraphes: { type: "array", items: { type: "string" } },
+            },
+            required: ["prestation", "titre", "paragraphes"],
+          },
+        },
+      },
+      required: ["accroche", "intro", "prestations", "zone", "apropos", "telephone", "description", "pages"],
+    },
+  }, [{
+    type: "text",
+    text: JSON.stringify({
+      nom: c.nom, metier: c.metier, commune: c.commune, nb_pages: c.nbPages,
+      ce_que_la_personne_a_ecrit: { prestations: c.prestations, zone: c.zone, telephone: c.telephone, message: c.message },
+      maquette: c.maquette,
+    }),
+  }], 1300 + c.nbPages * 450);
+
+  const source = `${c.prestations ?? ""} ${c.message ?? ""}`;
+  const prestations = (Array.isArray(s.prestations) ? (s.prestations as Record<string, unknown>[]) : [])
+    .slice(0, 4)
+    .map((x) => ({ titre: court(x.titre, 40), description: court(x.description, 170), prix: prixVerifie(x.prix, source) }))
+    .filter((x) => x.titre && x.description);
+  const avecPrestations = prestations.length >= 2 ? prestations : c.maquette.prestations.map((p) => ({ ...p, prix: null }));
+  const zone = [...new Set([c.commune, ...(Array.isArray(s.zone) ? s.zone.map((z) => court(z, 40)) : [])].filter(Boolean))].slice(0, 10);
+
+  const chiffres = (t: string | null) => (t ?? "").replace(/\D/g, "");
+  let telephone = court(s.telephone, 20) || null;
+  if (telephone && c.telephone && chiffres(telephone) !== chiffres(c.telephone).replace(/^33/, "0")) telephone = court(c.telephone, 25);
+  if (!telephone && c.telephone) telephone = court(c.telephone, 25);
+  // Un numéro que la personne n'a pas donné n'est jamais affiché.
+  if (telephone && !c.telephone) telephone = null;
+
+  const pages = (Array.isArray(s.pages) ? (s.pages as Record<string, unknown>[]) : [])
+    .map((p) => ({
+      prestation: Number(p.prestation),
+      titre: court(p.titre, 70),
+      paragraphes: (Array.isArray(p.paragraphes) ? p.paragraphes : []).map((x) => court(x, 700)).filter(Boolean).slice(0, 3),
+    }))
+    .filter((p, i, t) => Number.isInteger(p.prestation) && p.prestation >= 0 && p.prestation < avecPrestations.length
+      && p.titre && p.paragraphes.length > 0 && t.findIndex((q) => q.prestation === p.prestation) === i)
+    .slice(0, c.nbPages);
+
+  return {
+    textes: {
+      accroche: court(s.accroche, 110) || c.maquette.accroche,
+      intro: court(s.intro, 280) || c.maquette.intro,
+      prestations: avecPrestations,
+      zone: zone.length > 1 ? zone : c.maquette.zone,
+      apropos: court(s.apropos, 520) || c.maquette.apropos,
+      telephone,
+      description: court(s.description, 170) || `${c.metier} à ${c.commune} : ${c.nom}. Réservation en ligne.`,
+      pages,
+    },
+    usage,
+  };
+}

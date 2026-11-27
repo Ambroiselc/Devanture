@@ -9,7 +9,7 @@
 // dit la maquette (nombre de formules, de communes) et la réservation en ligne qu'on propose.
 // Importé seulement par demo-independant.ts (types uniquement dans ce sens-là) : pas d'import circulaire à l'exécution.
 import type { ContenuIndependant, Specialite } from "./demo-independant.ts";
-import { EN_HAUTEUR, repartir } from "./cadrage.ts";
+import { estEnHauteur, repartir } from "./cadrage.ts";
 
 export const MISES_EN_PAGE_COACH = ["Dynamique", "Douceur", "Affirmé", "Méthode"] as const;
 
@@ -77,7 +77,7 @@ export function renderCoach(d: DonneesCoach): string {
   // colonnes de « Douceur » (3:4) et cadres de « Méthode » (4:5) → photos en hauteur d'abord.
   const galerie = m === 0 || m === 2 ? repartir(ph.slice(1, 5), ["large", "large", "large", "large"])
     : repartir(ph.slice(1, 5), ["haute", "haute", "haute", "haute"]);
-  const horizontale = (id: string) => (EN_HAUTEUR.has(id) ? (ph.slice(0, -1).find((x) => !EN_HAUTEUR.has(x)) ?? id) : id);
+  const horizontale = (id: string) => (estEnHauteur(id) ? (ph.slice(0, -1).find((x) => !estEnHauteur(x)) ?? id) : id);
   const portrait = ph[ph.length - 1];
 
   const agenda = `<div class="agenda" aria-label="Exemple de réservation en ligne">

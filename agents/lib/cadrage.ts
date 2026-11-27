@@ -154,6 +154,10 @@ export const EN_HAUTEUR = new Set<string>([
   "1506126613408-eca07ce68773", "1616740793717-0aca29b92221", "1642086545847-7b7c16631fa9",
 ]);
 
+/** En hauteur : une photo d'illustration de la liste ci-dessus, ou une photo d'un client (site définitif, 27/11) dont
+ *  le repère porte « H » (« reelH3 » : voir site-independant.ts). */
+export const estEnHauteur = (id: string) => EN_HAUTEUR.has(id) || /^reelH\d+$/.test(id);
+
 export type FormeCase = "large" | "haute" | "libre";
 
 /**
@@ -172,7 +176,7 @@ export function repartir(ids: string[], formes: FormeCase[]): string[] {
   for (const forme of ["large", "haute", "libre"] as const) {
     formes.forEach((f, k) => {
       if (f !== forme || !reste.length) return;
-      res[k] = forme === "large" ? prendre((id) => !EN_HAUTEUR.has(id)) : forme === "haute" ? prendre((id) => EN_HAUTEUR.has(id)) : prendre(() => true);
+      res[k] = forme === "large" ? prendre((id) => !estEnHauteur(id)) : forme === "haute" ? prendre((id) => estEnHauteur(id)) : prendre(() => true);
     });
   }
   return res.map((id, k) => id || ids[k % ids.length]);
@@ -181,6 +185,6 @@ export function repartir(ids: string[], formes: FormeCase[]): string[] {
 /** Pour une case large qui n'a reçu qu'une photo en hauteur : une seconde photo en hauteur à mettre à côté
  *  (prise parmi `reserve`, en évitant celles déjà affichées), ou null si la photo est horizontale. */
 export function secondePhoto(id: string, dejaPrises: string[], reserve: string[]): string | null {
-  if (!EN_HAUTEUR.has(id)) return null;
-  return reserve.find((x) => EN_HAUTEUR.has(x) && !dejaPrises.includes(x)) ?? reserve.find((x) => EN_HAUTEUR.has(x) && x !== id) ?? null;
+  if (!estEnHauteur(id)) return null;
+  return reserve.find((x) => estEnHauteur(x) && !dejaPrises.includes(x)) ?? reserve.find((x) => estEnHauteur(x) && x !== id) ?? null;
 }

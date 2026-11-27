@@ -32,6 +32,19 @@ Client valide par écrit ──► Broise achète le domaine, le branche sur Clo
 
 Coût : quelques centimes d'IA par site. Hébergement : gratuit (un seul Worker Cloudflare pour tous les sites).
 
+## Photographes et coachs (27/11)
+
+Même procédure, avec deux choses en plus à demander au client sur sa page d'accueil :
+
+- **Son lien de réservation** (Cal.com, guide : `docs/reservation-en-ligne.md`). Sans lien, le site se fait quand même :
+  la partie « Réserver » disparaît et tous les boutons mènent au contact. Une fois le lien noté, « Préparer le site » à nouveau.
+- **Un portrait de lui** avec « moi » en légende : il va dans « À propos ». Sans portrait, « À propos » est sans photo.
+
+Pedro garde la mise en page et les couleurs de sa maquette, met toutes ses photos dans la galerie (entières, rien n'est
+coupé), n'affiche un tarif que si le client l'a écrit, et l'agenda ne se charge que quand le visiteur clique sur
+« Voir les créneaux disponibles ». Pour voir à quoi ça ressemble : `/demo/exemple-photographe?site=1` ou
+`/demo/exemple-coach?site=1` (ajouter `&resa=0` pour la version sans réservation).
+
 ## À faire une seule fois (≈ 10 minutes)
 
 ### 1. Appliquer la migration

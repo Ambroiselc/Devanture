@@ -36,7 +36,7 @@ function milieu(html: string, nouveau: string, garderContact = true): string {
 }
 
 /** Remplace titre, description et adresse canonique d'une page. */
-function tete(html: string, titre: string, description: string, canonique: string | null, indexer = true): string {
+export function tete(html: string, titre: string, description: string, canonique: string | null, indexer = true): string {
   let s = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(titre)}</title>`)
     .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(description)}">`)
     .replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${esc(titre)}">`);
@@ -46,7 +46,7 @@ function tete(html: string, titre: string, description: string, canonique: strin
   return s;
 }
 
-const coupe = (t: string, n: number) => (t.length <= n ? t : `${t.slice(0, n - 1).replace(/\s+\S*$/, "")}…`);
+export const coupe = (t: string, n: number) => (t.length <= n ? t : `${t.slice(0, n - 1).replace(/\s+\S*$/, "")}…`);
 
 export function construireSite(c: ContenuDemo & { reel: Reel }, style: StyleDemo, mentions: MentionsClient): Map<string, string> {
   const r = c.reel;

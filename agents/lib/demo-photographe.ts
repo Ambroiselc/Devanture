@@ -8,7 +8,7 @@
 //                   repères « 1 · 2 · 3 », portrait en arche).
 // Les couleurs viennent de la palette choisie ; les polices vont avec la mise en page.
 import type { ContenuIndependant, Specialite } from "./demo-independant.ts";
-import { EN_HAUTEUR, repartir, secondePhoto } from "./cadrage.ts";
+import { estEnHauteur, repartir, secondePhoto } from "./cadrage.ts";
 
 export const MISES_EN_PAGE_PHOTOGRAPHE = ["Classique", "Galerie", "Studio", "Carnet"] as const;
 
@@ -59,7 +59,7 @@ export function renderPhotographe(d: DonneesPhotographe): string {
   // 27/11 : cases larges (bandeaux de « Galerie ») → photos horizontales ; cases hautes → photos en hauteur.
   // « Galerie » : la grande photo du haut doit être horizontale ; si celle de la spécialité est en hauteur, on prend la
   // première horizontale, qui ne revient alors pas dans la galerie.
-  const hautDePage = m === 1 && EN_HAUTEUR.has(ph[0]) ? (ph.slice(1).find((id) => !EN_HAUTEUR.has(id)) ?? ph[0]) : ph[0];
+  const hautDePage = m === 1 && estEnHauteur(ph[0]) ? (ph.slice(1).find((id) => !estEnHauteur(id)) ?? ph[0]) : ph[0];
   const sansHaut = [ph[0], ...ph.slice(1, 8)].filter((id) => id !== hautDePage).slice(0, 6);
   const galerie = m === 1 ? repartir(sansHaut, ["large", "haute", "haute", "large", "haute", "haute"])
     : m === 2 ? repartir(ph.slice(1, 7), ["haute", "haute", "haute", "haute", "haute", "haute"]) : ph.slice(1, 7);

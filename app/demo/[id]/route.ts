@@ -12,7 +12,9 @@ import { moderniser } from "@/agents/lib/moderne";
 import { choisirHabillage, codeHabillageIndep, EXEMPLE_COACH_MENTAL, PHOTOS_INDEPENDANTS, EXEMPLES_INDEPENDANT, habillageDe, lireCodeHabillageIndep, renderIndependant, SPECIALITES, type HabillageIndep } from "@/agents/lib/demo-independant";
 import { MISES_EN_PAGE_COACH } from "@/agents/lib/demo-coach";
 import { MISES_EN_PAGE_PHOTOGRAPHE } from "@/agents/lib/demo-photographe";
-import { CADRAGE, pointDe } from "@/agents/lib/cadrage";
+import { CADRAGE, EN_HAUTEUR, pointDe } from "@/agents/lib/cadrage";
+import type { ContenuIndependant } from "@/agents/lib/demo-independant";
+import type { PhotoSite, ReelIndependant } from "@/agents/lib/site-reel";
 import { PHOTOS_METIERS_PAR_GROUPE } from "@/agents/lib/photo-metier";
 
 const pageBrute = (html: string, status = 200) =>
@@ -24,6 +26,33 @@ const pageBrute = (html: string, status = 200) =>
       "x-robots-tag": "noindex, nofollow",
     },
   });
+
+/**
+ * 27/11 : aperçu du SITE DÉFINITIF d'un photographe ou d'un coach (Pedro), avec des photos d'illustration jouant
+ * les photos du client, des tarifs fictifs et une fausse page de réservation. ?resa=0 : sans réservation ;
+ * ?portrait=0 : sans portrait.
+ */
+function exempleSite(c: ContenuIndependant, spe: string, q: URLSearchParams): ContenuIndependant {
+  const ids = [...new Set([...(PHOTOS_INDEPENDANTS[spe as keyof typeof PHOTOS_INDEPENDANTS] ?? []),
+    ...SPECIALITES[c.metier].flatMap((x) => PHOTOS_INDEPENDANTS[x])])].slice(0, 10);
+  const vers = (id: string, alt: string): PhotoSite => {
+    const haut = EN_HAUTEUR.has(id);
+    const u = (w: number) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=70`;
+    return { src: u(1600), petit: u(800), largeur: haut ? 1067 : 1600, hauteur: haut ? 1600 : 1067, alt, prestation: null,
+      centre: CADRAGE[id] ? [CADRAGE[id][0], CADRAGE[id][1]] : undefined };
+  };
+  const photos = ids.slice(0, -1).map((id, i) => vers(id, `Photo ${i + 1} (exemple)`));
+  const portraitId = c.metier === "Photographe" ? "1573496358961-3c82861ab8f4" : "1759300642338-c5c7cd576a22";
+  const reel: ReelIndependant = {
+    telephone: c.telephone ?? null, photos,
+    portrait: q.get("portrait") === "0" ? null : vers(portraitId, "Portrait (exemple)"),
+    reservation: q.get("resa") === "0" ? null : "https://cal.com/exemple",
+    devis: { url: "/api/devis", site: "exemple" }, domaine: null,
+    pages: [], description: c.intro.slice(0, 150),
+  };
+  const prix = ["150 €", "à partir de 90 €", "45 € la séance", "250 €"];
+  return { ...c, prestations: c.prestations.map((p, i) => ({ ...p, prix: prix[i % prix.length] })), reel };
+}
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -78,8 +107,10 @@ ${[10, 20, 30, 40, 50, 60, 70, 80, 90].map((p) => `<span style="position:absolut
     const specs = SPECIALITES[ex.metier];
     const spe = specs.includes(q.get("spe") as never) ? (q.get("spe") as (typeof specs)[number]) : specs[0];
     const code = (h: HabillageIndep) => codeHabillageIndep(ex.metier, h);
+    // 27/11 : ?site=1 = le même exemple en site définitif (Pedro).
+    const site = q.get("site") === "1";
     const bouton = (h: HabillageIndep, s: string, txt: string, actif = false) =>
-      `<a href="/demo/${id}?v=${code(h)}&spe=${s}" style="color:${actif ? "#111" : "#fff"};background:${actif ? "#FFD866" : "transparent"};border:1px solid #FFD866;text-decoration:none;border-radius:999px;padding:5px 12px">${txt}</a>`;
+      `<a href="/demo/${id}?v=${code(h)}&spe=${s}${site ? "&site=1" : ""}" style="color:${actif ? "#111" : "#fff"};background:${actif ? "#FFD866" : "transparent"};border:1px solid #FFD866;text-decoration:none;border-radius:999px;padding:5px 12px">${txt}</a>`;
     const groupe = (titre: string, liens: string) => `<span style="display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px"><span style="opacity:.7">${titre}</span>${liens}</span>`;
     const mises = groupe("Mise en page :",
       (ex.metier === "Photographe" ? MISES_EN_PAGE_PHOTOGRAPHE : MISES_EN_PAGE_COACH).map((nom, m) => bouton({ ...habillage, m }, spe, nom, (habillage.m ?? 0) === m)).join(""));
@@ -89,9 +120,11 @@ ${[10, 20, 30, 40, 50, 60, 70, 80, 90].map((p) => `<span style="position:absolut
       + `<span style="opacity:.75">Exemple fictif · variante ${code(habillage)}</span>`
       + groupe("Spécialité :", specs.map((x) => bouton(habillage, x, x, x === spe)).join(""))
       + mises + palettes
-      + bouton(choisirHabillage(ex.metier, [habillage]), spe, "Autre variante →") + `</div>`;
+      + bouton(choisirHabillage(ex.metier, [habillage]), spe, "Autre variante →")
+      + `<a href="/demo/${id}?v=${code(habillage)}&spe=${spe}${site ? "" : "&site=1"}" style="color:#FFD866">${site ? "← Maquette" : "Voir en site définitif →"}</a>` + `</div>`;
     const contenu = spe === "mental" ? EXEMPLE_COACH_MENTAL : ex;
-    return pageBrute(renderIndependant({ ...contenu, habillage, specialite: spe }).replace(/<body[^>]*>/, (b) => `${b}\n${barre}`));
+    const base = { ...contenu, habillage, specialite: spe };
+    return pageBrute(renderIndependant(site ? exempleSite(base, spe, q) : base).replaceAll("{{R}}", "").replace(/<body[^>]*>/, (b) => `${b}\n${barre}`));
   }
   if (!isSupabaseConfigured || !/^[0-9a-f-]{36}$/i.test(id)) return page("<p>Démo introuvable.</p>", 404);
 
