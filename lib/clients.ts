@@ -11,7 +11,7 @@ export interface Etape { label: string; tone: Tone; qui: "Broise" | "Claude" | "
 /** Dans l'ordre du parcours. « abandonne » et « resilie » sont des sorties, hors parcours. */
 export const etapes: Record<EtapeClient, Etape> = {
   paye: { label: "Payé", tone: "info", qui: "Broise",
-    faire: "La création est payée (ou, avec 0 € de départ, le premier des 12 mois). Valider l'e-mail de bienvenue préparé dans la boîte mail (page Inès) : il contient son lien d'accueil, où il dépose ses photos et ses infos. La fiche passe seule à « Contenu reçu » quand il les envoie." },
+    faire: "La création est payée (ou, avec 0 € de départ, le premier des 12 mois). Valider l'e-mail de bienvenue préparé dans la boîte mail (page Inès) : il contient son lien d'accueil, où il dépose ses photos et ses infos. Photographe ou coach : caler l'appel de lancement (15-20 min, le soir) pour créer avec lui son compte de réservation Cal.com (guide docs/reservation-en-ligne.md) ; il colle ensuite son lien sur sa page d'accueil. La fiche passe seule à « Contenu reçu » quand il les envoie." },
   contenu_demande: { label: "Contenu demandé", tone: "progress", qui: "Le client",
     faire: "Attendre ses photos, son logo et ses infos sur sa page d'accueil (15 jours prévus par les CGV). Relancer gentiment au bout d'une semaine, avec le même lien." },
   contenu_recu: { label: "Contenu reçu", tone: "progress", qui: "Claude",
@@ -65,7 +65,7 @@ export interface Client {
 /** Libellés des infos envoyées par le client sur sa page d'accueil (components/accueil-form.tsx). */
 export const champsContenu: [string, string][] = [
   ["prestations", "Prestations"], ["zone", "Zone d'intervention"], ["horaires", "Horaires"], ["telephone", "Téléphone"],
-  ["domaine_souhaite", "Adresse souhaitée"], ["style", "Style préféré"], ["message", "Message"],
+  ["domaine_souhaite", "Adresse souhaitée"], ["reservation", "Page de réservation"], ["style", "Style préféré"], ["message", "Message"],
 ];
 
 export interface PaiementStripe {

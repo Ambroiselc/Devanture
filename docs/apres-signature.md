@@ -1,6 +1,6 @@
 # Après la signature : du paiement au site en ligne
 
-Version du 29/10/2026. Suivi de chaque client sur la page **Clients** du tableau de bord
+Version du 29/10/2026, réservation en ligne des indépendants ajoutée le 27/11/2026. Suivi de chaque client sur la page **Clients** du tableau de bord
 (app.devanture-artisans.fr/clients) : chaque fiche affiche l'étape en cours et ce qu'il faut faire.
 
 Qui fait quoi : **Broise** (toi), **Claude** (moi, en conversation, puis l'agent de site définitif), **le client**.
@@ -15,6 +15,7 @@ sur un lien d'aperçu. Si un client abandonne en route, aucun domaine n'a été 
 | # | Étape (page Clients) | Qui | Ce qu'il faut faire |
 |---|---|---|---|
 | 1 | **Payé** | Broise | L'artisan a payé par le lien Stripe envoyé par Inès. Créer sa fiche sur la page Clients (formule, paiement, offre de lancement). Envoyer l'e-mail de bienvenue (modèle ci-dessous). |
+| 1 bis | **Payé** (photographe, coach) | Broise + le client | **Appel de lancement** (15-20 min, en soirée) : créer ensemble son compte de réservation en ligne Cal.com, gratuit, à SON nom (guide pas à pas : [reservation-en-ligne.md](reservation-en-ligne.md)). Il colle ensuite le lien de sa page de réservation sur sa page d'accueil. |
 | 2 | **Contenu demandé** | Le client | Il envoie logo, 5 à 15 photos de chantiers, horaires, prestations, zone d'intervention, numéro, nom de domaine souhaité, style préféré (sobre ou chaleureux). Les CGV lui laissent 15 jours. Relance au bout d'une semaine. |
 | 3 | **Contenu reçu** | Claude | Broise me transmet le contenu (ou il arrive par la boîte mail). Je pars de sa maquette et de ses vraies photos. |
 | 4 | **Site en préparation** | Claude | Je construis le site. Broise le relit (≈ 10 min) avant l'envoi au client. |

@@ -111,6 +111,14 @@ l'hébergeur (Cloudflare), la réalisation (Devanture), l'usage du formulaire et
 avec le site (aucune requête vers Google Fonts). Le contrat client devra comporter une clause de sous-traitance (art. 28) :
 à ajouter aux CGV lors de la relecture par un juriste.
 
+## Réservation en ligne sur les sites des indépendants — depuis le 27/11/2026
+
+Les sites des photographes et coachs intègrent la page de réservation **Cal.com du client** (compte gratuit ouvert à son nom,
+avec ses propres conditions d'utilisation). Le client est responsable de ce traitement et Cal.com est son prestataire direct :
+Devanture n'a pas accès aux réservations et n'en stocke aucune (elle aide seulement à créer le compte pendant l'appel de
+lancement et intègre le lien au site). Les mentions légales du site client devront citer Cal.com pour la réservation.
+Article 8 bis des CGV.
+
 ## Traitement 3 — Demandes reçues via le site devanture.fr
 
 | | |

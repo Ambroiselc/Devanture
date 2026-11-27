@@ -13,6 +13,8 @@ export interface ContenuAccueil {
   prestations?: string;
   zone?: string;
   domaine_souhaite?: string;
+  /** 27/11 : lien de sa page Cal.com (photographes, coachs), intégré au site par Pedro. */
+  reservation?: string;
   style?: string;
   message?: string;
 }
@@ -153,7 +155,7 @@ export function AccueilForm({ jeton, contenu, commune, pro }: {
 
     setProgres("Enregistrement…");
     const infos: ContenuAccueil = {};
-    for (const k of ["telephone", "horaires", "prestations", "zone", "domaine_souhaite", "style", "message"] as const) {
+    for (const k of ["telephone", "horaires", "prestations", "zone", "domaine_souhaite", "reservation", "style", "message"] as const) {
       const v = String(form.get(k) ?? "").trim();
       if (v) infos[k] = v.slice(0, 3000);
     }
@@ -226,6 +228,11 @@ export function AccueilForm({ jeton, contenu, commune, pro }: {
           <span className="mb-1 block font-medium">L&apos;adresse que vous aimeriez</span>
           <input name="domaine_souhaite" defaultValue={contenu.domaine_souhaite} className={champ} placeholder="Ex. : votre-entreprise.fr" />
           <span className="mt-1 block text-xs text-muted">Je vérifie qu&apos;elle est libre. Elle sera enregistrée à votre nom, une fois votre site validé.</span>
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1 block font-medium">Votre page de réservation (facultatif)</span>
+          <input name="reservation" type="url" defaultValue={contenu.reservation} className={champ} placeholder="Ex. : https://cal.com/votre-nom" />
+          <span className="mt-1 block text-xs text-muted">Photographes, coachs… : le lien de votre compte Cal.com, que nous créons ensemble pendant l&apos;appel de lancement. Vos clients réserveront directement depuis votre site.</span>
         </label>
         <div className="text-sm">
           <span className="mb-1 block font-medium">Le style que vous préférez</span>
