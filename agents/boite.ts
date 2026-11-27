@@ -186,8 +186,9 @@ async function trier(sql: Sql, taskId: string, r: Reglages): Promise<void> {
     try {
       // 0) Alerte interne de Devanture (13/11, agents/interets.ts : « artisan intéressé ») : pas un artisan.
       if (m.from_email && /^alertes@/i.test(m.from_email) && /devanture-artisans\.fr$/i.test(m.from_email)) {
-        await sql`update public.mailbox_messages set status = 'ignore', category = 'automatique', prospect_id = null,
-                  summary = 'Alerte interne de Devanture (artisan intéressé).' where id = ${m.id}`;
+        // 27/11 : rangée dans « Reçus » (à regarder) et plus dans « Spam et absences », pour ne pas la rater.
+        await sql`update public.mailbox_messages set status = 'a_traiter', category = 'automatique', prospect_id = null,
+                  summary = 'Alerte : un prospect a cliqué « Ce site m''intéresse » sur sa maquette. À rappeler.' where id = ${m.id}`;
         bilan.ignores++;
         continue;
       }

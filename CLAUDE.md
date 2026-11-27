@@ -106,7 +106,8 @@
   `/m/<slug>/interet` → `public.maquette_interet` → table `maquette_interets` (migration 20261113030000) → réveil
   d'Inès → `agents/interets.ts` envoie l'alerte à Broise (Resend, expéditeur alertes@, ignoré par Inès) ; panneau
   en tête de la vue d'ensemble (`components/artisans-interesses.tsx`, « Marquer traité ») ; alerte urgente de Coco ;
-  plus de relance automatique pour un artisan intéressé.
+  plus de relance automatique pour un artisan intéressé. 27/11 : le clic passe aussi le prospect « interesse » (interets.ts, rattrape les
+  anciens clics) et l'alerte arrive dans « Reçus » (à traiter), plus dans « Spam et absences ».
   19/11 (demande de Broise, 0 réponse intéressée, ouvertures de 4 à 20 s) : plus AUCUN trou en haut des maquettes.
   Téléphone, e-mail et horaires : la vraie valeur ou rien (fini « Votre numéro », « Vos horaires » en pointillés, et la
   note Google vide du style chaleureux) ; boutons « Appeler » seulement avec un numéro. Téléphone public de la liste RGE :

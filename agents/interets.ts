@@ -46,6 +46,12 @@ async function main() {
       console.log(`Intérêts pas encore lisibles (migration 20261113030000 ?) : ${(err as Error).message}`);
       return;
     }
+    // 27/11 (demande de Broise) : un clic sur « Ce site m'intéresse » rend le prospect « intéressé », même s'il n'a jamais
+    // écrit (avant, seul un e-mail d'intérêt le faisait). Rejouable : rattrape aussi les clics passés.
+    const passes = await sql`update public.prospects p set status = 'interesse'
+      from public.maquette_interets i
+      where i.prospect_id = p.id and p.status not in ('interesse', 'client', 'refuse', 'ecarte') returning p.id`;
+    if (passes.length) console.log(`${passes.length} prospect(s) passé(s) « intéressé » après un clic sur leur maquette.`);
     if (!liste.length) {
       console.log("Aucun nouvel artisan intéressé.");
       return;
