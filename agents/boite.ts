@@ -141,7 +141,8 @@ async function rattraperStop(sql: Sql, taskId: string | null): Promise<number> {
     select id, from_email, from_name, to_email, subject, body_text, message_id, in_reply_to, references_ids, attachments,
            auto_submitted, received_at, created_at, prospect_id, category
     from public.mailbox_messages
-    where direction = 'entrant' and status <> 'nouveau' and coalesce(category, '') not in ('stop', 'chauffe')
+    where direction = 'entrant' and status <> 'nouveau' and coalesce(category, '') <> 'chauffe'
+      and not (category = 'stop' and status = 'traite')
       and (category in ('automatique', 'spam') and created_at > now() - interval '60 days' or created_at > now() - interval '14 days')
     order by created_at desc limit 500`;
   let n = 0;
