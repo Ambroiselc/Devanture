@@ -212,7 +212,7 @@ export function renderCoach(d: DonneesCoach): string {
 </section>
 <section id="galerie" class="band" style="padding-top:0">
   <p class="lab">// En images</p>
-  <div class="cadres">${galerie.slice(1).concat(galerie.slice(0, 1)).map((id, i) => `<figure><div>${img(id, 700, `Photo d'illustration ${i + 1}`)}</div><figcaption>Exemple ${i + 1}</figcaption></figure>`).join("")}</div>
+  <div class="cadres">${galerie.slice(1).map((id, i) => `<figure><div>${img(id, 700, `Photo d'illustration ${i + 1}`)}</div><figcaption>Exemple ${i + 1}</figcaption></figure>`).join("")}</div>
   ${legende}
 </section>`;
   }
