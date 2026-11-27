@@ -3,9 +3,9 @@
 //
 // Préparer (--client <id>, ou --tout : tous les clients dont le contenu est arrivé et qui n'ont pas encore de site) :
 //   1. part de la maquette du client, dans le style qu'il a choisi, avec son habillage ;
-//   2. fait réécrire les textes par Claude Haiku avec ce que le client a envoyé (prestations, zone, horaires…),
+//   2. fait réécrire les textes par Claude Opus avec ce que le client a envoyé (prestations, zone, horaires…),
 //      plus les pages de prestation en formule Pro ;
-//   3. prépare ses photos (remises droites, réduites, en WebP) et les fait légender par Claude Haiku, qui choisit
+//   3. prépare ses photos (remises droites, réduites, en WebP) et les fait légender par Claude Opus, qui choisit
 //      aussi la plus belle pour l'en-tête et écarte les photos floues ou sans rapport ;
 //   4. assemble les pages (accueil, prestations, mentions légales), héberge les polices avec le site ;
 //   5. publie le tout dans le stockage (dossier public « sites/<site>/ ») : l'aperçu est aussitôt visible sur
@@ -25,14 +25,13 @@ import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { connecter, type Sql } from "./lib/db.ts";
 import { SIMULATION } from "./lib/http.ts";
-import { MODELE } from "./lib/haiku.ts";
 import type { ContenuDemo } from "./lib/demo-artisan-pro.ts";
 import type { StyleDemo } from "./lib/demo-styles.ts";
 import { variantes } from "./lib/habillage.ts";
 import { URL_APP } from "./lib/accueil.ts";
 import type { PhotoSite, Reel } from "./lib/site-reel.ts";
 import { construireSite, versSlug, type MentionsClient } from "./lib/site-final.ts";
-import { legenderPhotos, redigerSite } from "./lib/redaction-site.ts";
+import { legenderPhotos, MODELE_PEDRO, redigerSite } from "./lib/redaction-site.ts";
 import { preparerLogo, preparerPhoto, type PhotoPrete } from "./lib/photos.ts";
 import { heberger, relier } from "./lib/polices.ts";
 import { brancherAdresse, workerSitesExiste, zoneDuDomaine } from "./lib/cloudflare.ts";
@@ -223,7 +222,7 @@ async function enregistrer(sql: Sql, taskId: string, c: Client, existant: SiteEx
     await tx`update public.clients set etape = 'site_en_preparation'
              where id = ${c.id} and etape in ('paye', 'contenu_demande', 'contenu_recu')`;
     await tx`insert into public.costs (task_id, campaign_id, provider, category, amount_eur, description, is_demo)
-             values (${taskId}, ${c.campaign_id}, 'anthropic', 'api', ${cout}, ${`Site définitif (${MODELE}) : ${nomClient}`}, ${SIMULATION})`;
+             values (${taskId}, ${c.campaign_id}, 'anthropic', 'api', ${cout}, ${`Site définitif (${MODELE_PEDRO}) : ${nomClient}`}, ${SIMULATION})`;
     if (c.email && !existant) {
       const [{ signature } = { signature: null }] = await tx<{ signature: string | null }[]>`
         select signature from public.agent_settings where agent = 'boite'`;
@@ -418,7 +417,7 @@ async function preparerIndependant(sql: Sql, taskId: string, c: Client, maquette
   });
   compter(u1);
 
-  // 2. Les photos : le portrait (légende « moi ») à part, les autres regardées par Claude Haiku.
+  // 2. Les photos : le portrait (légende « moi ») à part, les autres regardées par Claude Opus.
   const binaires = new Map<string, Buffer>();
   const prets: (PhotoPrete & { nom: string; legende: string | null })[] = [];
   for (const f of c.fichiers.filter((x) => x.sorte === "photo").slice(0, 40)) {
@@ -570,7 +569,7 @@ async function main() {
     const [tache] = await sql<{ id: string }[]>`
       insert into public.tasks (agent, title, status, input, attempts, started_at, is_demo)
       values ('site_production', ${enLigne ? "Pedro : mise en ligne" : `Pedro : ${ids.length} site(s)`}, 'en_cours',
-              ${sql.json({ clients: ids, en_ligne: !!enLigne, modele: MODELE })}, 1, now(), ${SIMULATION})
+              ${sql.json({ clients: ids, en_ligne: !!enLigne, modele: MODELE_PEDRO })}, 1, now(), ${SIMULATION})
       returning id`;
     taskId = tache.id;
 

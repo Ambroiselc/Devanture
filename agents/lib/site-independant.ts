@@ -5,7 +5,7 @@
 // client, horizontale), « reelH5 » (en hauteur), « reelP0 » (son portrait). Les mises en page placent donc les photos
 // du client exactement comme les photos d'illustration (le sens des photos compte : voir cadrage.ts, estEnHauteur).
 // Ensuite `versVraiSite` transforme la page :
-//   - repères → vraies photos (deux tailles, texte de remplacement, point de cadrage choisi par Claude Haiku) ;
+//   - repères → vraies photos (deux tailles, texte de remplacement, point de cadrage choisi par Claude Opus) ;
 //   - galerie remplacée par TOUTES les photos du client, dans leur format (rien n'est coupé) ;
 //   - plus aucune mention « illustration », « exemple » ni « Votre tarif » (le prix du client, ou rien) ;
 //   - partie Réserver : son agenda Cal.com, chargé seulement quand le visiteur clique (aucune connexion à Cal.com

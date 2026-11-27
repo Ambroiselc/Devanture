@@ -1,11 +1,22 @@
-// Claude Haiku pour le site définitif (Pedro, 30/10) :
+// Claude pour le site définitif (Pedro, 30/10 ; Opus 5.5 depuis le 27/11, Haiku avant) :
 //   1. regarde les photos du client (petites miniatures) et les légende : ce qu'on y voit, quelle prestation,
 //      à garder ou non, et lesquelles mettre en avant ;
 //   2. réécrit les textes de la maquette avec ce que le client a vraiment envoyé (prestations, zone, horaires…),
 //      et rédige les pages de prestation de la formule Pro.
 // Même règle que pour les maquettes : aucun fait inventé.
 import { httpClaude } from "./http.ts";
-import { coutEur, MODELE } from "./haiku.ts";
+
+/**
+ * 27/11 (demande de Broise : « c'est le site du client, il faut que ce soit vraiment carré ») : Pedro écrit avec
+ * Claude Opus 5.5, le modèle le plus soigné, au lieu de Haiku. Il travaille une fois par client, donc le coût reste
+ * de quelques dizaines de centimes par site. Tarifs (dollars par million de tokens), page des tarifs d'Anthropic, nov. 2026.
+ */
+export const MODELE_PEDRO = "claude-opus-5-5";
+const PRIX_ENTREE_USD = 4;
+const PRIX_SORTIE_USD = 20;
+const USD_EN_EUR = 0.95;
+const coutEur = (entree: number, sortie: number) =>
+  Math.round(((entree * PRIX_ENTREE_USD + sortie * PRIX_SORTIE_USD) / 1e6) * USD_EN_EUR * 1e6) / 1e6;
 import type { ContenuDemo, ServiceDemo } from "./demo-artisan-pro.ts";
 
 export interface Usage { tokensEntree: number; tokensSortie: number; coutEur: number }
@@ -17,7 +28,7 @@ async function appeler(system: string, outil: Record<string, unknown> & { name: 
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({
-      model: MODELE, max_tokens: maxTokens, system, tools: [outil],
+      model: MODELE_PEDRO, max_tokens: maxTokens, system, tools: [outil],
       tool_choice: { type: "tool", name: outil.name },
       messages: [{ role: "user", content: contenu }],
     }),

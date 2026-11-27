@@ -15,7 +15,7 @@ Client valide par écrit ──► Broise achète le domaine, le branche sur Clo
 - Part de la **maquette** du client, dans le **style** qu'il a choisi (sobre si « je vous laisse choisir »), avec son habillage.
 - Réécrit les textes avec **ce que le client a écrit** (prestations, zone, horaires, téléphone, message) : Claude Haiku,
   aucun fait inventé. S'il demande de ne pas afficher son adresse, seule la commune reste.
-- **Photos** : remises droites, réduites (WebP, 2 tailles), photos d'iPhone (HEIC) converties. Claude Haiku regarde des
+- **Photos** : remises droites, réduites (WebP, 2 tailles), photos d'iPhone (HEIC) converties. Claude Opus 5.5 regarde des
   miniatures : prestation montrée, la plus belle en en-tête, et il écarte les photos floues, les documents et les visages
   de clients. Essentiel : 10 photos ; Pro : 30 au plus.
 - **Légendes (30/10, demande de Broise)** : le client peut écrire un petit mot sous chaque photo sur sa page d'accueil ;

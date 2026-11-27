@@ -170,7 +170,7 @@
 - Pedro (appelé Devi jusqu'au 5/11 ; /devi redirige vers /pedro ; workflow, tâche `site_production` et migrations inchangés), l'agent des sites définitifs (30/10, `docs/sites-clients.md`, page `/pedro`) : `agents/site.ts` (workflow `agent-site.yml`, chaque jour
   ouvré 8 h 47 UTC + boutons « Préparer le site » / « Mettre en ligne » de la fiche client, `lancerPedro`). Part de la maquette
   (style choisi, habillage), réécrit les textes avec le contenu du client (`redaction-site.ts`), prépare et légende les photos
-  (`photos.ts` : sharp installé seulement dans le workflow, HEIC via heif-convert ; Haiku vision), pages Pro et mentions légales
+  (`photos.ts` : sharp installé seulement dans le workflow, HEIC via heif-convert ; vision ; Claude Opus 5.5 depuis le 27/11, `MODELE_PEDRO` dans redaction-site.ts, demande de Broise : « que ce soit vraiment carré »), pages Pro et mentions légales
   (`site-final.ts`), polices hébergées (`polices.ts`). Mode « vrai site » des deux modèles : champ `content.reel`
   (`site-reel.ts`, liens internes préfixés `{{R}}`, repères `<!--principal-->` / `<!--contact-->` à garder dans les modèles).
   Fichiers publiés dans le stockage Supabase, bucket PUBLIC `sites/<slug>/` (secret `SUPABASE_SECRET_KEY`), servis par le Worker
@@ -308,7 +308,7 @@
 - Site définitif des photographes et coachs (27/11, demande de Broise, avant l'appel de Rémi) : Pedro (agents/site.ts,
   `preparerIndependant`, template `site-independant`) part de la maquette « indépendant » rendue avec des REPÈRES de photos
   (`jetonsReels` : reelL<n> / reelH<n> selon le sens, reelP0 = portrait ; `estEnHauteur` dans cadrage.ts les reconnaît) puis
-  `versVraiSite` (agents/lib/site-independant.ts) : photos du client (point de cadrage `centre` donné par Haiku), galerie de
+  `versVraiSite` (agents/lib/site-independant.ts) : photos du client (point de cadrage `centre` donné par Claude), galerie de
   TOUTES ses photos entières (insérée si la mise en page n'en a pas), tarifs du client seulement (`prix`, vérifié par
   `prixVerifie` : ses chiffres doivent être dans ce qu'il a écrit), plus de « illustration » / « exemple » / « Votre tarif » ;
   réservation = son lien Cal.com (`contenu.reservation`, `lienReservation`), agenda chargé dans la page SEULEMENT au clic
