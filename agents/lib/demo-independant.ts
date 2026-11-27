@@ -3,8 +3,9 @@
 // comblés (bloc « Réserver en ligne » avec des créneaux d'exemple, prestations avec un emplacement de tarif).
 // Même règle d'honnêteté que les maquettes d'artisans : aucune info inventée (pas de prix, d'avis, de diplôme,
 // d'ancienneté). Ce qu'on ne sait pas s'affiche « à compléter » ; les créneaux et les photos sont marqués « exemple ».
-// Ce fichier est lu par l'agent des maquettes ET par le tableau de bord ; il n'importe que demo-coach.ts (mises en page des coachs).
+// Ce fichier est lu par l'agent des maquettes ET par le tableau de bord ; il n'importe que demo-coach.ts et demo-photographe.ts (mises en page).
 import { renderCoach } from "./demo-coach.ts";
+import { renderPhotographe } from "./demo-photographe.ts";
 
 export type MetierIndependant = "Photographe" | "Coach sportif";
 
@@ -36,44 +37,39 @@ export const SPECIALITES: Record<MetierIndependant, Specialite[]> = {
   "Coach sportif": ["fitness", "running", "yoga", "mental"],
 };
 
-/** Variante d'une maquette (27/11 après-midi, demande de Broise) :
- *  - photographe : p = palette (0-3) ; la mise en page reste celle d'avant le 27/11 (préférée par Broise) ;
- *  - coach : p = couleurs (0-3) et m = mise en page inspirée d'un coach connu (0-3, voir demo-coach.ts).
+/** Variante d'une maquette (27/11 après-midi, demandes de Broise) : p = palette / couleurs (0-3) et m = mise en page (0-3),
+ *  inspirée de coachs connus (demo-coach.ts) ou de photographes connus (demo-photographe.ts ; m = 0 = la mise en page
+ *  d'origine des photographes, que Broise aime).
  *  h, s, g : champs du matin du 27/11 (haut de page, prestations, galerie), abandonnés et ignorés. */
 export interface HabillageIndep { p: number; m?: number; h?: number; s?: number; g?: number }
 export const NB_VARIANTES_INDEP = { p: 4, m: 4 } as const;
 
 /** La variante à afficher. Sans habillage : l'apparence d'avant le 27/11 (palette 0 ou 1). */
 export function habillageDe(c: Pick<ContenuIndependant, "metier" | "palette" | "habillage">): HabillageIndep {
-  const p = (c.habillage?.p ?? c.palette ?? 0) % NB_VARIANTES_INDEP.p;
-  return c.metier === "Photographe" ? { p } : { p, m: (c.habillage?.m ?? 0) % NB_VARIANTES_INDEP.m };
+  return { p: (c.habillage?.p ?? c.palette ?? 0) % NB_VARIANTES_INDEP.p, m: (c.habillage?.m ?? 0) % NB_VARIANTES_INDEP.m };
 }
 
-/** Code court d'une variante, pour ?v= dans les aperçus : « 2 » (photographe) ou « 21 » (coach : couleurs puis mise en page). */
-export function codeHabillageIndep(metier: MetierIndependant, h: HabillageIndep): string {
-  return metier === "Photographe" ? `${h.p}` : `${h.p}${h.m ?? 0}`;
+/** Code court d'une variante, pour ?v= dans les aperçus : « 21 » = palette 2, mise en page 1 (« 2 » seul = mise en page 0). */
+export function codeHabillageIndep(_metier: MetierIndependant, h: HabillageIndep): string {
+  return `${h.p}${h.m ?? 0}`;
 }
-export function lireCodeHabillageIndep(metier: MetierIndependant, code: string | null): HabillageIndep | null {
-  const v = (code ?? "").match(metier === "Photographe" ? /^(\d)$/ : /^(\d)(\d)$/);
+export function lireCodeHabillageIndep(_metier: MetierIndependant, code: string | null): HabillageIndep | null {
+  const v = (code ?? "").match(/^(\d)(\d)?$/);
   if (!v) return null;
-  return metier === "Photographe" ? { p: +v[1] % NB_VARIANTES_INDEP.p } : { p: +v[1] % NB_VARIANTES_INDEP.p, m: +v[2] % NB_VARIANTES_INDEP.m };
+  return { p: +v[1] % NB_VARIANTES_INDEP.p, m: +(v[2] ?? 0) % NB_VARIANTES_INDEP.m };
 }
 
 /** Toutes les combinaisons du métier, puis celle qui ressemble le moins aux voisins (même métier, même département) ;
  *  à égalité, la moins utilisée par eux, puis au hasard. */
 export function choisirHabillage(metier: MetierIndependant, voisins: HabillageIndep[], hasard: () => number = Math.random): HabillageIndep {
-  const photographe = metier === "Photographe";
   const toutes: HabillageIndep[] = [];
-  for (let p = 0; p < NB_VARIANTES_INDEP.p; p++) {
-    if (photographe) toutes.push({ p });
-    else for (let m = 0; m < NB_VARIANTES_INDEP.m; m++) toutes.push({ p, m });
-  }
+  for (let p = 0; p < NB_VARIANTES_INDEP.p; p++) for (let m = 0; m < NB_VARIANTES_INDEP.m; m++) toutes.push({ p, m });
   const vois = voisins.map((v) => habillageDe({ metier, habillage: v }));
-  // La mise en page compte double : deux coachs voisins avec la même mise en page se ressemblent même en d'autres couleurs.
-  const ecart = (a: HabillageIndep, b: HabillageIndep) => Number(a.p !== b.p) + (photographe ? 0 : 2 * Number((a.m ?? 0) !== (b.m ?? 0)));
+  // La mise en page compte double : deux voisins avec la même mise en page se ressemblent même en d'autres couleurs.
+  const ecart = (a: HabillageIndep, b: HabillageIndep) => Number(a.p !== b.p) + 2 * Number((a.m ?? 0) !== (b.m ?? 0));
   const note = (x: HabillageIndep) => (vois.length ? Math.min(...vois.map((v) => ecart(x, v))) : 3) * 100
     - vois.filter((v) => ecart(x, v) === 0).length * 10
-    - (photographe ? 0 : vois.filter((v) => (v.m ?? 0) === (x.m ?? 0)).length);
+    - vois.filter((v) => (v.m ?? 0) === (x.m ?? 0)).length;
   const max = Math.max(...toutes.map(note));
   const meilleures = toutes.filter((x) => note(x) === max);
   return meilleures[Math.floor(hasard() * meilleures.length)];
@@ -185,8 +181,9 @@ export function renderIndependant(c: ContenuIndependant): string {
     });
   }
 
-  // Photographe : la mise en page d'avant le 27/11 (Broise la préfère), seules la palette et les photos changent.
   const pal = PALETTES_PHOTOGRAPHE[hab.p % PALETTES_PHOTOGRAPHE.length];
+  if (hab.m) return renderPhotographe({ c, spe, ph, m: hab.m, couleurs: pal, jours, creneaux: ["10:00", "14:00", "16:30"] });
+  // Mise en page 0 « Classique » : celle d'avant le 27/11 (Broise l'aime), seules la palette et les photos changent.
   const prestations = c.prestations.slice(0, 4);
   const creneaux = ["10:00", "14:00", "16:30"];
   const verbe = "Réserver une séance";

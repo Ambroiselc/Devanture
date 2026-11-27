@@ -135,7 +135,7 @@
   Boîte mail (27/10, `docs/boite-mail.md`) : Worker Cloudflare `workers/boite-mail` (Email Routing → `mailbox_messages`,
   copie Gmail, réveille le workflow `agent-boite.yml`) ; Inès (`agents/boite.ts`, agent `boite`, page `/ines` ; la boîte mail elle-même,
   façon messagerie — Reçus, Envoyés avec la prospection de Valérie, Brouillons, Spam — est sur `/boite?dossier=…&m=<fil>`) trie,
-  met les STOP en opposition (détection codée, sans IA), répond seule aux messages simples (questions, « pas intéressé »)
+  met les STOP en opposition (détection codée, sans IA ; 27/11 : « supprimez ce site » compte comme STOP, la maquette est alors archivée, la fiche passe « refusé », son adresse en opposition, et le prospect est retrouvé par le fil In-Reply-To s'il répond d'une autre adresse ; `retirerProspect`, rattrapage 14 jours dans `rattraperStop`), répond seule aux messages simples (questions, « pas intéressé »)
   et prépare les autres (prix, contrat, paiement, appel, intéressés, inconnus, pièces jointes → garde-fous
   `agents/lib/boite.ts`) ; envoi via Resend 8 h – 20 h. Adresse de réponse par prospect : `ambroise+p-<id>@…`
   (`adresseReponse`, aussi utilisée par Valérie). Nettoyage : `public.nettoyer_boite()`.
@@ -285,9 +285,9 @@
   « écarté » avec la raison ; input `independants` du workflow pour un lancement à la main). Sid : modèle `agents/lib/demo-independant.ts`
   (template « independant », textes `redaction-independant.ts`, sans captures ; 27/11, demande de Broise : `content.specialite`
   (photos par spécialité : fitness, running, yoga, mental ; mariage, famille, portrait — `detecterSpecialite`, sans IA) et
-  `content.habillage` (27/11 après-midi, demande de Broise) : photographe {p} = 4 palettes, mise en page d'origine fixe ; coach {p,m} = 4 couleurs × 4 mises en page inspirées de coachs connus (`agents/lib/demo-coach.ts` : Dynamique/Lucile Woodward, Douceur/Yoga with Adriene, Affirmé/Mel Robbins, Méthode/Jeff Nippard ; anciens champs h,s,g ignorés), `choisirHabillage(metier, voisins)` loin des voisins
+  `content.habillage` (27/11 après-midi, demande de Broise) : {p,m} = 4 palettes × 4 mises en page par métier ; coachs : `agents/lib/demo-coach.ts` (Dynamique/Lucile Woodward, Douceur/Yoga with Adriene, Affirmé/Mel Robbins, Méthode/Jeff Nippard) ; photographes : m=0 Classique = mise en page d'origine (aimée de Broise), `agents/lib/demo-photographe.ts` (Galerie/Jose Villa, Studio/Peter Hurley + Elena S Blair, Carnet/Corbin Gurkin) ; anciens champs h,s,g ignorés, `choisirHabillage(metier, voisins)` loin des voisins
   (même métier, même département) ; rattrapage `agents/habiller-independants.ts`, workflow `habiller-independants.yml`,
-  « appliquer » en 1re ligne de tests/habiller-independants.txt ; aperçus `/demo/exemple-coach?v=32&spe=mental` (v = couleurs puis mise en page ; photographe : v = palette) ; exemples `/demo/exemple-photographe`,
+  « appliquer » en 1re ligne de tests/habiller-independants.txt ; aperçus `/demo/exemple-coach?v=32&spe=mental` (v = palette puis mise en page) ; exemples `/demo/exemple-photographe`,
   `/demo/exemple-coach`), rendu par /m et /demo selon `content.modele`. Valérie : `SYSTEME_INDEPENDANT` (redaction-email.ts) ;
   Coco : `SYSTEME_INDEPENDANT` (coco.ts), un photographe garde son métier si Sid refait la maquette. Envoi : les PREMIERS e-mails
   ne partent plus qu'à la cible, les relances des artisans continuent ; jamais d'envoi à une adresse de service (`ADRESSE_GENERIQUE`,

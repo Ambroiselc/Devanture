@@ -11,6 +11,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { moderniser } from "@/agents/lib/moderne";
 import { choisirHabillage, codeHabillageIndep, EXEMPLE_COACH_MENTAL, EXEMPLES_INDEPENDANT, habillageDe, lireCodeHabillageIndep, renderIndependant, SPECIALITES, type HabillageIndep } from "@/agents/lib/demo-independant";
 import { MISES_EN_PAGE_COACH } from "@/agents/lib/demo-coach";
+import { MISES_EN_PAGE_PHOTOGRAPHE } from "@/agents/lib/demo-photographe";
 
 const pageBrute = (html: string, status = 200) =>
   new Response(html, {
@@ -50,8 +51,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const bouton = (h: HabillageIndep, s: string, txt: string, actif = false) =>
       `<a href="/demo/${id}?v=${code(h)}&spe=${s}" style="color:${actif ? "#111" : "#fff"};background:${actif ? "#FFD866" : "transparent"};border:1px solid #FFD866;text-decoration:none;border-radius:999px;padding:5px 12px">${txt}</a>`;
     const groupe = (titre: string, liens: string) => `<span style="display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px"><span style="opacity:.7">${titre}</span>${liens}</span>`;
-    const mises = ex.metier === "Photographe" ? "" : groupe("Mise en page :",
-      MISES_EN_PAGE_COACH.map((nom, m) => bouton({ ...habillage, m }, spe, nom, (habillage.m ?? 0) === m)).join(""));
+    const mises = groupe("Mise en page :",
+      (ex.metier === "Photographe" ? MISES_EN_PAGE_PHOTOGRAPHE : MISES_EN_PAGE_COACH).map((nom, m) => bouton({ ...habillage, m }, spe, nom, (habillage.m ?? 0) === m)).join(""));
     const palettes = groupe(ex.metier === "Photographe" ? "Palette :" : "Couleurs :",
       [0, 1, 2, 3].map((p) => bouton({ ...habillage, p }, spe, String(p + 1), habillage.p === p)).join(""));
     const barre = `<div style="position:relative;z-index:50;background:#111;color:#fff;font:600 14px/1.2 system-ui,sans-serif;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 18px;padding:8px 16px">`

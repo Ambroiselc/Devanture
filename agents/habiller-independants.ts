@@ -45,7 +45,7 @@ try {
     "",
     "Spécialités : " + [...parSpe.entries()].sort().map(([k, n]) => `${k} ${n}`).join(", "),
     "",
-    `Variantes utilisées : ${[...parVariante.entries()].sort().map(([k, n]) => `${k} ×${n}`).join(", ")} (photographes : 4 palettes ; coachs : 4 couleurs × 4 mises en page).`,
+    `Variantes utilisées : ${[...parVariante.entries()].sort().map(([k, n]) => `${k} ×${n}`).join(", ")} (par métier : 4 palettes × 4 mises en page).`,
   ].join("\n");
   console.log(md);
   ajouterResume(md);
