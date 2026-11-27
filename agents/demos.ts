@@ -275,10 +275,10 @@ async function main() {
             0,
           );
           // 27/11 (demande de Broise) : photos selon ce que fait la personne, et une variante loin de celles des voisins
-          // (même métier, même département).
+          // (même métier, même département) ; coachs : couleurs + mise en page inspirée d'un coach connu (demo-coach.ts).
           r.contenu.specialite = detecterSpecialite(p.category, [p.name, site?.indices?.extrait ?? "", r.contenu.accroche, r.contenu.intro,
             ...r.contenu.prestations.flatMap((x) => [x.titre, x.description]), r.contenu.apropos].join(" "));
-          r.contenu.habillage = choisirHabillageIndep(await habillagesVoisins(sql, p.category, p.postal_code, p.id));
+          r.contenu.habillage = choisirHabillageIndep(r.contenu.metier, await habillagesVoisins(sql, p.category, p.postal_code, p.id));
           delete r.contenu.palette;
           tokensEntree += r.tokensEntree;
           tokensSortie += r.tokensSortie;

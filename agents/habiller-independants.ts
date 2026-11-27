@@ -1,10 +1,10 @@
-// 27/11 (demande de Broise) : donne aux maquettes « indépendant » déjà faites une spécialité (photos qui ressemblent à ce que
+// 27/11 (demande de Broise ; refait l'après-midi : photographes = palette seule, coachs = couleurs + mise en page) : donne aux maquettes « indépendant » déjà faites une spécialité (photos qui ressemblent à ce que
 // fait la personne : coach mental, yoga, course à pied… ; mariage, famille, portrait) et une variante loin de celles des
 // voisins (même métier, même département). Sans IA : seulement les textes déjà écrits dans la maquette.
 // Simulation par défaut ; « appliquer » en 1re ligne de tests/habiller-independants.txt pour enregistrer.
 import { connecter } from "./lib/db.ts";
 import { ajouterResume } from "./lib/sortie-publique.ts";
-import { choisirHabillage, detecterSpecialite, habillageDe, type ContenuIndependant, type HabillageIndep } from "./lib/demo-independant.ts";
+import { choisirHabillage, codeHabillageIndep, detecterSpecialite, habillageDe, type ContenuIndependant, type HabillageIndep } from "./lib/demo-independant.ts";
 import { readFileSync } from "node:fs";
 
 const appliquer = (() => { try { return /^appliquer/i.test(readFileSync("tests/habiller-independants.txt", "utf8").trim()); } catch { return false; } })();
@@ -25,11 +25,11 @@ try {
     const specialite = detecterSpecialite(c.metier, [l.name, c.accroche, c.intro, ...c.prestations.flatMap((x) => [x.titre, x.description]), c.apropos].join(" "));
     const cle = `${l.category}|${l.dep}`;
     const voisins = dejaChoisis.get(cle) ?? [];
-    const habillage = choisirHabillage(voisins);
+    const habillage = choisirHabillage(c.metier, voisins);
     voisins.push(habillage);
     dejaChoisis.set(cle, voisins);
     parSpe.set(`${c.metier} · ${specialite}`, (parSpe.get(`${c.metier} · ${specialite}`) ?? 0) + 1);
-    const code = `${habillage.p}${habillage.h}${habillage.s}${habillage.g}`;
+    const code = `${c.metier} ${codeHabillageIndep(c.metier, habillage)}`;
     parVariante.set(code, (parVariante.get(code) ?? 0) + 1);
     const avant = habillageDe(c);
     if (appliquer) {
@@ -45,7 +45,7 @@ try {
     "",
     "Spécialités : " + [...parSpe.entries()].sort().map(([k, n]) => `${k} ${n}`).join(", "),
     "",
-    `Variantes différentes utilisées : ${parVariante.size} (sur 48 possibles par métier).`,
+    `Variantes utilisées : ${[...parVariante.entries()].sort().map(([k, n]) => `${k} ×${n}`).join(", ")} (photographes : 4 palettes ; coachs : 4 couleurs × 4 mises en page).`,
   ].join("\n");
   console.log(md);
   ajouterResume(md);
