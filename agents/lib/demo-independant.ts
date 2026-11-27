@@ -6,7 +6,7 @@
 // Ce fichier est lu par l'agent des maquettes ET par le tableau de bord ; il n'importe que demo-coach.ts et demo-photographe.ts (mises en page).
 import { renderCoach } from "./demo-coach.ts";
 import { renderPhotographe } from "./demo-photographe.ts";
-import { avecCadrage } from "./cadrage.ts";
+import { avecCadrage, repartir, secondePhoto } from "./cadrage.ts";
 
 export type MetierIndependant = "Photographe" | "Coach sportif";
 
@@ -195,7 +195,15 @@ function renderIndependantSansCadrage(c: ContenuIndependant): string {
   const creneaux = ["10:00", "14:00", "16:30"];
   const verbe = "Réserver une séance";
   const annee = new Date().getFullYear();
-  const galerie = ph.slice(1, 7).map((id, i) => `<figure class="g g${i}">${img(id, 900, `Photo d'illustration ${i + 1}`)}</figure>`).join("");
+  // 27/11 : g0 occupe 2 rangées (case haute), g3 et g5 deux colonnes (cases larges) → photos du bon sens.
+  // Case large sans photo horizontale disponible (spécialité « portrait ») : deux photos en hauteur côte à côte.
+  const casesGalerie = repartir(ph.slice(1, 7), ["haute", "libre", "libre", "large", "libre", "large"]);
+  const galerie = casesGalerie.map((id, i) => {
+    const deux = i === 3 || i === 5 ? secondePhoto(id, casesGalerie, [ph[ph.length - 1], ph[0]]) : null;
+    return deux
+      ? `<figure class="g g${i} duo"><div>${img(id, 700, `Photo d'illustration ${i + 1}`)}</div><div>${img(deux, 700, `Photo d'illustration ${i + 1} bis`)}</div></figure>`
+      : `<figure class="g g${i}">${img(id, 900, `Photo d'illustration ${i + 1}`)}</figure>`;
+  }).join("");
   const cartes = prestations.map((p) => `<article class="carte">
     <h3>${e(p.titre)}</h3>
     <p>${e(p.description)}</p>
@@ -248,6 +256,7 @@ h2{font-size:clamp(32px,4vw,50px);margin-bottom:12px}
 .g{margin:0;overflow:hidden;background:var(--ligne);border-radius:2px}
 .g img{transition:transform .8s ease;object-position:50% 22%}.g:hover img{transform:scale(1.05)}
 .g0{grid-row:span 2}.g3,.g5{grid-column:span 2}
+.g.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:none}.g.duo>div{overflow:hidden;background:var(--ligne)}
 .legende{color:var(--doux);font-size:14px;margin-top:12px}
 .resa{display:grid;grid-template-columns:1fr minmax(0,420px);gap:clamp(28px,5vw,72px);align-items:center;background:var(--carte);color:var(--encre);border-block:1px solid var(--ligne)}
 .resa p{color:var(--doux);max-width:34em}

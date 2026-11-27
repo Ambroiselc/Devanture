@@ -8,6 +8,7 @@
 //                   repères « 1 · 2 · 3 », portrait en arche).
 // Les couleurs viennent de la palette choisie ; les polices vont avec la mise en page.
 import type { ContenuIndependant, Specialite } from "./demo-independant.ts";
+import { EN_HAUTEUR, repartir, secondePhoto } from "./cadrage.ts";
 
 export const MISES_EN_PAGE_PHOTOGRAPHE = ["Classique", "Galerie", "Studio", "Carnet"] as const;
 
@@ -53,7 +54,9 @@ export function renderPhotographe(d: DonneesPhotographe): string {
   const verbe = "Réserver une séance";
   const annee = new Date().getFullYear();
   const posHero = d.spe === "portrait" ? "50% 25%" : "50% 40%";
-  const galerie = ph.slice(1, 7);
+  // 27/11 : cases larges (bandeaux de « Galerie ») → photos horizontales ; cases hautes → photos en hauteur.
+  const galerie = m === 1 ? repartir(ph.slice(1, 7), ["large", "haute", "haute", "large", "haute", "haute"])
+    : m === 2 ? repartir(ph.slice(1, 7), ["haute", "haute", "haute", "haute", "haute", "haute"]) : ph.slice(1, 7);
   const portrait = ph[ph.length - 1];
   const tarif = `<span class="todo">Votre tarif</span>`;
   const legende = `<p class="legende">Photos d'illustration : vos propres photos prendront leur place.</p>`;
@@ -92,12 +95,19 @@ export function renderPhotographe(d: DonneesPhotographe): string {
   const pied = `<footer><span>© ${annee} ${e(c.nom)} · ${e(c.metier)} à ${e(c.commune)}</span><span>Mentions légales</span></footer>`;
   const nav = `<nav><a href="#prestations">Prestations</a>${m === 2 ? "" : `<a href="#galerie">Portfolio</a>`}<a href="#reserver">Réserver</a><a href="#apropos">À propos</a><a href="#contact">Contact</a></nav>`;
 
+  // Bandeau large de « Galerie » : une photo horizontale, sinon deux photos en hauteur côte à côte (jamais une tranche de visage).
+  const bandeau = (id: string, classe: string, n: number) => {
+    const deux = secondePhoto(id, galerie, [portrait, ph[0]]);
+    return deux
+      ? `<div class="paire">${[id, deux].map((x, k) => `<figure>${img(x, 1000, `Photo d'illustration ${n}${k ? " bis" : ""}`)}</figure>`).join("")}</div>`
+      : `<figure class="${classe}">${img(id, 2000, `Photo d'illustration ${n}`)}</figure>`;
+  };
   let corps = "";
   if (m === 1) {
     // « Galerie » (codes de Jose Villa)
     corps = `<header><a class="logo" href="#">${e(c.nom)}</a>${nav}</header>
 <!--principal-->
-<section class="hero-img">${img(ph[0], 2000, `Photo d'illustration : ${c.metier}`)}</section>
+<section class="hero-img">${img(EN_HAUTEUR.has(ph[0]) ? (ph.slice(1).find((id) => !EN_HAUTEUR.has(id)) ?? ph[0]) : ph[0], 2000, `Photo d'illustration : ${c.metier}`)}</section>
 <section class="band intro">
   <p class="sur">${e(c.metier)} · ${e(c.commune)}</p>
   <h1>${e(c.accroche)}</h1>
@@ -105,9 +115,9 @@ export function renderPhotographe(d: DonneesPhotographe): string {
   <div class="ctas"><a class="btn" href="#reserver">${verbe}</a></div>
 </section>
 <section id="galerie" class="galerie">
-  <figure class="large">${img(galerie[0], 2000, "Photo d'illustration 1")}</figure>
+  ${bandeau(galerie[0], "large", 1)}
   <div class="paire"><figure>${img(galerie[1], 1000, "Photo d'illustration 2")}</figure><figure>${img(galerie[2], 1000, "Photo d'illustration 3")}</figure></div>
-  <figure class="moyenne">${img(galerie[3], 1600, "Photo d'illustration 4")}</figure>
+  ${bandeau(galerie[3], "moyenne", 4)}
   <div class="paire"><figure>${img(galerie[4], 1000, "Photo d'illustration 5")}</figure><figure>${img(galerie[5], 1000, "Photo d'illustration 6")}</figure></div>
   ${legende}
 </section>

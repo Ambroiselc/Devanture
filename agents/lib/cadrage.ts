@@ -18,9 +18,9 @@ export const CADRAGE: Record<string, [number, number]> = {
   "1519741196428-6a2175fa2557": [50, 45],
   "1602255680702-c47261041a97": [45, 38],
   "1685873875056-bb96de15555c": [55, 42],
-  "1561524891-8e08ab8569f3": [55, 45],
+  "1561524891-8e08ab8569f3": [55, 30],
   "1559734840-f9509ee5677f": [50, 62],
-  "1542037104857-ffbb0b9155fb": [52, 55],
+  "1542037104857-ffbb0b9155fb": [52, 18],
   "1529518152792-d08317b26e22": [50, 62],
   "1685873875872-ecd77ba5a2b0": [55, 42],
   "1573496358961-3c82861ab8f4": [50, 35],
@@ -132,4 +132,55 @@ export function cssCadrage(): string {
 export function avecCadrage(html: string): string {
   const css = cssCadrage();
   return css && html.includes("</head>") ? html.replace("</head>", `<style id="cadrage">${css}</style></head>`) : html;
+}
+
+/**
+ * Photos prises EN HAUTEUR (27/11 midi, demande de Broise : dans la galerie « famille », deux photos en hauteur tombaient
+ * dans les cases très larges → têtes coupées / rien de visible). Les autres photos des indépendants sont à l'horizontale.
+ * Une case large doit recevoir une photo horizontale, une case haute une photo en hauteur : voir `repartir`.
+ */
+export const EN_HAUTEUR = new Set<string>([
+  // mariage
+  "1622277430358-f4d134452e2e", "1757647630063-dd5cd82271f3", "1617724975854-70b5d0cedb0a", "1630526720753-aa4e71acf67d",
+  "1519741196428-6a2175fa2557",
+  // famille
+  "1602255680702-c47261041a97", "1685873875056-bb96de15555c", "1559734840-f9509ee5677f", "1529518152792-d08317b26e22",
+  "1685873875872-ecd77ba5a2b0", "1573496358961-3c82861ab8f4",
+  // portrait
+  "1573497019940-1c28c88b4f3e", "1560250097-0b93528c311a", "1781888681811-332968760c2a", "1500648767791-00dcc994a43e",
+  "1573496359142-b8d87734a5a2", "1685760259914-ee8d2c92d2e0", "1494790108377-be9c29b29330",
+  // coachs
+  "1759476532444-fa17a7131941", "1542354771-435b9f200e57", "1634921363975-46fa99024422", "1761035005546-62b8018b212a",
+  "1506126613408-eca07ce68773", "1616740793717-0aca29b92221", "1642086545847-7b7c16631fa9",
+]);
+
+export type FormeCase = "large" | "haute" | "libre";
+
+/**
+ * Place les photos dans des cases de formes données : d'abord les cases larges (photos horizontales en priorité),
+ * puis les hautes (photos en hauteur en priorité), puis les libres ; l'ordre d'origine est gardé autant que possible.
+ * Rend une photo par case (en reprenant depuis le début s'il y a plus de cases que de photos).
+ */
+export function repartir(ids: string[], formes: FormeCase[]): string[] {
+  if (!ids.length) return formes.map(() => "");
+  const reste = [...ids];
+  const res: string[] = new Array(formes.length).fill("");
+  const prendre = (veut: (id: string) => boolean) => {
+    const i = reste.findIndex(veut);
+    return reste.splice(i >= 0 ? i : 0, 1)[0];
+  };
+  for (const forme of ["large", "haute", "libre"] as const) {
+    formes.forEach((f, k) => {
+      if (f !== forme || !reste.length) return;
+      res[k] = forme === "large" ? prendre((id) => !EN_HAUTEUR.has(id)) : forme === "haute" ? prendre((id) => EN_HAUTEUR.has(id)) : prendre(() => true);
+    });
+  }
+  return res.map((id, k) => id || ids[k % ids.length]);
+}
+
+/** Pour une case large qui n'a reçu qu'une photo en hauteur : une seconde photo en hauteur à mettre à côté
+ *  (prise parmi `reserve`, en évitant celles déjà affichées), ou null si la photo est horizontale. */
+export function secondePhoto(id: string, dejaPrises: string[], reserve: string[]): string | null {
+  if (!EN_HAUTEUR.has(id)) return null;
+  return reserve.find((x) => EN_HAUTEUR.has(x) && !dejaPrises.includes(x)) ?? reserve.find((x) => EN_HAUTEUR.has(x) && x !== id) ?? null;
 }

@@ -9,6 +9,7 @@
 // dit la maquette (nombre de formules, de communes) et la réservation en ligne qu'on propose.
 // Importé seulement par demo-independant.ts (types uniquement dans ce sens-là) : pas d'import circulaire à l'exécution.
 import type { ContenuIndependant, Specialite } from "./demo-independant.ts";
+import { EN_HAUTEUR, repartir } from "./cadrage.ts";
 
 export const MISES_EN_PAGE_COACH = ["Dynamique", "Douceur", "Affirmé", "Méthode"] as const;
 
@@ -72,7 +73,11 @@ export function renderCoach(d: DonneesCoach): string {
   const sur = `${e(d.metierAffiche)} · ${e(c.commune)}`;
   const posHero = spe === "fitness" ? "50% 72%" : "50% 35%";
   const annee = new Date().getFullYear();
-  const galerie = ph.slice(1, 5);
+  // 27/11 : cartes de « Dynamique » (≈ 2:1) et rangée d'« Affirmé » (4:3) → photos horizontales d'abord ;
+  // colonnes de « Douceur » (3:4) et cadres de « Méthode » (4:5) → photos en hauteur d'abord.
+  const galerie = m === 0 || m === 2 ? repartir(ph.slice(1, 5), ["large", "large", "large", "large"])
+    : repartir(ph.slice(1, 5), ["haute", "haute", "haute", "haute"]);
+  const horizontale = (id: string) => (EN_HAUTEUR.has(id) ? (ph.slice(0, -1).find((x) => !EN_HAUTEUR.has(x)) ?? id) : id);
   const portrait = ph[ph.length - 1];
 
   const agenda = `<div class="agenda" aria-label="Exemple de réservation en ligne">
@@ -197,7 +202,7 @@ export function renderCoach(d: DonneesCoach): string {
     <a class="btn" href="#reserver">${verbe}</a>
   </div>
   <div class="droite">
-    <div class="grande">${img(ph[0], 1600, `Photo d'illustration : ${c.metier}`)}</div>
+    <div class="grande">${img(horizontale(ph[0]), 1600, `Photo d'illustration : ${c.metier}`)}</div>
     <p class="lab">// ${sur}</p>
     <h1>${e(c.accroche)}</h1>
     <div class="trio">${trio.map(([t, x]) => `<div><h3>${t}</h3><p>${x}</p></div>`).join("")}</div>
