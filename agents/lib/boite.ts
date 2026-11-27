@@ -40,11 +40,11 @@ export function sansCitation(texte: string): string {
   return garde || texte.trim();
 }
 
-/** Demande de désinscription claire : « STOP », « désinscrire », « ne plus m'écrire »… */
+/** Demande de désinscription claire : « STOP », « désinscrire », « ne plus m'écrire », « supprimez ce site » (27/11)… */
 export function demandeStop(sujet: string, texte: string): boolean {
   const debut = sansCitation(texte).slice(0, 400);
   if (/^\s*stop\b/i.test(debut) || /^\s*(re\s*:\s*)?stop\s*$/i.test(sujet)) return true;
-  return /d[ée]sinscri|d[ée]sabonn|ne (plus|jamais) (me |nous )?(recontacter|contacter|[ée]crire|envoyer)|retirez[- ]moi|supprimez (mon|notre) adresse|arr[êe]tez de m/i
+  return /d[ée]sinscri|d[ée]sabonn|ne (plus|jamais) (me |nous )?(recontacter|contacter|[ée]crire|envoyer)|retirez[- ]moi|supprimez (mon|notre) adresse|arr[êe]tez de m|(supprim|retir|effac)(er|ez)\s+(ce|le|mon|cette|la|votre)\s+(site|maquette|page)/i
     .test(debut);
 }
 

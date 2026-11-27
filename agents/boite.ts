@@ -57,6 +57,7 @@ interface Recu {
   body_text: string;
   message_id: string | null;
   in_reply_to: string | null;
+  references_ids: string | null;
   attachments: { nom: string }[];
   auto_submitted: boolean;
   received_at: Date | null;
@@ -96,6 +97,15 @@ async function retrouverProspect(sql: Sql, m: Recu): Promise<Prospect | null> {
     const [p] = await sql<Prospect[]>`select ${champs} from public.prospects where id = ${id}`;
     if (p) return p;
   }
+  // 27/11 : réponse depuis une autre adresse que celle de la fiche (ex. Gmail perso) : on suit le fil, l'e-mail
+  // auquel elle répond (In-Reply-To = Message-ID de notre envoi, gardé dans emails.provider_id).
+  const refs = [m.in_reply_to, ...(m.references_ids ?? "").split(/\s+/)].map((x) => (x ?? "").replace(/[<>\s]/g, "")).filter(Boolean);
+  if (refs.length) {
+    const [p] = await sql<Prospect[]>`select ${sql`p.id, p.name, p.category, p.city, p.status, p.campaign_id`}
+      from public.emails e join public.prospects p on p.id = e.prospect_id
+      where e.provider_id is not null and replace(replace(e.provider_id, '<', ''), '>', '') = any(${refs}) limit 1`;
+    if (p) return p;
+  }
   if (!m.from_email) return null;
   const [p] = await sql<Prospect[]>`select ${champs} from public.prospects where lower(email) = ${m.from_email}
                                     order by updated_at desc limit 1`;
@@ -105,6 +115,19 @@ async function retrouverProspect(sql: Sql, m: Recu): Promise<Prospect | null> {
   const parDomaine = await sql<Prospect[]>`select ${champs} from public.prospects
                                            where split_part(lower(email), '@', 2) = ${domaine} limit 2`;
   return parDomaine.length === 1 ? parDomaine[0] : null;
+}
+
+/** STOP d'un prospect connu (27/11) : maquettes archivées (plus visibles sur /m), adresse de la fiche en opposition,
+ *  e-mails pas encore partis annulés, fiche « refusé ». */
+async function retirerProspect(sql: Sql, id: string, nom: string): Promise<void> {
+  if (SIMULATION) return;
+  await sql`update public.websites set status = 'archive' where prospect_id = ${id} and kind = 'demo' and status <> 'archive'`;
+  await sql`update public.emails set status = 'annule' where prospect_id = ${id} and status in ('a_valider', 'valide')`;
+  await sql`update public.prospects set status = 'refuse' where id = ${id} and status not in ('client')`;
+  await sql`insert into public.opposition_list (email, business_name, reason, notes, is_demo)
+            select lower(email), ${nom}, 'desinscription', 'Demande reçue par e-mail (adresse de la fiche).', false
+            from public.prospects where id = ${id} and email is not null
+            on conflict do nothing`;
 }
 
 /**
@@ -139,7 +162,7 @@ async function rattraperStop(sql: Sql, taskId: string | null): Promise<number> {
 
 async function trier(sql: Sql, taskId: string, r: Reglages): Promise<void> {
   const recus = await sql<Recu[]>`
-    select id, from_email, from_name, to_email, subject, body_text, message_id, in_reply_to, attachments,
+    select id, from_email, from_name, to_email, subject, body_text, message_id, in_reply_to, references_ids, attachments,
            auto_submitted, received_at, created_at
     from public.mailbox_messages where direction = 'entrant' and status = 'nouveau'
     order by created_at limit ${MAX_TRI}`;
@@ -194,6 +217,9 @@ async function trier(sql: Sql, taskId: string, r: Reglages): Promise<void> {
                     on conflict do nothing`;
         }
         if (envoi && envoi.status === "envoye") await sql`update public.emails set status = 'repondu' where id = ${envoi.id}`;
+        // 27/11 (une photographe a demandé de « supprimer ce site immédiatement ») : on retire aussi sa maquette
+        // (archivée → /m/<slug> ne l'affiche plus), son adresse de fiche part en opposition, rien d'autre ne partira.
+        if (p) await retirerProspect(sql, p.id, p.name);
         await sql`update public.mailbox_messages set status = 'traite', category = 'stop',
                   summary = 'Demande à ne plus être contacté : ajouté à la liste d''opposition.' where id = ${m.id}`;
         bilan.stop++;
