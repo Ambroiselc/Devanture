@@ -170,6 +170,8 @@ export function renderIndependant(c: ContenuIndependant): string {
   const spe = c.specialite && SPECIALITES[c.metier].includes(c.specialite) ? c.specialite : photographe ? "mariage" : "fitness";
   const ph = PHOTOS[spe];
   const calme = spe === "mental" || spe === "yoga";
+  // Ce qu'on affiche comme métier : « Coach sportif » serait faux pour un coach mental.
+  const metierAffiche = spe === "mental" ? "Coach" : c.metier;
   const prestations = c.prestations.slice(0, 4);
   const jours = prochainsJours();
   const creneaux = photographe ? ["10:00", "14:00", "16:30"] : calme ? ["09:00", "11:00", "14:30", "18:00"] : ["07:30", "12:15", "18:00", "19:15"];
@@ -180,7 +182,7 @@ export function renderIndependant(c: ContenuIndependant): string {
   const hero = hab.h === 2
     ? `<section class="hero hero-cote">
   <div class="hero-txt">
-    <p class="sur">${e(c.metier)} · ${e(c.commune)}</p>
+    <p class="sur">${e(metierAffiche)} · ${e(c.commune)}</p>
     <h1>${e(c.accroche)}</h1>
     <p class="lead">${e(c.intro)}</p>
     <div class="ctas"><a class="btn" href="#reserver">${verbe}</a>${voirAutre}</div>
@@ -191,7 +193,7 @@ export function renderIndependant(c: ContenuIndependant): string {
     ? `<section class="hero hero-photo">
   <div class="hero-img">${img(ph[0], 1800, `Photo d'illustration : ${c.metier}`)}</div>
   <div class="hero-txt">
-    <p class="sur">${e(c.metier)} · ${e(c.commune)}</p>
+    <p class="sur">${e(metierAffiche)} · ${e(c.commune)}</p>
     <h1>${e(c.accroche)}</h1>
     <p class="lead">${e(c.intro)}</p>
     <div class="ctas"><a class="btn" href="#reserver">${verbe}</a>${voirAutre}</div>
@@ -200,7 +202,7 @@ export function renderIndependant(c: ContenuIndependant): string {
     : `<section class="hero hero-coach">
   <div class="hero-img">${img(ph[0], 1800, `Photo d'illustration : ${c.metier}`)}</div>
   <div class="hero-txt">
-    <div><p class="sur">${e(c.metier)} · ${e(c.commune)}</p><h1>${e(c.accroche)}</h1></div>
+    <div><p class="sur">${e(metierAffiche)} · ${e(c.commune)}</p><h1>${e(c.accroche)}</h1></div>
     <div><p class="lead">${e(c.intro)}</p>
     <div class="ctas"><a class="btn" href="#reserver">${verbe}</a>${voirAutre}</div></div>
   </div>
@@ -241,7 +243,7 @@ export function renderIndependant(c: ContenuIndependant): string {
 
   return `<!DOCTYPE html>
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${e(c.nom)} · ${e(c.metier)} à ${e(c.commune)}</title>
+<title>${e(c.nom)} · ${e(metierAffiche)} à ${e(c.commune)}</title>
 <meta name="description" content="${e(c.intro)}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=${pal.url}&display=swap" rel="stylesheet">
@@ -320,7 +322,7 @@ footer{padding:28px max(5vw,16px);color:var(--doux);font-size:14px;border-top:1p
 </style></head>
 <body>
 <header><a class="logo" href="#">${e(c.nom)}</a>
-<nav><a href="#prestations">${photographe ? "Prestations" : "Formules"}</a><a href="#galerie">${photographe ? "Portfolio" : "En images"}</a><a href="#apropos">À propos</a><a href="#contact">Contact</a></nav>
+<nav><a href="#prestations">${photographe ? "Prestations" : spe === "mental" ? "Accompagnements" : "Formules"}</a><a href="#galerie">${photographe ? "Portfolio" : "En images"}</a><a href="#apropos">À propos</a><a href="#contact">Contact</a></nav>
 <a class="btn" href="#reserver">${verbe}</a></header>
 <!--principal-->
 ${hero}
@@ -348,7 +350,7 @@ ${resa}
   <p class="intro2" style="margin-inline:auto">${photographe ? "Réservez directement en ligne, ou écrivez-moi pour une demande particulière." : "Réservez votre première séance en ligne, ou contactez-moi pour en parler."}</p>
   <div class="ctas"><a class="btn" href="#reserver">${verbe}</a>${contact}</div>
 </section>
-<footer><span>© ${annee} ${e(c.nom)} · ${e(c.metier)} à ${e(c.commune)}</span><span>Mentions légales</span></footer>
+<footer><span>© ${annee} ${e(c.nom)} · ${e(metierAffiche)} à ${e(c.commune)}</span><span>Mentions légales</span></footer>
 </body></html>`;
 }
 
